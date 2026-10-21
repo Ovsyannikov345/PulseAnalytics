@@ -5,6 +5,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 var configuration = builder.Configuration;
 
+if (builder.Environment.IsDevelopment())
+{
+    configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+}
+
 builder.Services
     .AddInfrastructureServices(configuration)
     .AddApiServices();
