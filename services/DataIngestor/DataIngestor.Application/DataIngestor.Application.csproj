@@ -1,0 +1,5 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\DataIngestor.Domain\DataIngestor.Domain.csproj" />
+  </ItemGroup>
+</Project>
