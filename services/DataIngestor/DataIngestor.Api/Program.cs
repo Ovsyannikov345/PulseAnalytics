@@ -1,6 +1,13 @@
+using DataIngestor.Api;
+using DataIngestor.Infrastructure;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+var configuration = builder.Configuration;
+
+builder.Services
+    .AddInfrastructureServices(configuration)
+    .AddApiServices();
 
 var app = builder.Build();
 
