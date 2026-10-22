@@ -21,7 +21,7 @@ public static class DependencyInjection
         // HTTP Clients
         services.AddTransient<WeakAppAuthorizationHandler>();
 
-        services.AddHttpClient<IMetersClient, MetersClient>((serviceProvider, client) =>
+        services.AddHttpClient<IExternalMetersClient, WeakAppClient>((serviceProvider, client) =>
         {
             var weakAppSettings = serviceProvider.GetRequiredService<IOptionsMonitor<WeakAppSettings>>();
 

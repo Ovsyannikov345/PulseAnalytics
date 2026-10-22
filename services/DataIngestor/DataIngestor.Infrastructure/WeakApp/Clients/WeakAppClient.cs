@@ -9,8 +9,8 @@ using System.Text.Json.Serialization;
 
 namespace DataIngestor.Infrastructure.WeakApp.Clients;
 
-internal sealed class MetersClient(HttpClient httpClient, ILogger<MetersClient> logger)
-    : BaseClient(httpClient, logger), IMetersClient
+internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient> logger)
+    : BaseClient(httpClient, logger), IExternalMetersClient
 {
     protected override JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
     {
@@ -31,7 +31,7 @@ internal sealed class MetersClient(HttpClient httpClient, ILogger<MetersClient> 
 
         if (!response.IsSuccessStatusCode)
         {
-            return Result<List<MeterReading>>.Fail("Meters API responded with failure");
+            return Result<List<MeterReading>>.Fail("Weak App API responded with failure");
         }
 
         var utcNow = DateTimeOffset.UtcNow;
@@ -42,7 +42,7 @@ internal sealed class MetersClient(HttpClient httpClient, ILogger<MetersClient> 
 
             if (!deserializationResult.TryGetSuccessValue(out var readings))
             {
-                return Result<List<MeterReading>>.Fail("Failed to read Meters API response");
+                return Result<List<MeterReading>>.Fail("Failed to read Weak App API response");
             }
 
             return MapResponse(readings);
@@ -100,7 +100,7 @@ internal sealed class MetersClient(HttpClient httpClient, ILogger<MetersClient> 
     }
 }
 
-public static partial class MetersClientLogs
+public static partial class WeakAppClientLogs
 {
     [LoggerMessage(Level = LogLevel.Warning, Message = "Unknown meter reading type encountered: {Type}")]
     public static partial void UnknownReadingType(this ILogger logger, Type type);

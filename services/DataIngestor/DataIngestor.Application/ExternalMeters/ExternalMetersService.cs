@@ -4,15 +4,17 @@ using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Application.ExternalMeters;
 
-public interface IReadingsExtractionService
+public interface IExternalMetersService
 {
-    public Task<Result> ExtractAsync(CancellationToken ct);
+    public Task<Result> ExtractReadingsAsync(CancellationToken ct);
 }
 
-internal sealed class ReadingsExtractionService(IMetersClient metersClient, ILogger<ReadingsExtractionService> logger)
-    : IReadingsExtractionService
+internal sealed class ExternalMetersService(
+    IExternalMetersClient metersClient, 
+    ILogger<ExternalMetersService> logger)
+    : IExternalMetersService
 {
-    public async Task<Result> ExtractAsync(CancellationToken ct)
+    public async Task<Result> ExtractReadingsAsync(CancellationToken ct)
     {
         var extractionResult = await metersClient.GetMetersAsync(ct);
 

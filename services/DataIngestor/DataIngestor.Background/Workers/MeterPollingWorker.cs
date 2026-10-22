@@ -69,9 +69,9 @@ internal sealed class MeterPollingWorker(
 
     private static async Task<Result> DoWorkAsync(AsyncServiceScope serviceScope, CancellationToken ct)
     {
-        var readingsExtractionService = serviceScope.ServiceProvider.GetRequiredService<IReadingsExtractionService>();
+        var metersService = serviceScope.ServiceProvider.GetRequiredService<IExternalMetersService>();
 
-        return await readingsExtractionService.ExtractAsync(ct);
+        return await metersService.ExtractReadingsAsync(ct);
     }
 }
 
