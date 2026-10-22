@@ -12,6 +12,7 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services
     .AddInfrastructureServices(configuration)
+    .AddApiServices()
     .AddApiServices();
 
 var app = builder.Build();
