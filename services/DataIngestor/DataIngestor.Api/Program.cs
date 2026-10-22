@@ -1,4 +1,6 @@
 using DataIngestor.Api;
+using DataIngestor.Application;
+using DataIngestor.Background;
 using DataIngestor.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +14,8 @@ if (builder.Environment.IsDevelopment())
 
 builder.Services
     .AddInfrastructureServices(configuration)
-    .AddApiServices()
+    .AddApplicationServices()
+    .AddBackgroundServices(configuration)
     .AddApiServices();
 
 var app = builder.Build();
