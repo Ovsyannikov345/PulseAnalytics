@@ -1,5 +1,5 @@
 ﻿using Ausiannikau.Utilities.Results;
-using DataIngestor.Application.ExternalMeters.Dto;
+using DataIngestor.Domain.Entities;
 
 namespace DataIngestor.Application.Interfaces.Clients;
 
