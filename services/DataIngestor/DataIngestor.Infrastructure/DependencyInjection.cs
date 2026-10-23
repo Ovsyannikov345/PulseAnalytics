@@ -1,7 +1,7 @@
 ﻿using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Infrastructure.WeakApp.Clients;
 using DataIngestor.Infrastructure.WeakApp.Configuration;
-using DataIngestor.Infrastructure.WeakApp.Handlers;
+using DataIngestor.Infrastructure.WeakApp.Constants;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -19,17 +19,17 @@ public static class DependencyInjection
             .ValidateDataAnnotations();
 
         // HTTP Clients
-        services.AddTransient<WeakAppAuthorizationHandler>();
-
         services.AddHttpClient<IExternalMetersClient, WeakAppClient>((serviceProvider, client) =>
         {
-            var weakAppSettings = serviceProvider.GetRequiredService<IOptionsMonitor<WeakAppSettings>>();
+            var optionsMonitor = serviceProvider.GetRequiredService<IOptionsMonitor<WeakAppSettings>>();
 
-            var baseUrl = $"{weakAppSettings.CurrentValue.BaseUrl.TrimEnd('/')}/";
+            var weakAppSettings = optionsMonitor.CurrentValue;
+
+            var baseUrl = $"{weakAppSettings.BaseUrl.TrimEnd('/')}/";
 
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
-        })
-        .AddHttpMessageHandler<WeakAppAuthorizationHandler>();
+            client.DefaultRequestHeaders.Add(HeaderNames.ApiKey, weakAppSettings.ApiKey);
+        });
 
         return services;
     }

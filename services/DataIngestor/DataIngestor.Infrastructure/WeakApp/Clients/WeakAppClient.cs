@@ -2,6 +2,7 @@
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
+using DataIngestor.Infrastructure.Abstractions;
 using DataIngestor.Infrastructure.WeakApp.Contracts;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -10,12 +11,14 @@ using System.Text.Json.Serialization;
 namespace DataIngestor.Infrastructure.WeakApp.Clients;
 
 internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient> logger)
-    : BaseClient(httpClient, logger), IExternalMetersClient
+    : BaseHttpClient(httpClient, logger, SerializerOptions), IExternalMetersClient
 {
-    protected override JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
+    private static JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        AllowOutOfOrderMetadataProperties = true,
+        RespectNullableAnnotations = true
     };
 
     public async Task<Result<List<MeterReading>>> GetMetersAsync(CancellationToken ct)
@@ -29,15 +32,17 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
             return requestResult.ToFailureOf<List<MeterReading>>();
         }
 
-        if (!response.IsSuccessStatusCode)
-        {
-            return Result<List<MeterReading>>.Fail("Weak App API responded with failure");
-        }
-
         var utcNow = DateTimeOffset.UtcNow;
 
         using (response)
         {
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogFailedResponseAsync(response, ct);
+
+                return Result<List<MeterReading>>.Fail("Weak App API responded with failure");
+            }
+
             var deserializationResult = await DeserializeAsync<List<MeterReadingResponse>>(response, ct);
 
             if (!deserializationResult.TryGetSuccessValue(out var readings))
@@ -54,45 +59,48 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
 
             foreach (var reading in readings)
             {
-                if (reading is MotionMeterReadingResponse motionReading)
+                var mappedReading = reading switch
                 {
-                    mappedReadings.Add(new MeterReading
+                    MotionMeterReadingResponse motionReading => new MeterReading
                     {
                         Name = motionReading.Name,
                         Type = MeterType.Motion,
                         ReceivedAt = utcNow,
                         Payload = new MotionPayload { MotionDetected = motionReading.Payload.MotionDetected }
-                    });
-                }
+                    },
 
-                if (reading is EnergyMeterReadingResponse energyReading)
-                {
-                    mappedReadings.Add(new MeterReading
+                    EnergyMeterReadingResponse energyReading => new MeterReading
                     {
                         Name = energyReading.Name,
                         Type = MeterType.Energy,
                         ReceivedAt = utcNow,
                         Payload = new EnergyPayload { Energy = energyReading.Payload.Energy }
-                    });
-                }
+                    },
 
-                if (reading is AirQualityMeterReadingResponse airReading)
-                {
-                    mappedReadings.Add(new MeterReading
+                    AirQualityMeterReadingResponse airReading => new MeterReading
                     {
                         Name = airReading.Name,
                         Type = MeterType.AirQuality,
                         ReceivedAt = utcNow,
-                        Payload = new AirQualityPayload 
+                        Payload = new AirQualityPayload
                         {
                             Co2 = airReading.Payload.Co2,
                             Pm25 = airReading.Payload.Pm25,
                             Humidity = airReading.Payload.Humidity
                         }
-                    });
-                }
+                    },
 
-                Logger.UnknownReadingType(reading.GetType());
+                    _ => null
+                };
+
+                if (mappedReading is not null)
+                {
+                    mappedReadings.Add(mappedReading);
+                }
+                else
+                {
+                    Logger.UnknownReadingType(reading.GetType());
+                }
             }
 
             return mappedReadings;

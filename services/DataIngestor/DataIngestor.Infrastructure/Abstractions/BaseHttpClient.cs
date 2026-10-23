@@ -1,13 +1,12 @@
 ﻿using Ausiannikau.Utilities.Results;
 using Microsoft.Extensions.Logging;
+using System.Net;
 using System.Text.Json;
 
-namespace DataIngestor.Infrastructure.WeakApp.Clients;
+namespace DataIngestor.Infrastructure.Abstractions;
 
-internal abstract class BaseClient(HttpClient httpClient, ILogger logger)
+internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, JsonSerializerOptions serializerOptions)
 {
-    protected abstract JsonSerializerOptions SerializerOptions { get; }
-
     protected readonly ILogger Logger = logger;
 
     protected async Task<Result<HttpResponseMessage>> SendAsync(HttpRequestMessage request, CancellationToken ct)
@@ -36,7 +35,7 @@ internal abstract class BaseClient(HttpClient httpClient, ILogger logger)
         {
             var bodyStream = await response.Content.ReadAsStreamAsync(ct);
 
-            var payload = await JsonSerializer.DeserializeAsync<TPayload>(bodyStream, SerializerOptions, ct);
+            var payload = await JsonSerializer.DeserializeAsync<TPayload>(bodyStream, serializerOptions, ct);
 
             if (payload is null)
             {
@@ -58,6 +57,34 @@ internal abstract class BaseClient(HttpClient httpClient, ILogger logger)
             return Result<TPayload>.Fail("Failed to deserialize reponse body");
         }
     }
+
+    protected async Task LogFailedResponseAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        var request = response.RequestMessage;
+
+        await response.Content.LoadIntoBufferAsync(ct);
+        var responseBody = await ReadBodySafelyAsync();
+
+        Logger.ApiRespondedWithFailure(
+            request?.Method,
+            request?.RequestUri,
+            response.StatusCode,
+            responseBody);
+
+        async Task<string?> ReadBodySafelyAsync()
+        {
+            try
+            {
+                return await response.Content.ReadAsStringAsync(CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                Logger.FailedToReadResponseBody(ex);
+
+                return "[Failed to read]";
+            }
+        }
+    }
 }
 
 internal static partial class BaseClientLogs
@@ -76,4 +103,21 @@ internal static partial class BaseClientLogs
         Level = LogLevel.Error,
         Message = "Response body is empty")]
     public static partial void EncounteredEmptyResponseBody(this ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = 
+        "API responded with failure. HTTP method: {HttpMethod}. URL: {RequestUri}. " +
+        "Status code: {ResponseStatusCode}. Response body: {ResponseBody}")]
+    public static partial void ApiRespondedWithFailure(
+        this ILogger logger,
+        HttpMethod? httpMethod,
+        Uri? requestUri,
+        HttpStatusCode responseStatusCode,
+        string? responseBody);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to read response body.")]
+    public static partial void FailedToReadResponseBody(this ILogger logger, Exception ex);
 }
