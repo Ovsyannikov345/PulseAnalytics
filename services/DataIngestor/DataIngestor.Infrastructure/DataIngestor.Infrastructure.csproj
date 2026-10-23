@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  
-  <ItemGroup>
-    <PackageReference Include="Ausiannikau.Utilities.Result" Version="1.0.10" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.13" />
-  </ItemGroup>
-	
-  <ItemGroup>
-    <ProjectReference Include="..\DataIngestor.Application\DataIngestor.Application.csproj" />
-  </ItemGroup>
-	
+
+	<ItemGroup>
+		<PackageReference Include="Ausiannikau.Utilities.Result" Version="1.0.10" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
+		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DataIngestor.Application\DataIngestor.Application.csproj" />
+	</ItemGroup>
+
 </Project>

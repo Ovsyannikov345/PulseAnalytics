@@ -1,13 +1,13 @@
-﻿using Ausiannikau.Utilities.Results;
-using Microsoft.Extensions.Logging;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
+using Ausiannikau.Utilities.Results;
+using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Infrastructure.Abstractions;
 
 internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, JsonSerializerOptions serializerOptions)
 {
-    protected readonly ILogger Logger = logger;
+    protected ILogger Logger => logger;
 
     protected async Task<Result<HttpResponseMessage>> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
@@ -54,7 +54,7 @@ internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, Js
         {
             Logger.FailedToDeserializeBody(ex);
 
-            return Result<TPayload>.Fail("Failed to deserialize reponse body");
+            return Result<TPayload>.Fail("Failed to deserialize response body");
         }
     }
 

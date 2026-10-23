@@ -10,7 +10,7 @@ public interface IExternalMetersService
 }
 
 internal sealed class ExternalMetersService(
-    IExternalMetersClient metersClient, 
+    IExternalMetersClient metersClient,
     ILogger<ExternalMetersService> logger)
     : IExternalMetersService
 {

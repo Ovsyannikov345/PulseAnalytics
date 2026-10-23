@@ -6,7 +6,6 @@ internal sealed record MeterPollingWorkerSettings
 {
     public const string SectionName = "MeterPollingWorker";
 
-    [Required]
     [Range(1, int.MaxValue)]
     public required int PollingPeriodInSeconds { get; init; }
 

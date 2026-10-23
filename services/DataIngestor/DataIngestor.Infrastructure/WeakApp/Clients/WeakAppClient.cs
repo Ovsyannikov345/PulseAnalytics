@@ -1,12 +1,12 @@
-﻿using Ausiannikau.Utilities.Results;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
 using DataIngestor.Infrastructure.Abstractions;
 using DataIngestor.Infrastructure.WeakApp.Contracts;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace DataIngestor.Infrastructure.WeakApp.Clients;
 
@@ -108,7 +108,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
     }
 }
 
-public static partial class WeakAppClientLogs
+internal static partial class WeakAppClientLogs
 {
     [LoggerMessage(Level = LogLevel.Warning, Message = "Unknown meter reading type encountered: {Type}")]
     public static partial void UnknownReadingType(this ILogger logger, Type type);

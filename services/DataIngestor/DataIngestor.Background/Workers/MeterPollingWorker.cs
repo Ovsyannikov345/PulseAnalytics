@@ -40,31 +40,38 @@ internal sealed class MeterPollingWorker(
 
         logger.JobStarting(_settings.PollingPeriodInSeconds);
 
-        do
+        try
         {
-            try
+            do
             {
-                await using var serviceScope = scopeFactory.CreateAsyncScope();
-
-                var result = await DoWorkAsync(serviceScope, stoppingToken);
-
-                if (result.IsFailure)
+                try
                 {
-                    logger.JobFailed(result.ErrorMessage);
+                    await using var serviceScope = scopeFactory.CreateAsyncScope();
+
+                    var result = await DoWorkAsync(serviceScope, stoppingToken);
+
+                    if (result.IsFailure)
+                    {
+                        logger.JobFailed(result.ErrorMessage);
+                    }
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    logger.JobFailed(ex);
                 }
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                logger.JobShuttingDown();
-
-                throw;
-            }
-            catch (Exception ex)
-            {
-                logger.JobFailed(ex);
-            }
+            while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-        while (await timer.WaitForNextTickAsync(stoppingToken));
+        catch (OperationCanceledException)
+        {
+            logger.JobShuttingDown();
+
+            throw;
+        }
     }
 
     private static async Task<Result> DoWorkAsync(AsyncServiceScope serviceScope, CancellationToken ct)
