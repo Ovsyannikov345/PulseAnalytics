@@ -20,18 +20,25 @@ internal sealed class ExternalMetersService(
 
         if (!extractionResult.TryGetSuccessValue(out var readings))
         {
-            // TODO log
+            logger.FailedToExtractReadings(extractionResult.ErrorMessage);
 
             return extractionResult;
         }
 
         foreach (var reading in readings)
         {
-            // TODO publish readings
-
-            logger.LogInformation($"Publishing reading:\n{reading}\n");
+            // TODO replace with real publishing logic
+            logger.LogInformation("Publishing reading: {Reading}", reading.ToString());
         }
 
         return Result.Succeed();
     }
+}
+
+internal static partial class ExternalMetersServiceLogs
+{
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to extract readings. Reason: {Reason}")]
+    public static partial void FailedToExtractReadings(this ILogger logger, string reason);
 }
