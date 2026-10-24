@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<UserSecretsId>b0c40f09-3479-4c41-bba5-e909567e8a81</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DataIngestor.Application\DataIngestor.Application.csproj" />
+		<ProjectReference Include="..\DataIngestor.Background\DataIngestor.Background.csproj" />
+		<ProjectReference Include="..\DataIngestor.Infrastructure\DataIngestor.Infrastructure.csproj" />
+	</ItemGroup>
+
+</Project>

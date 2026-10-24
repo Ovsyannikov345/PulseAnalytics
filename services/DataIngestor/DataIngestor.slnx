@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Project Path="DataIngestor.Api/DataIngestor.Api.csproj" />
+  <Project Path="DataIngestor.Application/DataIngestor.Application.csproj" />
+  <Project Path="DataIngestor.Background/DataIngestor.Background.csproj" />
+  <Project Path="DataIngestor.Domain/DataIngestor.Domain.csproj" />
+  <Project Path="DataIngestor.Infrastructure/DataIngestor.Infrastructure.csproj" />
+</Solution>
