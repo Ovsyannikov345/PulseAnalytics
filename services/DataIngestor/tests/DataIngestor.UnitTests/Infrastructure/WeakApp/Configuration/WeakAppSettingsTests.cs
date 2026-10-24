@@ -40,8 +40,7 @@ public sealed class WeakAppSettingsTests
         var results = DataAnnotationsValidator.Validate(settings);
 
         // Assert
-        results.ShouldNotBeEmpty();
-        results.ShouldAllBe(result => result.MemberNames.SequenceEqual(new[] { nameof(WeakAppSettings.BaseUrl) }));
+        results.SelectMany(result => result.MemberNames).Distinct().ShouldBe([nameof(WeakAppSettings.BaseUrl)]);
     }
 
     [Theory]

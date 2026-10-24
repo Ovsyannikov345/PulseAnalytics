@@ -16,7 +16,7 @@ namespace DataIngestor.UnitTests.Background.Workers;
 
 // The worker runs on a background task, so tests wait for its observable effects (polls, timers)
 // with TestWait. Time itself only moves when a test advances the fake time provider.
-public sealed class MeterPollingWorkerTests : IDisposable
+public sealed class MeterPollingWorkerTests : IAsyncDisposable
 {
     private const int PollingPeriodInSeconds = 60;
     private const int StartupDelayInSeconds = 30;
@@ -42,9 +42,23 @@ public sealed class MeterPollingWorkerTests : IDisposable
             .ReturnsLazily(CreateScope);
     }
 
-    public void Dispose()
+    public enum PollOutcome
     {
-        _sut?.Dispose();
+        Succeeds,
+        ReturnsFailure,
+        Throws
+    }
+
+    // Stops the worker even when a test failed before stopping it, so its background task
+    // cannot outlive the test.
+    public async ValueTask DisposeAsync()
+    {
+        if (_sut is not null)
+        {
+            await _sut.StopAsync(CancellationToken.None);
+
+            _sut.Dispose();
+        }
     }
 
     [Fact]
@@ -181,10 +195,20 @@ public sealed class MeterPollingWorkerTests : IDisposable
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
-    [Fact]
-    public async Task ExecuteAsync_EachPoll_UsesNewServiceScopeAndDisposesIt()
+    [Theory]
+    [InlineData(PollOutcome.Succeeds)]
+    [InlineData(PollOutcome.ReturnsFailure)]
+    [InlineData(PollOutcome.Throws)]
+    public async Task ExecuteAsync_AnyPollOutcome_UsesNewServiceScopePerPollAndDisposesIt(PollOutcome outcome)
     {
         // Arrange
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(() => outcome switch
+            {
+                PollOutcome.Succeeds => Task.FromResult(Result.Succeed()),
+                PollOutcome.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
+                _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+            });
         var sut = CreateSut();
 
         // Act
@@ -265,6 +289,29 @@ public sealed class MeterPollingWorkerTests : IDisposable
     }
 
     [Fact]
+    public async Task ExecuteAsync_StoppedWhilePollIsInProgress_DisposesServiceScope()
+    {
+        // Arrange
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(async (CancellationToken token) =>
+            {
+                await Task.Delay(Timeout.Infinite, token);
+
+                return Result.Succeed();
+            });
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var scope = _createdScopes.ShouldHaveSingleItem();
+        A.CallTo(() => scope.Dispose()).MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
     public async Task ExecuteAsync_StartupDelayNotYetElapsed_DoesNotPoll()
     {
         // Arrange
@@ -301,6 +348,24 @@ public sealed class MeterPollingWorkerTests : IDisposable
         _logs.Entries.ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StartupDelayElapsed_CountsPollingPeriodFromFirstPoll()
+    {
+        // Arrange
+        var sut = CreateSut(StartupDelayInSeconds);
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForTimersAsync(1);
+        _timeProvider.Advance(StartupDelay);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod - TimeSpan.FromSeconds(1));
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]

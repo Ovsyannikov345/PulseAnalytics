@@ -13,6 +13,8 @@ namespace DataIngestor.UnitTests.Application.ExternalMeters;
 
 public sealed class ExternalMetersServiceTests
 {
+    private static readonly DateTimeOffset ReadingTime = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
+
     private readonly IExternalMetersClient _metersClient = A.Fake<IExternalMetersClient>();
     private readonly LogCapture _logs = new();
     private readonly ExternalMetersService _sut;
@@ -49,8 +51,7 @@ public sealed class ExternalMetersServiceTests
         // Publishing is still a logging placeholder (TODO in ExternalMetersService);
         // replace this with an assertion on the publisher once it exists.
         _logs.Entries
-            .Where(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal))
-            .Count()
+            .Count(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal))
             .ShouldBe(3);
     }
 
@@ -72,8 +73,7 @@ public sealed class ExternalMetersServiceTests
     public async Task ExtractReadingsAsync_ClientFails_ReturnsFailureWithClientErrorMessage()
     {
         // Arrange
-        A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._))
-            .Returns(Result<List<MeterReading>>.Fail("Weak App API responded with failure"));
+        ClientFails("Weak App API responded with failure");
 
         // Act
         var result = await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
@@ -87,8 +87,7 @@ public sealed class ExternalMetersServiceTests
     public async Task ExtractReadingsAsync_ClientFails_LogsErrorWithReason()
     {
         // Arrange
-        A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._))
-            .Returns(Result<List<MeterReading>>.Fail("Weak App API responded with failure"));
+        ClientFails("Weak App API responded with failure");
 
         // Act
         await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
@@ -134,7 +133,7 @@ public sealed class ExternalMetersServiceTests
         {
             Name = name,
             Type = MeterType.Motion,
-            ReceivedAt = DateTimeOffset.UtcNow,
+            ReceivedAt = ReadingTime,
             Payload = new MotionPayload { MotionDetected = true }
         };
     }
@@ -145,7 +144,7 @@ public sealed class ExternalMetersServiceTests
         {
             Name = name,
             Type = MeterType.Energy,
-            ReceivedAt = DateTimeOffset.UtcNow,
+            ReceivedAt = ReadingTime,
             Payload = new EnergyPayload { Energy = 845.62 }
         };
     }
@@ -154,5 +153,11 @@ public sealed class ExternalMetersServiceTests
     {
         A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._))
             .Returns(Result<List<MeterReading>>.Succeed([.. readings]));
+    }
+
+    private void ClientFails(string errorMessage)
+    {
+        A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._))
+            .Returns(Result<List<MeterReading>>.Fail(errorMessage));
     }
 }

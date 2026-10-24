@@ -25,6 +25,7 @@ public sealed class WeakAppClientTests : IDisposable
     private static readonly DateTimeOffset Now = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
     private readonly HttpMessageHandler _handler = A.Fake<HttpMessageHandler>();
+    private readonly FakeTimeProvider _timeProvider = new(Now);
     private readonly LogCapture _logs = new();
     private readonly HttpClient _httpClient;
     private readonly WeakAppClient _sut;
@@ -33,7 +34,7 @@ public sealed class WeakAppClientTests : IDisposable
     {
         _httpClient = new HttpClient(_handler) { BaseAddress = new Uri("http://weakapp.test/") };
 
-        _sut = new WeakAppClient(_httpClient, new FakeTimeProvider(Now), _logs.CreateLogger<WeakAppClient>());
+        _sut = new WeakAppClient(_httpClient, _timeProvider, _logs.CreateLogger<WeakAppClient>());
     }
 
     public void Dispose()
@@ -136,17 +137,40 @@ public sealed class WeakAppClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetMetersAsync_SuccessfulResponse_StampsAllReadingsWithCurrentTimeOfTimeProvider()
+    public async Task GetMetersAsync_SuccessfulResponse_StampsAllReadingsWithTimeResponseWasReceived()
     {
         // Arrange
-        _handler.RespondsWithJson($"[{MotionItem},{EnergyItem},{AirQualityItem}]");
+        var responseDelay = TimeSpan.FromSeconds(2);
+        _handler.CallsToSendAsync()
+            .Invokes(() => _timeProvider.Advance(responseDelay))
+            .ReturnsLazily(() => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent($"[{MotionItem},{EnergyItem},{AirQualityItem}]")
+            }));
 
         // Act
         var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.Value.Count.ShouldBe(3);
-        result.Value.ShouldAllBe(reading => reading.ReceivedAt == Now);
+        result.Value.ShouldAllBe(reading => reading.ReceivedAt == Now + responseDelay);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, "[]")]
+    [InlineData(HttpStatusCode.OK, """{"error":"data corrupted"}""")]
+    [InlineData(HttpStatusCode.BadGateway, "Bad Gateway")]
+    public async Task GetMetersAsync_AnyResponse_DisposesIt(HttpStatusCode statusCode, string body)
+    {
+        // Arrange
+        var content = new DisposalTrackingContent(body);
+        _handler.RespondsWith(statusCode, () => content);
+
+        // Act
+        await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        content.IsDisposed.ShouldBeTrue();
     }
 
     [Fact]
@@ -291,7 +315,7 @@ public sealed class WeakAppClientTests : IDisposable
     [InlineData("")]
     [InlineData("not json")]
     [InlineData("""[{"type":"motion","name":"Garage","payload":{"motionDetected":true}}""")]
-    public async Task GetMetersAsync_BodyIsNotAJsonArray_ReturnsFailure(string body)
+    public async Task GetMetersAsync_BodyIsNotAValidJsonArray_ReturnsFailure(string body)
     {
         // Arrange
         _handler.RespondsWithJson(body);
@@ -407,7 +431,7 @@ public sealed class WeakAppClientTests : IDisposable
     public async Task GetMetersAsync_RequestTimesOut_ReturnsFailure()
     {
         // Arrange
-        // This is how HttpClient reports its Timeout elapsing: a cancellation the caller did not request.
+        // Simulates a cancellation the caller did not request, e.g. an HttpClient or resilience-pipeline timeout.
         _handler.CallsToSendAsync().ThrowsAsync(new TaskCanceledException("The request timed out", new TimeoutException()));
 
         // Act
@@ -419,17 +443,17 @@ public sealed class WeakAppClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetMetersAsync_ResponseBodyCannotBeRead_ReturnsFailure()
+    public async Task GetMetersAsync_ResponseBodyCannotBeRead_ReturnsSendFailure()
     {
         // Arrange
+        // HttpClient buffers the body before returning the response, so a body that fails
+        // mid-read surfaces as a failed request rather than a deserialization failure.
         _handler.RespondsWith(HttpStatusCode.OK, () => new UnreadableHttpContent());
 
         // Act
         var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        // HttpClient buffers the body before returning the response, so a body that fails
-        // mid-read surfaces as a failed request rather than a deserialization failure.
         result.IsFailure.ShouldBeTrue();
         result.ErrorMessage.ShouldBe(SendFailureMessage);
     }
