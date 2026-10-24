@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using System.Text.Json.Serialization;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
@@ -13,10 +12,9 @@ namespace DataIngestor.Infrastructure.WeakApp.Clients;
 internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient> logger)
     : BaseHttpClient(httpClient, logger, SerializerOptions), IExternalMetersClient
 {
-    private static JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
+    private static readonly JsonSerializerOptions SerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         AllowOutOfOrderMetadataProperties = true,
         RespectNullableAnnotations = true
     };
@@ -111,14 +109,13 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
 
     private List<MeterReadingResponse> ParseReadings(List<JsonElement> items)
     {
-        var serializerOptions = SerializerOptions;
         var readings = new List<MeterReadingResponse>(items.Count);
 
         for (var index = 0; index < items.Count; index++)
         {
             try
             {
-                var reading = items[index].Deserialize<MeterReadingResponse>(serializerOptions);
+                var reading = items[index].Deserialize<MeterReadingResponse>(SerializerOptions);
 
                 if (reading is not null)
                 {
