@@ -1,0 +1,25 @@
+name: Data Ingestor PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - services/DataIngestor/**
+      - .github/workflows/data-ingestor.yml
+      - .github/workflows/_dotnet-ci.yml
+
+concurrency:
+  group: data-ingestor-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    if: github.event.pull_request.draft == false
+    uses: ./.github/workflows/_dotnet-ci.yml
+    with:
+      solution: services/DataIngestor/DataIngestor.slnx

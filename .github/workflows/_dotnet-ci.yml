@@ -1,0 +1,33 @@
+name: .NET CI (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      solution:
+        description: Path to the solution file, relative to the repo root
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore ${{ inputs.solution }}
+
+      - name: Build
+        run: dotnet build ${{ inputs.solution }} --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ${{ inputs.solution }} --configuration Release --no-build
