@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Infrastructure.WeakApp.Clients;
 
-internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient> logger)
+internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProvider, ILogger<WeakAppClient> logger)
     : BaseHttpClient(httpClient, logger, SerializerOptions), IExternalMetersClient
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -30,7 +31,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
             return requestResult.ToFailureOf<List<MeterReading>>();
         }
 
-        var utcNow = DateTimeOffset.UtcNow;
+        var utcNow = timeProvider.GetUtcNow();
 
         using (response)
         {
@@ -50,60 +51,46 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
 
             var parsedReadings = ParseReadings(rawReadings);
 
-            return MapResponse(parsedReadings);
+            return parsedReadings.ConvertAll(MapReading);
         }
 
-        List<MeterReading> MapResponse(List<MeterReadingResponse> readings)
+        MeterReading MapReading(MeterReadingResponse reading)
         {
-            var mappedReadings = new List<MeterReading>(readings.Count);
-
-            foreach (var reading in readings)
+            return reading switch
             {
-                var mappedReading = reading switch
+                MotionMeterReadingResponse motionReading => new MeterReading
                 {
-                    MotionMeterReadingResponse motionReading => new MeterReading
-                    {
-                        Name = motionReading.Name,
-                        Type = MeterType.Motion,
-                        ReceivedAt = utcNow,
-                        Payload = new MotionPayload { MotionDetected = motionReading.Payload.MotionDetected }
-                    },
+                    Name = motionReading.Name,
+                    Type = MeterType.Motion,
+                    ReceivedAt = utcNow,
+                    Payload = new MotionPayload { MotionDetected = motionReading.Payload.MotionDetected }
+                },
 
-                    EnergyMeterReadingResponse energyReading => new MeterReading
-                    {
-                        Name = energyReading.Name,
-                        Type = MeterType.Energy,
-                        ReceivedAt = utcNow,
-                        Payload = new EnergyPayload { Energy = energyReading.Payload.Energy }
-                    },
-
-                    AirQualityMeterReadingResponse airReading => new MeterReading
-                    {
-                        Name = airReading.Name,
-                        Type = MeterType.AirQuality,
-                        ReceivedAt = utcNow,
-                        Payload = new AirQualityPayload
-                        {
-                            Co2 = airReading.Payload.Co2,
-                            Pm25 = airReading.Payload.Pm25,
-                            Humidity = airReading.Payload.Humidity
-                        }
-                    },
-
-                    _ => null
-                };
-
-                if (mappedReading is not null)
+                EnergyMeterReadingResponse energyReading => new MeterReading
                 {
-                    mappedReadings.Add(mappedReading);
-                }
-                else
-                {
-                    Logger.UnknownReadingType(reading.GetType());
-                }
-            }
+                    Name = energyReading.Name,
+                    Type = MeterType.Energy,
+                    ReceivedAt = utcNow,
+                    Payload = new EnergyPayload { Energy = energyReading.Payload.Energy }
+                },
 
-            return mappedReadings;
+                AirQualityMeterReadingResponse airReading => new MeterReading
+                {
+                    Name = airReading.Name,
+                    Type = MeterType.AirQuality,
+                    ReceivedAt = utcNow,
+                    Payload = new AirQualityPayload
+                    {
+                        Co2 = airReading.Payload.Co2,
+                        Pm25 = airReading.Payload.Pm25,
+                        Humidity = airReading.Payload.Humidity
+                    }
+                },
+
+                // Items with an unknown type discriminator already fail deserialization in ParseReadings,
+                // so only the types registered with [JsonDerivedType] on MeterReadingResponse reach this point.
+                _ => throw new UnreachableException($"No mapping for meter reading type {reading.GetType().Name}")
+            };
         }
     }
 
@@ -138,9 +125,6 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
 
 internal static partial class WeakAppClientLogs
 {
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Unknown meter reading type encountered: {Type}")]
-    public static partial void UnknownReadingType(this ILogger logger, Type type);
-
     [LoggerMessage(Level = LogLevel.Warning, Message = "Skipped malformed meter reading at index {Index}")]
     public static partial void SkippedMalformedReading(this ILogger logger, int index, Exception ex);
 

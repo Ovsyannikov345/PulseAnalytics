@@ -4,6 +4,9 @@
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DataIngestor.UnitTests/DataIngestor.UnitTests.csproj" />
+  </Folder>
   <Project Path="DataIngestor.Api/DataIngestor.Api.csproj" />
   <Project Path="DataIngestor.Application/DataIngestor.Application.csproj" />
   <Project Path="DataIngestor.Background/DataIngestor.Background.csproj" />

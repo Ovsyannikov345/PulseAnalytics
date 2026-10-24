@@ -4,6 +4,7 @@ using DataIngestor.Infrastructure.WeakApp.Configuration;
 using DataIngestor.Infrastructure.WeakApp.Constants;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace DataIngestor.Infrastructure;
@@ -17,6 +18,8 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(WeakAppSettings.SectionName))
             .ValidateOnStart()
             .ValidateDataAnnotations();
+
+        services.TryAddSingleton(TimeProvider.System);
 
         // HTTP Clients
         services.AddHttpClient<IExternalMetersClient, WeakAppClient>((serviceProvider, client) =>
