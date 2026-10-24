@@ -3,9 +3,9 @@ using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
-using DataIngestor.UnitTests.TestDoubles;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using Shouldly;
 using Xunit;
 
@@ -16,12 +16,12 @@ public sealed class ExternalMetersServiceTests
     private static readonly DateTimeOffset ReadingTime = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
     private readonly IExternalMetersClient _metersClient = A.Fake<IExternalMetersClient>();
-    private readonly LogCapture _logs = new();
+    private readonly FakeLogger<ExternalMetersService> _logger = new();
     private readonly ExternalMetersService _sut;
 
     public ExternalMetersServiceTests()
     {
-        _sut = new ExternalMetersService(_metersClient, _logs.CreateLogger<ExternalMetersService>());
+        _sut = new ExternalMetersService(_metersClient, _logger);
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class ExternalMetersServiceTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public sealed class ExternalMetersServiceTests
         // Assert
         // Publishing is still a logging placeholder (TODO in ExternalMetersService);
         // replace this with an assertion on the publisher once it exists.
-        _logs.Entries
+        _logger.Collector.GetSnapshot()
             .Count(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal))
             .ShouldBe(3);
     }
@@ -66,7 +66,7 @@ public sealed class ExternalMetersServiceTests
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        _logs.Entries.ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -93,9 +93,9 @@ public sealed class ExternalMetersServiceTests
         await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Failed to extract readings. Reason: Weak App API responded with failure");
-        _logs.Entries.ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
     }
 
     [Fact]

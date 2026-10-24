@@ -6,6 +6,7 @@ using DataIngestor.Infrastructure.WeakApp.Clients;
 using DataIngestor.UnitTests.TestDoubles;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Xunit;
@@ -26,7 +27,7 @@ public sealed class WeakAppClientTests : IDisposable
 
     private readonly HttpMessageHandler _handler = A.Fake<HttpMessageHandler>();
     private readonly FakeTimeProvider _timeProvider = new(Now);
-    private readonly LogCapture _logs = new();
+    private readonly FakeLogger<WeakAppClient> _logger = new();
     private readonly HttpClient _httpClient;
     private readonly WeakAppClient _sut;
 
@@ -34,7 +35,7 @@ public sealed class WeakAppClientTests : IDisposable
     {
         _httpClient = new HttpClient(_handler) { BaseAddress = new Uri("http://weakapp.test/") };
 
-        _sut = new WeakAppClient(_httpClient, _timeProvider, _logs.CreateLogger<WeakAppClient>());
+        _sut = new WeakAppClient(_httpClient, _timeProvider, _logger);
     }
 
     public void Dispose()
@@ -183,7 +184,7 @@ public sealed class WeakAppClientTests : IDisposable
         await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 
     [Fact]
@@ -271,7 +272,7 @@ public sealed class WeakAppClientTests : IDisposable
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.Select(reading => reading.Type).ShouldBe([MeterType.Motion, MeterType.Energy]);
-        var warning = _logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
+        var warning = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
         warning.Message.ShouldBe("Skipped malformed meter reading at index 1");
         warning.Exception.ShouldNotBeNull();
     }
@@ -288,7 +289,7 @@ public sealed class WeakAppClientTests : IDisposable
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.Select(reading => reading.Type).ShouldBe([MeterType.Motion, MeterType.Energy]);
-        var warning = _logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
+        var warning = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
         warning.Message.ShouldBe("Skipped null meter reading at index 1");
     }
 
@@ -304,7 +305,7 @@ public sealed class WeakAppClientTests : IDisposable
         // Assert
         result.IsSuccess.ShouldBeTrue();
         result.Value.ShouldBeEmpty();
-        _logs.Entries.Count(entry => entry.Level == LogLevel.Warning).ShouldBe(3);
+        _logger.Collector.GetSnapshot().Count(entry => entry.Level == LogLevel.Warning).ShouldBe(3);
     }
 
     [Theory]
@@ -338,7 +339,7 @@ public sealed class WeakAppClientTests : IDisposable
         await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Exception occurred while deserializing response body");
         error.Exception.ShouldBeOfType<JsonException>();
     }
@@ -355,7 +356,7 @@ public sealed class WeakAppClientTests : IDisposable
         // Assert
         result.IsFailure.ShouldBeTrue();
         result.ErrorMessage.ShouldBe(UnreadableBodyMessage);
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Response body is empty");
     }
 
@@ -389,7 +390,7 @@ public sealed class WeakAppClientTests : IDisposable
         await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var warning = _logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
+        var warning = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
         warning.Message.ShouldBe(
             "API responded with failure. HTTP method: GET. URL: http://weakapp.test/meters. " +
             "Status code: 502. Response body: Bad Gateway");
@@ -422,7 +423,7 @@ public sealed class WeakAppClientTests : IDisposable
         // Assert
         result.IsFailure.ShouldBeTrue();
         result.ErrorMessage.ShouldBe(SendFailureMessage);
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Exception occurred while sending HTTP request");
         error.Exception.ShouldBeSameAs(exception);
     }
@@ -470,6 +471,6 @@ public sealed class WeakAppClientTests : IDisposable
 
         // Assert
         await act.ShouldThrowAsync<OperationCanceledException>();
-        _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 }

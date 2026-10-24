@@ -8,6 +8,7 @@ using DataIngestor.UnitTests.Utilities;
 using FakeItEasy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 using Shouldly;
 using Xunit;
@@ -30,7 +31,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     private readonly IServiceScopeFactory _scopeFactory = A.Fake<IServiceScopeFactory>();
     private readonly ConcurrentQueue<IServiceScope> _createdScopes = new();
     private readonly TimerTrackingFakeTimeProvider _timeProvider = new();
-    private readonly LogCapture _logs = new();
+    private readonly FakeLogger<MeterPollingWorker> _logger = new();
     private MeterPollingWorker? _sut;
 
     public MeterPollingWorkerTests()
@@ -74,10 +75,10 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
-        _logs.Entries.ShouldContain(entry =>
+        _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
-        _logs.Entries.ShouldNotContain(entry => entry.Message.Contains("before first attempt", StringComparison.Ordinal));
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.Contains("before first attempt", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -125,7 +126,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 
     [Fact]
@@ -144,7 +145,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed. Reason: Weak App API responded with failure");
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
@@ -166,7 +167,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed");
         error.Exception.ShouldBeSameAs(exception);
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
@@ -189,9 +190,9 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Exception.ShouldBeSameAs(exception);
-        _logs.Entries.Count(entry => entry.Message == ShuttingDownMessage).ShouldBe(1);
+        _logger.Collector.GetSnapshot().Count(entry => entry.Message == ShuttingDownMessage).ShouldBe(1);
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
@@ -261,7 +262,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         sut.ExecuteTask.ShouldNotBeNull().IsCanceled.ShouldBeTrue();
-        _logs.Entries.ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
+        _logger.Collector.GetSnapshot().ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
     }
 
     [Fact]
@@ -284,8 +285,8 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         sut.ExecuteTask.ShouldNotBeNull().IsCanceled.ShouldBeTrue();
-        _logs.Entries.ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
-        _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
+        _logger.Collector.GetSnapshot().ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 
     [Fact]
@@ -325,7 +326,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustNotHaveHappened();
-        _logs.Entries.ShouldContain(entry =>
+        _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is waiting 30 seconds before first attempt");
     }
@@ -345,7 +346,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
-        _logs.Entries.ShouldContain(entry =>
+        _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
     }
@@ -381,8 +382,8 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
         // Assert
         sut.ExecuteTask.ShouldNotBeNull().IsCanceled.ShouldBeTrue();
-        _logs.Entries.ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
-        _logs.Entries.ShouldNotContain(entry => entry.Message.StartsWith("Meter polling job is starting", StringComparison.Ordinal));
+        _logger.Collector.GetSnapshot().ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
+        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.StartsWith("Meter polling job is starting", StringComparison.Ordinal));
     }
 
     private MeterPollingWorker CreateSut(int? startupDelayInSeconds = null)
@@ -397,7 +398,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
             _scopeFactory,
             Options.Create(settings),
             _timeProvider,
-            _logs.CreateLogger<MeterPollingWorker>());
+            _logger);
 
         return _sut;
     }
