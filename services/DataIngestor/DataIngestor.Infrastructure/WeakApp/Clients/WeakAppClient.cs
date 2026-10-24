@@ -23,7 +23,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
 
     public async Task<Result<List<MeterReading>>> GetMetersAsync(CancellationToken ct)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, "meters");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "meters");
 
         var requestResult = await SendAsync(request, ct);
 
