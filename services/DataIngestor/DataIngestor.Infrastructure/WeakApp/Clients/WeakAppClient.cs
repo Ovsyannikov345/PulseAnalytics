@@ -43,14 +43,16 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
                 return Result<List<MeterReading>>.Fail("Weak App API responded with failure");
             }
 
-            var deserializationResult = await DeserializeAsync<List<MeterReadingResponse>>(response, ct);
+            var deserializationResult = await DeserializeAsync<List<JsonElement>>(response, ct);
 
-            if (!deserializationResult.TryGetSuccessValue(out var readings))
+            if (!deserializationResult.TryGetSuccessValue(out var rawReadings))
             {
                 return Result<List<MeterReading>>.Fail("Failed to read Weak App API response");
             }
 
-            return MapResponse(readings);
+            var parsedReadings = ParseReadings(rawReadings);
+
+            return MapResponse(parsedReadings);
         }
 
         List<MeterReading> MapResponse(List<MeterReadingResponse> readings)
@@ -106,10 +108,45 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
             return mappedReadings;
         }
     }
+
+    private List<MeterReadingResponse> ParseReadings(List<JsonElement> items)
+    {
+        var serializerOptions = SerializerOptions;
+        var readings = new List<MeterReadingResponse>(items.Count);
+
+        for (var index = 0; index < items.Count; index++)
+        {
+            try
+            {
+                var reading = items[index].Deserialize<MeterReadingResponse>(serializerOptions);
+
+                if (reading is not null)
+                {
+                    readings.Add(reading);
+                }
+                else
+                {
+                    Logger.SkippedNullReading(index);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.SkippedMalformedReading(index, ex);
+            }
+        }
+
+        return readings;
+    }
 }
 
 internal static partial class WeakAppClientLogs
 {
     [LoggerMessage(Level = LogLevel.Warning, Message = "Unknown meter reading type encountered: {Type}")]
     public static partial void UnknownReadingType(this ILogger logger, Type type);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipped malformed meter reading at index {Index}")]
+    public static partial void SkippedMalformedReading(this ILogger logger, int index, Exception ex);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Skipped null meter reading at index {Index}")]
+    public static partial void SkippedNullReading(this ILogger logger, int index);
 }

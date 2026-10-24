@@ -68,7 +68,7 @@ internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, Js
         Logger.ApiRespondedWithFailure(
             request?.Method,
             request?.RequestUri,
-            response.StatusCode,
+            (int)response.StatusCode,
             responseBody);
 
         async Task<string?> ReadBodySafelyAsync()
@@ -113,7 +113,7 @@ internal static partial class BaseClientLogs
         this ILogger logger,
         HttpMethod? httpMethod,
         Uri? requestUri,
-        HttpStatusCode responseStatusCode,
+        int responseStatusCode,
         string? responseBody);
 
     [LoggerMessage(
