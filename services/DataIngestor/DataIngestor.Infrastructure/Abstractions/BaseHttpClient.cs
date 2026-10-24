@@ -62,7 +62,6 @@ internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, Js
     {
         var request = response.RequestMessage;
 
-        await response.Content.LoadIntoBufferAsync(ct);
         var responseBody = await ReadBodySafelyAsync();
 
         Logger.ApiRespondedWithFailure(
@@ -75,6 +74,8 @@ internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, Js
         {
             try
             {
+                await response.Content.LoadIntoBufferAsync(ct);
+
                 return await response.Content.ReadAsStringAsync(CancellationToken.None);
             }
             catch (Exception ex)
