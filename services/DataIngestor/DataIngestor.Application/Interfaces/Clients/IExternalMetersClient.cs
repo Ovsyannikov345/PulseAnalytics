@@ -5,5 +5,5 @@ namespace DataIngestor.Application.Interfaces.Clients;
 
 public interface IExternalMetersClient
 {
-    public Task<Result<List<MeterReading>>> GetMetersAsync(CancellationToken ct);
+    public Task<Result<List<MeterReading>>> GetMetersAsync(CancellationToken ct)
 }
