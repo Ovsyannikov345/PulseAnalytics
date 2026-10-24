@@ -2,6 +2,7 @@
 using DataIngestor.Background.Workers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DataIngestor.Background;
 
@@ -14,6 +15,8 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(MeterPollingWorkerSettings.SectionName))
             .ValidateOnStart()
             .ValidateDataAnnotations();
+
+        services.TryAddSingleton(TimeProvider.System);
 
         // Workers
         services.AddHostedService<MeterPollingWorker>();

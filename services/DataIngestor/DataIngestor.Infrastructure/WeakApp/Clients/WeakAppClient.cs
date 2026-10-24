@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
@@ -9,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Infrastructure.WeakApp.Clients;
 
-internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient> logger)
+internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProvider, ILogger<WeakAppClient> logger)
     : BaseHttpClient(httpClient, logger, SerializerOptions), IExternalMetersClient
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -30,7 +31,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, ILogger<WeakAppClient
             return requestResult.ToFailureOf<List<MeterReading>>();
         }
 
-        var utcNow = DateTimeOffset.UtcNow;
+        var utcNow = timeProvider.GetUtcNow();
 
         using (response)
         {
