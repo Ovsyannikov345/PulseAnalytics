@@ -106,9 +106,8 @@ internal static partial class BaseClientLogs
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = 
-        "API responded with failure. HTTP method: {HttpMethod}. URL: {RequestUri}. " +
-        "Status code: {ResponseStatusCode}. Response body: {ResponseBody}")]
+        Message = "API responded with failure. HTTP method: {HttpMethod}. URL: {RequestUri}. " +
+            "Status code: {ResponseStatusCode}. Response body: {ResponseBody}")]
     public static partial void ApiRespondedWithFailure(
         this ILogger logger,
         HttpMethod? httpMethod,

@@ -1,4 +1,4 @@
-using DataIngestor.Api;
+﻿using DataIngestor.Api;
 using DataIngestor.Application;
 using DataIngestor.Background;
 using DataIngestor.Infrastructure;
