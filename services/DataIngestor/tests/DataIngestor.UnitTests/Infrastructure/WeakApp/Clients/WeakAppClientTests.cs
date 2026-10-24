@@ -1,26 +1,19 @@
 ﻿using System.Net;
 using System.Text.Json;
-using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
-using DataIngestor.Infrastructure;
+using DataIngestor.Infrastructure.WeakApp.Clients;
 using DataIngestor.UnitTests.TestDoubles;
 using FakeItEasy;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using Xunit;
 
 namespace DataIngestor.UnitTests.Infrastructure.WeakApp.Clients;
 
-// WeakAppClient is internal, so it is built through the public AddInfrastructureServices
-// registration and resolved as IExternalMetersClient. Only the primary HTTP handler is faked.
 public sealed class WeakAppClientTests : IDisposable
 {
-    private const string BaseUrl = "http://weakapp.test";
-    private const string ApiKey = "test-api-key";
-
     private const string MotionItem = """{"type":"motion","name":"Garage","payload":{"motionDetected":true}}""";
     private const string EnergyItem = """{"type":"energy","name":"Office","payload":{"energy":845.62}}""";
     private const string AirQualityItem = """{"type":"air_quality","name":"Kitchen","payload":{"co2":803,"pm25":25,"humidity":36}}""";
@@ -29,48 +22,38 @@ public sealed class WeakAppClientTests : IDisposable
     private const string FailureStatusMessage = "Weak App API responded with failure";
     private const string UnreadableBodyMessage = "Failed to read Weak App API response";
 
+    private static readonly DateTimeOffset Now = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
+
     private readonly HttpMessageHandler _handler = A.Fake<HttpMessageHandler>();
-    private readonly CapturingLoggerProvider _logs = new();
-    private ServiceProvider? _serviceProvider;
+    private readonly LogCapture _logs = new();
+    private readonly HttpClient _httpClient;
+    private readonly WeakAppClient _sut;
+
+    public WeakAppClientTests()
+    {
+        _httpClient = new HttpClient(_handler) { BaseAddress = new Uri("http://weakapp.test/") };
+
+        _sut = new WeakAppClient(_httpClient, new FakeTimeProvider(Now), _logs.CreateLogger<WeakAppClient>());
+    }
 
     public void Dispose()
     {
-        _serviceProvider?.Dispose();
+        _httpClient.Dispose();
     }
 
-    [Theory]
-    [InlineData("http://weakapp.test", "http://weakapp.test/meters")]
-    [InlineData("http://weakapp.test/", "http://weakapp.test/meters")]
-    [InlineData("http://weakapp.test/api", "http://weakapp.test/api/meters")]
-    [InlineData("http://weakapp.test/api/", "http://weakapp.test/api/meters")]
-    public async Task GetMetersAsync_AnyBaseUrl_SendsGetRequestToMetersEndpoint(string baseUrl, string expectedUrl)
+    [Fact]
+    public async Task GetMetersAsync_AnyCall_SendsGetRequestToMetersEndpointOfBaseAddress()
     {
         // Arrange
         _handler.RespondsWithJson("[]");
-        var sut = CreateSut(baseUrl);
 
         // Act
-        await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var request = _handler.SingleReceivedRequest();
         request.Method.ShouldBe(HttpMethod.Get);
-        request.RequestUri.ShouldBe(new Uri(expectedUrl));
-    }
-
-    [Fact]
-    public async Task GetMetersAsync_ApiKeyConfigured_SendsItInApiKeyHeader()
-    {
-        // Arrange
-        _handler.RespondsWithJson("[]");
-        var sut = CreateSut();
-
-        // Act
-        await sut.GetMetersAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        var request = _handler.SingleReceivedRequest();
-        request.Headers.GetValues("X-Api-Key").ShouldBe([ApiKey]);
+        request.RequestUri.ShouldBe(new Uri("http://weakapp.test/meters"));
     }
 
     [Fact]
@@ -78,19 +61,17 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{MotionItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        var reading = result.Value.ShouldHaveSingleItem();
-        reading.ShouldBe(new MeterReading
+        result.Value.ShouldHaveSingleItem().ShouldBe(new MeterReading
         {
             Name = "Garage",
             Type = MeterType.Motion,
-            ReceivedAt = reading.ReceivedAt,
+            ReceivedAt = Now,
             Payload = new MotionPayload { MotionDetected = true }
         });
     }
@@ -100,19 +81,17 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{EnergyItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        var reading = result.Value.ShouldHaveSingleItem();
-        reading.ShouldBe(new MeterReading
+        result.Value.ShouldHaveSingleItem().ShouldBe(new MeterReading
         {
             Name = "Office",
             Type = MeterType.Energy,
-            ReceivedAt = reading.ReceivedAt,
+            ReceivedAt = Now,
             Payload = new EnergyPayload { Energy = 845.62 }
         });
     }
@@ -122,19 +101,17 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{AirQualityItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        var reading = result.Value.ShouldHaveSingleItem();
-        reading.ShouldBe(new MeterReading
+        result.Value.ShouldHaveSingleItem().ShouldBe(new MeterReading
         {
             Name = "Kitchen",
             Type = MeterType.AirQuality,
-            ReceivedAt = reading.ReceivedAt,
+            ReceivedAt = Now,
             Payload = new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }
         });
     }
@@ -144,10 +121,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{EnergyItem},{MotionItem},{AirQualityItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -160,21 +136,17 @@ public sealed class WeakAppClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetMetersAsync_SuccessfulResponse_StampsAllReadingsWithTheSameUtcReceiveTime()
+    public async Task GetMetersAsync_SuccessfulResponse_StampsAllReadingsWithCurrentTimeOfTimeProvider()
     {
         // Arrange
         _handler.RespondsWithJson($"[{MotionItem},{EnergyItem},{AirQualityItem}]");
-        var sut = CreateSut();
-        var before = DateTimeOffset.UtcNow;
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var after = DateTimeOffset.UtcNow;
-        var receivedAt = result.Value.Select(reading => reading.ReceivedAt).Distinct().ShouldHaveSingleItem();
-        receivedAt.Offset.ShouldBe(TimeSpan.Zero);
-        receivedAt.ShouldBeInRange(before, after);
+        result.Value.Count.ShouldBe(3);
+        result.Value.ShouldAllBe(reading => reading.ReceivedAt == Now);
     }
 
     [Fact]
@@ -182,10 +154,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{MotionItem},{EnergyItem},{AirQualityItem}]");
-        var sut = CreateSut();
 
         // Act
-        await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
@@ -196,10 +167,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("""[{"type":"energy","name":"Office","payload":{"energy":946}}]""");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var reading = result.Value.ShouldHaveSingleItem();
@@ -211,10 +181,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("""[{"name":"Garage","payload":{"motionDetected":false},"type":"motion"}]""");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var reading = result.Value.ShouldHaveSingleItem();
@@ -227,10 +196,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("""[{"type":"motion","id":7,"name":"Garage","payload":{"motionDetected":true,"battery":90}}]""");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var reading = result.Value.ShouldHaveSingleItem();
@@ -243,10 +211,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("[]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -273,10 +240,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{MotionItem},{malformedItem},{EnergyItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -291,10 +257,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson($"[{MotionItem},null,{EnergyItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -308,10 +273,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("""[{"type":"unknown","name":"Garage"},{"name":"Office"},null]""");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -331,10 +295,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson(body);
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -346,10 +309,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("""{"error":"data corrupted"}""");
-        var sut = CreateSut();
 
         // Act
-        await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
@@ -362,10 +324,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWithJson("null");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -385,10 +346,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWith(statusCode, body);
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -400,10 +360,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWith(HttpStatusCode.BadGateway, "Bad Gateway");
-        var sut = CreateSut();
 
         // Act
-        await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var warning = _logs.Entries.Where(entry => entry.Level == LogLevel.Warning).ShouldHaveSingleItem();
@@ -417,10 +376,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWith(HttpStatusCode.InternalServerError, $"[{MotionItem}]");
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -433,10 +391,9 @@ public sealed class WeakAppClientTests : IDisposable
         // Arrange
         var exception = new HttpRequestException("Connection refused");
         _handler.CallsToSendAsync().ThrowsAsync(exception);
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -447,14 +404,14 @@ public sealed class WeakAppClientTests : IDisposable
     }
 
     [Fact]
-    public async Task GetMetersAsync_ApiDoesNotRespondWithinHttpClientTimeout_ReturnsFailure()
+    public async Task GetMetersAsync_RequestTimesOut_ReturnsFailure()
     {
         // Arrange
-        _handler.NeverResponds();
-        var sut = CreateSut(configureClient: client => client.Timeout = TimeSpan.FromMilliseconds(100));
+        // This is how HttpClient reports its Timeout elapsing: a cancellation the caller did not request.
+        _handler.CallsToSendAsync().ThrowsAsync(new TaskCanceledException("The request timed out", new TimeoutException()));
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -466,10 +423,9 @@ public sealed class WeakAppClientTests : IDisposable
     {
         // Arrange
         _handler.RespondsWith(HttpStatusCode.OK, () => new UnreadableHttpContent());
-        var sut = CreateSut();
 
         // Act
-        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
 
         // Assert
         // HttpClient buffers the body before returning the response, so a body that fails
@@ -482,39 +438,14 @@ public sealed class WeakAppClientTests : IDisposable
     public async Task GetMetersAsync_CallerCancelsWhileRequestIsInFlight_ThrowsOperationCanceledException()
     {
         // Arrange
-        _handler.NeverResponds();
-        var sut = CreateSut();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
-        cts.CancelAfter(TimeSpan.FromMilliseconds(100));
+        _handler.CancelsCallerWhileInFlight(cts);
 
         // Act
-        var act = () => sut.GetMetersAsync(cts.Token);
+        var act = () => _sut.GetMetersAsync(cts.Token);
 
         // Assert
         await act.ShouldThrowAsync<OperationCanceledException>();
         _logs.Entries.ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
-    }
-
-    private IExternalMetersClient CreateSut(string baseUrl = BaseUrl, Action<HttpClient>? configureClient = null)
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["WeakApp:BaseUrl"] = baseUrl,
-                ["WeakApp:ApiKey"] = ApiKey
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-
-        services.AddLogging(logging => logging.AddProvider(_logs.Provider));
-        services.AddInfrastructureServices(configuration);
-        services.ConfigureHttpClientDefaults(builder => builder
-            .ConfigurePrimaryHttpMessageHandler(() => _handler)
-            .ConfigureHttpClient(client => configureClient?.Invoke(client)));
-
-        _serviceProvider = services.BuildServiceProvider();
-
-        return _serviceProvider.GetRequiredService<IExternalMetersClient>();
     }
 }

@@ -40,11 +40,17 @@ internal static class HttpMessageHandlerFakeExtensions
             }));
     }
 
-    public static void NeverResponds(this HttpMessageHandler handler)
+    /// <summary>
+    /// Simulates the caller cancelling while the request is in flight: the handler cancels the caller's
+    /// token itself and then waits until that cancellation reaches the request.
+    /// </summary>
+    public static void CancelsCallerWhileInFlight(this HttpMessageHandler handler, CancellationTokenSource callerCts)
     {
         handler.CallsToSendAsync()
             .ReturnsLazily(async call =>
             {
+                await callerCts.CancelAsync();
+
                 await Task.Delay(Timeout.Infinite, call.GetArgument<CancellationToken>(1));
 
                 return new HttpResponseMessage(HttpStatusCode.OK);

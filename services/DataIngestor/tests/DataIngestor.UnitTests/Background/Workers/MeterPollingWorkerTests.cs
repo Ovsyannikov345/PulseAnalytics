@@ -1,50 +1,57 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Globalization;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.ExternalMeters;
-using DataIngestor.Background;
+using DataIngestor.Background.Configuration;
+using DataIngestor.Background.Workers;
 using DataIngestor.UnitTests.TestDoubles;
+using DataIngestor.UnitTests.Utilities;
 using FakeItEasy;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Shouldly;
 using Xunit;
 
 namespace DataIngestor.UnitTests.Background.Workers;
 
-// MeterPollingWorker is internal, so it is built through the public AddBackgroundServices
-// registration and driven through the BackgroundService start/stop API, as the host would do.
-// The worker uses a real PeriodicTimer, so tests that need a second poll take about a second.
+// The worker runs on a background task, so tests wait for its observable effects (polls, timers)
+// with TestWait. Time itself only moves when a test advances the fake time provider.
 public sealed class MeterPollingWorkerTests : IDisposable
 {
-    private const int LongPollingPeriodInSeconds = 60;
-    private const int ShortPollingPeriodInSeconds = 1;
+    private const int PollingPeriodInSeconds = 60;
+    private const int StartupDelayInSeconds = 30;
 
     private const string ShuttingDownMessage = "Meter polling job is gracefully shutting down";
 
+    private static readonly TimeSpan PollingPeriod = TimeSpan.FromSeconds(PollingPeriodInSeconds);
+    private static readonly TimeSpan StartupDelay = TimeSpan.FromSeconds(StartupDelayInSeconds);
+
     private readonly IExternalMetersService _metersService = A.Fake<IExternalMetersService>();
-    private readonly CapturingLoggerProvider _logs = new();
-    private ServiceProvider? _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory = A.Fake<IServiceScopeFactory>();
+    private readonly ConcurrentQueue<IServiceScope> _createdScopes = new();
+    private readonly TimerTrackingFakeTimeProvider _timeProvider = new();
+    private readonly LogCapture _logs = new();
+    private MeterPollingWorker? _sut;
 
     public MeterPollingWorkerTests()
     {
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Succeed());
+
+        A.CallTo(() => _scopeFactory.CreateScope())
+            .ReturnsLazily(CreateScope);
     }
 
     public void Dispose()
     {
-        _serviceProvider?.Dispose();
+        _sut?.Dispose();
     }
 
     [Fact]
     public async Task ExecuteAsync_NoStartupDelay_PollsImmediatelyOnStart()
     {
         // Arrange
-        var sut = CreateSut(LongPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
@@ -60,32 +67,43 @@ public sealed class MeterPollingWorkerTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_PollingPeriodElapses_PollsAgain()
+    public async Task ExecuteAsync_PollingPeriodNotYetElapsed_DoesNotPollAgain()
     {
         // Arrange
-        var pollTimes = new ConcurrentQueue<TimeSpan>();
-        var stopwatch = Stopwatch.StartNew();
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
-            .Invokes(() => pollTimes.Enqueue(stopwatch.Elapsed))
-            .Returns(Result.Succeed());
-        var sut = CreateSut(ShortPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod - TimeSpan.FromSeconds(1));
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_PollingPeriodElapsed_PollsAgain()
+    {
+        // Arrange
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
         await WaitForPollsAsync(2);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var times = pollTimes.ToArray();
-        times.Length.ShouldBeGreaterThanOrEqualTo(2);
-        (times[1] - times[0]).ShouldBeGreaterThan(TimeSpan.FromMilliseconds(900));
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
-    public async Task ExecuteAsync_SuccessfulPoll_LogsNoErrors()
+    public async Task ExecuteAsync_SuccessfulPoll_LogsNoWarningsOrErrors()
     {
         // Arrange
-        var sut = CreateSut(LongPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
@@ -102,17 +120,19 @@ public sealed class MeterPollingWorkerTests : IDisposable
         // Arrange
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Fail("Weak App API responded with failure")).Once();
-        var sut = CreateSut(ShortPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
         await WaitForPollsAsync(2);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed. Reason: Weak App API responded with failure");
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceOrMore();
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
@@ -122,10 +142,12 @@ public sealed class MeterPollingWorkerTests : IDisposable
         var exception = new InvalidOperationException("Unexpected failure");
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
             .ThrowsAsync(exception).Once();
-        var sut = CreateSut(ShortPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
         await WaitForPollsAsync(2);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
@@ -133,7 +155,7 @@ public sealed class MeterPollingWorkerTests : IDisposable
         var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed");
         error.Exception.ShouldBeSameAs(exception);
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceOrMore();
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
@@ -143,42 +165,41 @@ public sealed class MeterPollingWorkerTests : IDisposable
         var exception = new TaskCanceledException("The HTTP request timed out");
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
             .ThrowsAsync(exception).Once();
-        var sut = CreateSut(ShortPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
         await WaitForPollsAsync(2);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var error = _logs.Entries.Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Exception.ShouldBeSameAs(exception);
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceOrMore();
+        _logs.Entries.Count(entry => entry.Message == ShuttingDownMessage).ShouldBe(1);
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
-    public async Task ExecuteAsync_EachPoll_ResolvesServiceFromNewScopeAndDisposesIt()
+    public async Task ExecuteAsync_EachPoll_UsesNewServiceScopeAndDisposesIt()
     {
         // Arrange
-        var resolvedServices = new ConcurrentQueue<IExternalMetersService>();
-        var sut = CreateSut(ShortPollingPeriodInSeconds, configureServices: services => services.AddScoped(_ =>
-        {
-            var service = A.Fake<IExternalMetersService>(options => options.Implements<IAsyncDisposable>());
-            A.CallTo(() => service.ExtractReadingsAsync(A<CancellationToken>._)).Returns(Result.Succeed());
-            resolvedServices.Enqueue(service);
-
-            return service;
-        }));
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
-        await TestWait.UntilAsync(() => resolvedServices.Count >= 2, TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
+        await WaitForPollsAsync(2);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        var services = resolvedServices.ToArray();
-        services.Distinct().Count().ShouldBe(services.Length);
-        services.ShouldAllBe(service => Fake.GetCalls(service).Any(call => call.Method.Name == nameof(IAsyncDisposable.DisposeAsync)));
+        _createdScopes.Count.ShouldBe(2);
+        foreach (var scope in _createdScopes)
+        {
+            A.CallTo(() => scope.Dispose()).MustHaveHappenedOnceExactly();
+        }
     }
 
     [Fact]
@@ -189,7 +210,7 @@ public sealed class MeterPollingWorkerTests : IDisposable
         A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
             .Invokes((CancellationToken token) => passedToken = token)
             .Returns(Result.Succeed());
-        var sut = CreateSut(LongPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
@@ -207,7 +228,7 @@ public sealed class MeterPollingWorkerTests : IDisposable
     public async Task ExecuteAsync_StoppedBetweenPolls_ShutsDownGracefully()
     {
         // Arrange
-        var sut = CreateSut(LongPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
@@ -230,7 +251,7 @@ public sealed class MeterPollingWorkerTests : IDisposable
 
                 return Result.Succeed();
             });
-        var sut = CreateSut(LongPollingPeriodInSeconds);
+        var sut = CreateSut();
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
@@ -244,83 +265,102 @@ public sealed class MeterPollingWorkerTests : IDisposable
     }
 
     [Fact]
-    public async Task ExecuteAsync_StartupDelayConfigured_LogsDelayAndPollsOnlyAfterIt()
+    public async Task ExecuteAsync_StartupDelayNotYetElapsed_DoesNotPoll()
     {
         // Arrange
-        var firstPollAt = TimeSpan.Zero;
-        var stopwatch = Stopwatch.StartNew();
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
-            .Invokes(() => firstPollAt = stopwatch.Elapsed)
-            .Returns(Result.Succeed());
-        var sut = CreateSut(LongPollingPeriodInSeconds, startupDelayInSeconds: 1);
+        var sut = CreateSut(StartupDelayInSeconds);
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForTimersAsync(1);
+        _timeProvider.Advance(StartupDelay - TimeSpan.FromSeconds(1));
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustNotHaveHappened();
+        _logs.Entries.ShouldContain(entry =>
+            entry.Level == LogLevel.Information &&
+            entry.Message == "Meter polling job is waiting 30 seconds before first attempt");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StartupDelayElapsed_StartsPolling()
+    {
+        // Arrange
+        var sut = CreateSut(StartupDelayInSeconds);
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForTimersAsync(1);
+        _timeProvider.Advance(StartupDelay);
         await WaitForPollsAsync(1);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        firstPollAt.ShouldBeGreaterThan(TimeSpan.FromMilliseconds(900));
+        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         _logs.Entries.ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
-            entry.Message == "Meter polling job is waiting 1 seconds before first attempt");
+            entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
     }
 
     [Fact]
-    public async Task ExecuteAsync_StoppedDuringStartupDelay_ShutsDownWithoutPolling()
+    public async Task ExecuteAsync_StoppedDuringStartupDelay_ShutsDownGracefully()
     {
         // Arrange
-        var sut = CreateSut(LongPollingPeriodInSeconds, startupDelayInSeconds: 3600);
+        var sut = CreateSut(StartupDelayInSeconds);
 
         // Act
         await sut.StartAsync(TestContext.Current.CancellationToken);
-        await TestWait.UntilAsync(
-            () => _logs.Entries.Any(entry => entry.Message.Contains("before first attempt", StringComparison.Ordinal)),
-            TestContext.Current.CancellationToken);
+        await WaitForTimersAsync(1);
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
         sut.ExecuteTask.ShouldNotBeNull().IsCanceled.ShouldBeTrue();
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustNotHaveHappened();
         _logs.Entries.ShouldContain(entry => entry.Level == LogLevel.Information && entry.Message == ShuttingDownMessage);
         _logs.Entries.ShouldNotContain(entry => entry.Message.StartsWith("Meter polling job is starting", StringComparison.Ordinal));
     }
 
-    private BackgroundService CreateSut(
-        int pollingPeriodInSeconds,
-        int? startupDelayInSeconds = null,
-        Action<IServiceCollection>? configureServices = null)
+    private MeterPollingWorker CreateSut(int? startupDelayInSeconds = null)
     {
-        var settings = new Dictionary<string, string?>
+        var settings = new MeterPollingWorkerSettings
         {
-            ["MeterPollingWorker:PollingPeriodInSeconds"] = pollingPeriodInSeconds.ToString(CultureInfo.InvariantCulture)
+            PollingPeriodInSeconds = PollingPeriodInSeconds,
+            StartupDelayInSeconds = startupDelayInSeconds
         };
 
-        if (startupDelayInSeconds is not null)
-        {
-            settings["MeterPollingWorker:StartupDelayInSeconds"] = startupDelayInSeconds.Value.ToString(CultureInfo.InvariantCulture);
-        }
+        _sut = new MeterPollingWorker(
+            _scopeFactory,
+            Options.Create(settings),
+            _timeProvider,
+            _logs.CreateLogger<MeterPollingWorker>());
 
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(settings)
-            .Build();
+        return _sut;
+    }
 
-        var services = new ServiceCollection();
+    private IServiceScope CreateScope()
+    {
+        var serviceProvider = A.Fake<IServiceProvider>();
+        A.CallTo(() => serviceProvider.GetService(typeof(IExternalMetersService))).Returns(_metersService);
 
-        services.AddLogging(logging => logging.AddProvider(_logs.Provider));
-        services.AddBackgroundServices(configuration);
-        services.AddScoped(_ => _metersService);
-        configureServices?.Invoke(services);
+        var scope = A.Fake<IServiceScope>();
+        A.CallTo(() => scope.ServiceProvider).Returns(serviceProvider);
 
-        _serviceProvider = services.BuildServiceProvider();
+        _createdScopes.Enqueue(scope);
 
-        return _serviceProvider.GetServices<IHostedService>().OfType<BackgroundService>().Single();
+        return scope;
     }
 
     private Task WaitForPollsAsync(int count)
     {
         return TestWait.UntilAsync(
             () => Fake.GetCalls(_metersService).Count() >= count,
+            TestContext.Current.CancellationToken);
+    }
+
+    private Task WaitForTimersAsync(int count)
+    {
+        return TestWait.UntilAsync(
+            () => _timeProvider.CreatedTimersCount >= count,
             TestContext.Current.CancellationToken);
     }
 }

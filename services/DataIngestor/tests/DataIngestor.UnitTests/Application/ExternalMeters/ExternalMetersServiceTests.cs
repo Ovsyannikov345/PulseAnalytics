@@ -1,41 +1,25 @@
 ﻿using Ausiannikau.Utilities.Results;
-using DataIngestor.Application;
 using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
 using DataIngestor.UnitTests.TestDoubles;
 using FakeItEasy;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 
 namespace DataIngestor.UnitTests.Application.ExternalMeters;
 
-// ExternalMetersService is internal, so it is built through the public AddApplicationServices
-// registration and resolved as IExternalMetersService, with a faked IExternalMetersClient.
-public sealed class ExternalMetersServiceTests : IDisposable
+public sealed class ExternalMetersServiceTests
 {
     private readonly IExternalMetersClient _metersClient = A.Fake<IExternalMetersClient>();
-    private readonly CapturingLoggerProvider _logs = new();
-    private readonly ServiceProvider _serviceProvider;
-    private readonly IExternalMetersService _sut;
+    private readonly LogCapture _logs = new();
+    private readonly ExternalMetersService _sut;
 
     public ExternalMetersServiceTests()
     {
-        _serviceProvider = new ServiceCollection()
-            .AddLogging(logging => logging.AddProvider(_logs.Provider))
-            .AddSingleton(_metersClient)
-            .AddApplicationServices()
-            .BuildServiceProvider();
-
-        _sut = _serviceProvider.GetRequiredService<IExternalMetersService>();
-    }
-
-    public void Dispose()
-    {
-        _serviceProvider.Dispose();
+        _sut = new ExternalMetersService(_metersClient, _logs.CreateLogger<ExternalMetersService>());
     }
 
     [Fact]

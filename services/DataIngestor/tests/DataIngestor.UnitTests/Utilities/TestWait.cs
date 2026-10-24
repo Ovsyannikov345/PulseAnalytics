@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace DataIngestor.UnitTests.TestDoubles;
+namespace DataIngestor.UnitTests.Utilities;
 
 /// <summary>
 /// Waits for a condition produced by background work (e.g. a hosted service) to become true.
