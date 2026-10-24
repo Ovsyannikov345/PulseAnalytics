@@ -1,4 +1,8 @@
 ﻿using DataIngestor.Application.Interfaces.Clients;
+using DataIngestor.Application.Interfaces.Messaging;
+using DataIngestor.Infrastructure.RabbitMq.Configuration;
+using DataIngestor.Infrastructure.RabbitMq.Connection;
+using DataIngestor.Infrastructure.RabbitMq.Publishers;
 using DataIngestor.Infrastructure.WeakApp.Clients;
 using DataIngestor.Infrastructure.WeakApp.Configuration;
 using DataIngestor.Infrastructure.WeakApp.Constants;
@@ -19,6 +23,11 @@ public static class DependencyInjection
             .ValidateOnStart()
             .ValidateDataAnnotations();
 
+        services.AddOptions<RabbitMqSettings>()
+            .Bind(configuration.GetSection(RabbitMqSettings.SectionName))
+            .ValidateOnStart()
+            .ValidateDataAnnotations();
+
         services.TryAddSingleton(TimeProvider.System);
 
         // HTTP Clients
@@ -33,6 +42,10 @@ public static class DependencyInjection
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.DefaultRequestHeaders.Add(HeaderNames.ApiKey, weakAppSettings.ApiKey);
         });
+
+        // Messaging
+        services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
+        services.AddScoped<IMeterReadingsPublisher, MeterReadingsPublisher>();
 
         return services;
     }

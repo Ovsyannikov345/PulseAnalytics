@@ -36,7 +36,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
     public MeterPollingWorkerTests()
     {
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Succeed());
 
         A.CallTo(() => _scopeFactory.CreateScope())
@@ -74,7 +74,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
@@ -94,7 +94,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     public async Task ExecuteAsync_PollReturnsFailure_LogsReasonAndKeepsPolling()
     {
         // Arrange
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Fail("Weak App API responded with failure")).Once();
         var sut = CreateSut();
 
@@ -147,7 +147,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         // Assert
         var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed. Reason: Weak App API responded with failure");
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     {
         // Arrange
         var exception = new InvalidOperationException("Unexpected failure");
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .ThrowsAsync(exception).Once();
         var sut = CreateSut();
 
@@ -170,7 +170,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Meter polling job failed");
         error.Exception.ShouldBeSameAs(exception);
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     {
         // Arrange
         var exception = new TaskCanceledException("The HTTP request timed out");
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .ThrowsAsync(exception).Once();
         var sut = CreateSut();
 
@@ -193,7 +193,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Exception.ShouldBeSameAs(exception);
         _logger.Collector.GetSnapshot().Count(entry => entry.Message == ShuttingDownMessage).ShouldBe(1);
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedTwiceExactly();
     }
 
     [Theory]
@@ -203,7 +203,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     public async Task ExecuteAsync_AnyPollOutcome_UsesNewServiceScopePerPollAndDisposesIt(PollOutcome outcome)
     {
         // Arrange
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .ReturnsLazily(() => outcome switch
             {
                 PollOutcome.Succeeds => Task.FromResult(Result.Succeed()),
@@ -232,7 +232,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     {
         // Arrange
         var passedToken = CancellationToken.None;
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .Invokes((CancellationToken token) => passedToken = token)
             .Returns(Result.Succeed());
         var sut = CreateSut();
@@ -269,7 +269,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     public async Task ExecuteAsync_StoppedWhilePollIsInProgress_ShutsDownGracefullyWithoutReportingFailure()
     {
         // Arrange
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .ReturnsLazily(async (CancellationToken token) =>
             {
                 await Task.Delay(Timeout.Infinite, token);
@@ -293,7 +293,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     public async Task ExecuteAsync_StoppedWhilePollIsInProgress_DisposesServiceScope()
     {
         // Arrange
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._))
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .ReturnsLazily(async (CancellationToken token) =>
             {
                 await Task.Delay(Timeout.Infinite, token);
@@ -325,7 +325,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustNotHaveHappened();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustNotHaveHappened();
         _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is waiting 30 seconds before first attempt");
@@ -345,7 +345,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         _logger.Collector.GetSnapshot().ShouldContain(entry =>
             entry.Level == LogLevel.Information &&
             entry.Message == "Meter polling job is starting. Polling period: 60 seconds");
@@ -366,7 +366,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         await sut.StopAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _metersService.ExtractReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]

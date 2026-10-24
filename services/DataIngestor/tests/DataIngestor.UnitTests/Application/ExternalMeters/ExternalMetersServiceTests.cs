@@ -1,6 +1,7 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Application.Interfaces.Clients;
+using DataIngestor.Application.Interfaces.Messaging;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
 using FakeItEasy;
@@ -16,22 +17,26 @@ public sealed class ExternalMetersServiceTests
     private static readonly DateTimeOffset ReadingTime = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
     private readonly IExternalMetersClient _metersClient = A.Fake<IExternalMetersClient>();
+    private readonly IMeterReadingsPublisher _readingsPublisher = A.Fake<IMeterReadingsPublisher>();
     private readonly FakeLogger<ExternalMetersService> _logger = new();
     private readonly ExternalMetersService _sut;
 
     public ExternalMetersServiceTests()
     {
-        _sut = new ExternalMetersService(_metersClient, _logger);
+        A.CallTo(() => _readingsPublisher.PublishAsync(A<IReadOnlyCollection<MeterReading>>._, A<CancellationToken>._))
+            .Returns(Result.Succeed());
+
+        _sut = new ExternalMetersService(_metersClient, _readingsPublisher, _logger);
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientReturnsReadings_ReturnsSuccess()
+    public async Task IngestReadingsAsync_ClientReturnsReadings_ReturnsSuccess()
     {
         // Arrange
         ClientReturns(CreateMotionReading("Garage"), CreateEnergyReading("Office"));
 
         // Act
-        var result = await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -39,44 +44,43 @@ public sealed class ExternalMetersServiceTests
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientReturnsReadings_HandsOffEveryReading()
+    public async Task IngestReadingsAsync_ClientReturnsReadings_HandsOffEveryReading()
     {
         // Arrange
         ClientReturns(CreateMotionReading("Garage"), CreateEnergyReading("Office"), CreateMotionReading("Bedroom"));
 
         // Act
-        await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
-        // Publishing is still a logging placeholder (TODO in ExternalMetersService);
-        // replace this with an assertion on the publisher once it exists.
-        _logger.Collector.GetSnapshot()
-            .Count(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal))
-            .ShouldBe(3);
+        A.CallTo(() => _readingsPublisher.PublishAsync(
+                A<IReadOnlyCollection<MeterReading>>.That.Matches(readings => readings.Count == 3),
+                A<CancellationToken>._))
+            .MustHaveHappenedOnceExactly();
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientReturnsNoReadings_ReturnsSuccessWithoutHandingOffAnything()
+    public async Task IngestReadingsAsync_ClientReturnsNoReadings_ReturnsSuccessWithoutHandingOffAnything()
     {
         // Arrange
         ClientReturns();
 
         // Act
-        var result = await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
+        A.CallTo(_readingsPublisher).MustNotHaveHappened();
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientFails_ReturnsFailureWithClientErrorMessage()
+    public async Task IngestReadingsAsync_ClientFails_ReturnsFailureWithClientErrorMessage()
     {
         // Arrange
         ClientFails("Weak App API responded with failure");
 
         // Act
-        var result = await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        var result = await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
         result.IsFailure.ShouldBeTrue();
@@ -84,43 +88,43 @@ public sealed class ExternalMetersServiceTests
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientFails_LogsErrorWithReason()
+    public async Task IngestReadingsAsync_ClientFails_LogsErrorWithReason()
     {
         // Arrange
         ClientFails("Weak App API responded with failure");
 
         // Act
-        await _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Failed to extract readings. Reason: Weak App API responded with failure");
-        _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Message.StartsWith("Publishing reading:", StringComparison.Ordinal));
+        A.CallTo(_readingsPublisher).MustNotHaveHappened();
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_AnyCall_PassesCancellationTokenToClient()
+    public async Task IngestReadingsAsync_AnyCall_PassesCancellationTokenToClient()
     {
         // Arrange
         ClientReturns();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
 
         // Act
-        await _sut.ExtractReadingsAsync(cts.Token);
+        await _sut.IngestReadingsAsync(cts.Token);
 
         // Assert
         A.CallTo(() => _metersClient.GetMetersAsync(cts.Token)).MustHaveHappenedOnceExactly();
     }
 
     [Fact]
-    public async Task ExtractReadingsAsync_ClientThrows_PropagatesException()
+    public async Task IngestReadingsAsync_ClientThrows_PropagatesException()
     {
         // Arrange
         var exception = new InvalidOperationException("Unexpected client failure");
         A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._)).ThrowsAsync(exception);
 
         // Act
-        var act = () => _sut.ExtractReadingsAsync(TestContext.Current.CancellationToken);
+        var act = () => _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
 
         // Assert
         var thrown = await act.ShouldThrowAsync<InvalidOperationException>();

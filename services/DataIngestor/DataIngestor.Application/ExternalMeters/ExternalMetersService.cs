@@ -1,20 +1,22 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
+using DataIngestor.Application.Interfaces.Messaging;
 using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Application.ExternalMeters;
 
 public interface IExternalMetersService
 {
-    public Task<Result> ExtractReadingsAsync(CancellationToken ct);
+    public Task<Result> IngestReadingsAsync(CancellationToken ct);
 }
 
 internal sealed class ExternalMetersService(
     IExternalMetersClient metersClient,
+    IMeterReadingsPublisher readingsPublisher,
     ILogger<ExternalMetersService> logger)
     : IExternalMetersService
 {
-    public async Task<Result> ExtractReadingsAsync(CancellationToken ct)
+    public async Task<Result> IngestReadingsAsync(CancellationToken ct)
     {
         var extractionResult = await metersClient.GetMetersAsync(ct);
 
@@ -25,10 +27,20 @@ internal sealed class ExternalMetersService(
             return extractionResult;
         }
 
-        foreach (var reading in readings)
+        if (readings.Count == 0)
         {
-            // TODO replace with real publishing logic
-            logger.LogInformation("Publishing reading: {Reading}", reading.ToString());
+            logger.NoReadingsToPublish();
+
+            return Result.Succeed();
+        }
+
+        var publishingResult = await readingsPublisher.PublishAsync(readings, ct);
+
+        if (publishingResult.IsFailure)
+        {
+            logger.FailedToPublishReadings(publishingResult.ErrorMessage);
+
+            return publishingResult;
         }
 
         return Result.Succeed();
@@ -41,4 +53,14 @@ internal static partial class ExternalMetersServiceLogs
         Level = LogLevel.Error,
         Message = "Failed to extract readings. Reason: {Reason}")]
     public static partial void FailedToExtractReadings(this ILogger logger, string reason);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "No readings were received, nothing to publish")]
+    public static partial void NoReadingsToPublish(this ILogger logger);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Failed to publish readings. Reason: {Reason}")]
+    public static partial void FailedToPublishReadings(this ILogger logger, string reason);
 }
