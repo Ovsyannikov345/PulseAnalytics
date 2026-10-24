@@ -10,4 +10,9 @@
 		<ProjectReference Include="..\DataIngestor.Application\DataIngestor.Application.csproj" />
 	</ItemGroup>
 	
+	<ItemGroup>
+		<InternalsVisibleTo Include="DataIngestor.UnitTests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+	</ItemGroup>
+
 </Project>

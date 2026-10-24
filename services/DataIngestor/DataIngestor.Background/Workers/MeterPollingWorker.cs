@@ -11,6 +11,7 @@ namespace DataIngestor.Background.Workers;
 internal sealed class MeterPollingWorker(
     IServiceScopeFactory scopeFactory,
     IOptions<MeterPollingWorkerSettings> options,
+    TimeProvider timeProvider,
     ILogger<MeterPollingWorker> logger)
     : BackgroundService
 {
@@ -24,7 +25,7 @@ internal sealed class MeterPollingWorker(
 
             try
             {
-                await Task.Delay(TimeSpan.FromSeconds(delayInSeconds), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(delayInSeconds), timeProvider, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -36,7 +37,7 @@ internal sealed class MeterPollingWorker(
 
         var pollingPeriod = TimeSpan.FromSeconds(_settings.PollingPeriodInSeconds);
 
-        using var timer = new PeriodicTimer(pollingPeriod);
+        using var timer = new PeriodicTimer(pollingPeriod, timeProvider);
 
         logger.JobStarting(_settings.PollingPeriodInSeconds);
 
