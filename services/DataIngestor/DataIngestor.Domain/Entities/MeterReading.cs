@@ -10,5 +10,5 @@ public sealed record MeterReading
 
     public required DateTimeOffset ReceivedAt { get; init; }
 
-    public required ReadingPayload Payload { get; init; }
+    public required IReadingPayload Payload { get; init; }
 }

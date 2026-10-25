@@ -11,6 +11,11 @@ on:
         description: SonarQube Cloud project key
         required: true
         type: string
+      coverage-exclusions:
+        description: Comma-separated globs excluded from coverage (not from analysis)
+        required: false
+        type: string
+        default: ""
     secrets:
       SONAR_TOKEN:
         required: true
@@ -59,6 +64,7 @@ jobs:
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.cs.vscoveragexml.reportsPaths="${{ runner.temp }}/coverage/**/*.xml"
           /d:sonar.qualitygate.wait=true
+          /d:sonar.coverage.exclusions="${{ inputs.coverage-exclusions }}"
 
       - name: Build
         run: dotnet build ${{ inputs.solution }} --configuration Release
