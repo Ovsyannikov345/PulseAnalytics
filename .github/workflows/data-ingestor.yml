@@ -1,4 +1,4 @@
-name: Data Ingestor PR
+name: Data Ingestor Build And Analysis
 
 on:
   pull_request:
@@ -8,9 +8,17 @@ on:
       - services/DataIngestor/**
       - .github/workflows/data-ingestor.yml
       - .github/workflows/_dotnet-ci.yml
+      - .github/workflows/_dotnet-sonar.yml
+  push:
+    branches: [main]
+    paths:
+      - services/DataIngestor/**
+      - .github/workflows/data-ingestor.yml
+      - .github/workflows/_dotnet-ci.yml
+      - .github/workflows/_dotnet-sonar.yml
 
 concurrency:
-  group: data-ingestor-${{ github.event.pull_request.number }}
+  group: data-ingestor-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -19,7 +27,17 @@ permissions:
 jobs:
   ci:
     name: CI
-    if: github.event.pull_request.draft == false
+    if: github.event_name == 'push' || !github.event.pull_request.draft
     uses: ./.github/workflows/_dotnet-ci.yml
     with:
       solution: services/DataIngestor/DataIngestor.slnx
+
+  sonar:
+    name: Sonar
+    if: github.event_name == 'push' || !github.event.pull_request.draft
+    uses: ./.github/workflows/_dotnet-sonar.yml
+    with:
+      solution: services/DataIngestor/DataIngestor.slnx
+      project-key: Ovsyannikov345_PulseAnalytics_DataIngestor
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
