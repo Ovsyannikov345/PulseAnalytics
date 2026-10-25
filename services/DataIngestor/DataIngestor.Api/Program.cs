@@ -27,3 +27,4 @@ app.MapGet("/ping", () =>
 .WithName("Ping");
 
 app.Run();
+
