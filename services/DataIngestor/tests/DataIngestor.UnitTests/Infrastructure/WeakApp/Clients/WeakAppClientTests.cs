@@ -8,6 +8,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
+using Polly.CircuitBreaker;
 using Shouldly;
 using Xunit;
 
@@ -22,6 +23,7 @@ public sealed class WeakAppClientTests : IDisposable
     private const string SendFailureMessage = "Error occurred while sending HTTP request";
     private const string FailureStatusMessage = "Weak App API responded with failure";
     private const string UnreadableBodyMessage = "Failed to read Weak App API response";
+    private const string CircuitOpenMessage = "Request was not sent because the circuit is open";
 
     private static readonly DateTimeOffset Now = new(2026, 10, 24, 12, 0, 0, TimeSpan.Zero);
 
@@ -426,6 +428,24 @@ public sealed class WeakAppClientTests : IDisposable
         var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
         error.Message.ShouldBe("Exception occurred while sending HTTP request");
         error.Exception.ShouldBeSameAs(exception);
+    }
+
+    [Fact]
+    public async Task GetMetersAsync_CircuitIsOpen_ReturnsFailureAndLogsWarningWithoutException()
+    {
+        // Arrange
+        _handler.CallsToSendAsync().ThrowsAsync(new BrokenCircuitException());
+
+        // Act
+        var result = await _sut.GetMetersAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.ErrorMessage.ShouldBe(CircuitOpenMessage);
+        var warning = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        warning.Level.ShouldBe(LogLevel.Warning);
+        warning.Message.ShouldBe("HTTP request was not sent because the circuit is open");
+        warning.Exception.ShouldBeNull();
     }
 
     [Fact]
