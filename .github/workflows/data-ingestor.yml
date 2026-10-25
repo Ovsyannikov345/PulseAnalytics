@@ -39,5 +39,6 @@ jobs:
     with:
       solution: services/DataIngestor/DataIngestor.slnx
       project-key: Ovsyannikov345_PulseAnalytics_DataIngestor
+      coverage-exclusions: "**/Program.cs,**/DependencyInjection.cs,**/Topology/*.cs"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
