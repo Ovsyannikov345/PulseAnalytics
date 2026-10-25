@@ -16,12 +16,7 @@ internal sealed class MeterReadingsPublisher(
     IOptions<RabbitMqSettings> options,
     TimeProvider timeProvider,
     ILogger<MeterReadingsPublisher> logger)
-    : BaseRabbitMqPublisher(
-        connectionProvider,
-        timeProvider,
-        logger,
-        TimeSpan.FromSeconds(options.Value.PublishTimeoutInSeconds)),
-    IMeterReadingsPublisher
+    : BaseRabbitMqPublisher(connectionProvider, timeProvider, options, logger), IMeterReadingsPublisher
 {
     public async Task<Result> PublishAsync(IReadOnlyCollection<MeterReading> readings, CancellationToken ct)
     {
@@ -50,7 +45,6 @@ internal sealed class MeterReadingsPublisher(
 
             foreach (var reading in readings)
             {
-                // A closed channel fails every remaining publish, so the rest of the batch is skipped.
                 if (channel.IsClosed)
                 {
                     Logger.ChannelClosedDuringBatch(readings.Count - attemptedCount);

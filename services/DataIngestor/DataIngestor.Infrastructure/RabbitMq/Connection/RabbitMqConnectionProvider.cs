@@ -26,8 +26,7 @@ internal sealed class RabbitMqConnectionProvider(
 
     public async Task<Result<IConnection>> GetConnectionAsync(CancellationToken ct)
     {
-        // Once created, the connection recovers from network failures automatically,
-        // so it is reused even while it is temporarily closed.
+        // Once created, the connection recovers from network failures automatically, so it is reused even while it is temporarily closed.
         if (_connection is not null)
         {
             return Result<IConnection>.Succeed(_connection);

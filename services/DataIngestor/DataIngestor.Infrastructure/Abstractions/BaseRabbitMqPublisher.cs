@@ -1,7 +1,9 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
+using DataIngestor.Infrastructure.RabbitMq.Configuration;
 using DataIngestor.Infrastructure.RabbitMq.Connection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Exceptions;
 
@@ -10,8 +12,8 @@ namespace DataIngestor.Infrastructure.Abstractions;
 internal abstract class BaseRabbitMqPublisher(
     IRabbitMqConnectionProvider connectionProvider,
     TimeProvider timeProvider,
-    ILogger logger,
-    TimeSpan publishTimeout)
+    IOptions<RabbitMqSettings> options,
+    ILogger logger)
 {
     private const string ApplicationId = "data-ingestor";
 
@@ -20,6 +22,8 @@ internal abstract class BaseRabbitMqPublisher(
     private static readonly CreateChannelOptions ChannelOptions = new(
         publisherConfirmationsEnabled: true,
         publisherConfirmationTrackingEnabled: true);
+
+    protected RabbitMqSettings Settings => options.Value;
 
     protected ILogger Logger => logger;
 
@@ -72,7 +76,6 @@ internal abstract class BaseRabbitMqPublisher(
     {
         try
         {
-            // Serialized by the runtime type so that the fields of derived message types are not lost.
             var body = JsonSerializer.SerializeToUtf8Bytes(message.Body, message.Body.GetType(), SerializerOptions);
 
             var properties = new BasicProperties
@@ -86,9 +89,8 @@ internal abstract class BaseRabbitMqPublisher(
             };
 
             using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeoutCts.CancelAfter(publishTimeout);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(Settings.PublishTimeoutInSeconds));
 
-            // With publisher confirmation tracking enabled, this completes only after the broker confirms the message.
             await channel.BasicPublishAsync(message.Exchange, message.RoutingKey, mandatory: true, properties, body, timeoutCts.Token);
 
             return Result.Succeed();
@@ -99,7 +101,7 @@ internal abstract class BaseRabbitMqPublisher(
         }
         catch (OperationCanceledException)
         {
-            Logger.PublishTimedOut(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, publishTimeout.TotalSeconds);
+            Logger.PublishTimedOut(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, Settings.PublishTimeoutInSeconds);
 
             return Result.Fail("Message was not confirmed by RabbitMQ in time");
         }
@@ -122,6 +124,11 @@ internal abstract class BaseRabbitMqPublisher(
             return Result.Fail("Failed to publish message to RabbitMQ");
         }
     }
+}
+
+internal sealed record OutgoingMessage(string Exchange, string RoutingKey, Guid MessageId, object Body)
+{
+    public string MessageType => Body.GetType().Name;
 }
 
 internal static partial class BaseRabbitMqPublisherLogs

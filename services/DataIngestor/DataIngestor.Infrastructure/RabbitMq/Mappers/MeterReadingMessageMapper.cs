@@ -10,10 +10,8 @@ internal static class MeterReadingMessageMapper
 {
     public static OutgoingMessage ToOutgoingMessage(MeterReading reading)
     {
-        // Time-ordered identifier, so messages sort by the time their readings were received.
         var messageId = Guid.CreateVersion7(reading.ReceivedAt);
 
-        // The event type and its routing key are chosen in the same arm, so they cannot get out of sync.
         return reading.Payload switch
         {
             MotionPayload motion => CreateMessage(
