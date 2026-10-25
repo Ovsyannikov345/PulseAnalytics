@@ -1,0 +1,51 @@
+name: Data Ingestor Contracts Publish
+
+on:
+  push:
+    tags:
+      - contracts-v*
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Pack and push to nuget.org
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: nuget
+    env:
+      SOLUTION: services/DataIngestor/DataIngestor.slnx
+      PROJECT: services/DataIngestor/DataIngestor.Contracts/DataIngestor.Contracts.csproj
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Ensure the tag is on main
+        run: |
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
+            || { echo "::error::Tag $GITHUB_REF_NAME is not reachable from main"; exit 1; }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION }} --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test ${{ env.SOLUTION }} --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack ${{ env.PROJECT }} --configuration Release --no-build --output ./artifacts
+
+      - name: Push
+        run: >
+          dotnet nuget push "./artifacts/*.nupkg"
+          --source https://api.nuget.org/v3/index.json
+          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --skip-duplicate
