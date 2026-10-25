@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: nuget
+    permissions:
+      contents: read
+      id-token: write
     env:
       SOLUTION: services/DataIngestor/DataIngestor.slnx
       PROJECT: services/DataIngestor/DataIngestor.Contracts/DataIngestor.Contracts.csproj
@@ -43,9 +46,15 @@ jobs:
       - name: Pack
         run: dotnet pack ${{ env.PROJECT }} --configuration Release --no-build --output ./artifacts
 
+      - name: NuGet login (OIDC to temporary API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push
         run: >
           dotnet nuget push "./artifacts/*.nupkg"
           --source https://api.nuget.org/v3/index.json
-          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
           --skip-duplicate
