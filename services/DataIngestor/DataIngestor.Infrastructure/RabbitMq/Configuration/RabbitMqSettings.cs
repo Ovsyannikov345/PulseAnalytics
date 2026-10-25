@@ -10,10 +10,10 @@ internal sealed record RabbitMqSettings
     public required string Host { get; init; }
 
     [Range(1, 65535)]
-    public int Port { get; init; } = 5672;
+    public int Port { get; init; }
 
     [Required(AllowEmptyStrings = false)]
-    public string VirtualHost { get; init; } = "/";
+    public required string VirtualHost { get; init; }
 
     [Required(AllowEmptyStrings = false)]
     public required string UserName { get; init; }
@@ -22,5 +22,5 @@ internal sealed record RabbitMqSettings
     public required string Password { get; init; }
 
     [Range(1, 60)]
-    public int PublishTimeoutInSeconds { get; init; } = 5;
+    public int PublishTimeoutInSeconds { get; init; }
 }
