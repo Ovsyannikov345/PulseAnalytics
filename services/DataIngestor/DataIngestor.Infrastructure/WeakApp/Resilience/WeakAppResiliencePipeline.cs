@@ -14,6 +14,14 @@ internal static class WeakAppResiliencePipeline
     public static void Configure(ResiliencePipelineBuilder<HttpResponseMessage> builder, WeakAppResilienceSettings settings)
     {
         builder
+            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+            {
+                FailureRatio = settings.CircuitBreakerFailureRatio,
+                MinimumThroughput = settings.CircuitBreakerMinimumThroughput,
+                SamplingDuration = TimeSpan.FromSeconds(settings.CircuitBreakerSamplingDurationInSeconds),
+                BreakDuration = TimeSpan.FromSeconds(settings.CircuitBreakerBreakDurationInSeconds),
+                ShouldHandle = ShouldBreak
+            })
             .AddTimeout(TimeSpan.FromSeconds(settings.TotalTimeoutInSeconds))
             .AddRetry(new HttpRetryStrategyOptions
             {
@@ -22,14 +30,6 @@ internal static class WeakAppResiliencePipeline
                 UseJitter = true,
                 Delay = TimeSpan.FromSeconds(settings.RetryBaseDelayInSeconds),
                 ShouldHandle = ShouldRetry
-            })
-            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
-            {
-                FailureRatio = settings.CircuitBreakerFailureRatio,
-                MinimumThroughput = settings.CircuitBreakerMinimumThroughput,
-                SamplingDuration = TimeSpan.FromSeconds(settings.CircuitBreakerSamplingDurationInSeconds),
-                BreakDuration = TimeSpan.FromSeconds(settings.CircuitBreakerBreakDurationInSeconds),
-                ShouldHandle = ShouldBreak
             })
             .AddTimeout(TimeSpan.FromSeconds(settings.AttemptTimeoutInSeconds));
     }

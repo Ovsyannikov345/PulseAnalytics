@@ -13,8 +13,8 @@ public sealed class WeakAppResilienceSettingsTests
         AttemptTimeoutInSeconds = 5,
         MaxRetryAttempts = 2,
         RetryBaseDelayInSeconds = 1,
-        CircuitBreakerFailureRatio = 0.9,
-        CircuitBreakerMinimumThroughput = 8,
+        CircuitBreakerFailureRatio = 0.5,
+        CircuitBreakerMinimumThroughput = 4,
         CircuitBreakerSamplingDurationInSeconds = 60,
         CircuitBreakerBreakDurationInSeconds = 30
     };
