@@ -88,10 +88,10 @@ internal abstract class BaseRabbitMqPublisher(
                 Timestamp = new AmqpTimestamp(timeProvider.GetUtcNow().ToUnixTimeSeconds())
             };
 
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(Settings.PublishTimeoutInSeconds));
+            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(Settings.PublishTimeoutInSeconds), timeProvider);
+            using var publishCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-            await channel.BasicPublishAsync(message.Exchange, message.RoutingKey, mandatory: true, properties, body, timeoutCts.Token);
+            await channel.BasicPublishAsync(message.Exchange, message.RoutingKey, mandatory: true, properties, body, publishCts.Token);
 
             return Result.Succeed();
         }

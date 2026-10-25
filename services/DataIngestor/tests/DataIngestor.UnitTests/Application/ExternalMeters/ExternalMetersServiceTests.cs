@@ -74,6 +74,69 @@ public sealed class ExternalMetersServiceTests
     }
 
     [Fact]
+    public async Task IngestReadingsAsync_ClientReturnsNoReadings_LogsThatThereIsNothingToPublish()
+    {
+        // Arrange
+        ClientReturns();
+
+        // Act
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var entry = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        entry.Level.ShouldBe(LogLevel.Information);
+        entry.Message.ShouldBe("No readings were received, nothing to publish");
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_ClientReturnsReadings_PassesExactReadingsAndCancellationTokenToPublisher()
+    {
+        // Arrange
+        MeterReading[] readings = [CreateMotionReading("Garage"), CreateEnergyReading("Office")];
+        ClientReturns(readings);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+
+        // Act
+        await _sut.IngestReadingsAsync(cts.Token);
+
+        // Assert
+        A.CallTo(() => _readingsPublisher.PublishAsync(
+                A<IReadOnlyCollection<MeterReading>>.That.IsSameSequenceAs(readings),
+                cts.Token))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_PublisherFails_ReturnsFailureWithPublisherErrorMessage()
+    {
+        // Arrange
+        ClientReturns(CreateMotionReading("Garage"));
+        PublisherFails("Failed to publish 1 of 1 meter readings");
+
+        // Act
+        var result = await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.ErrorMessage.ShouldBe("Failed to publish 1 of 1 meter readings");
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_PublisherFails_LogsErrorWithReason()
+    {
+        // Arrange
+        ClientReturns(CreateMotionReading("Garage"));
+        PublisherFails("Failed to publish 1 of 1 meter readings");
+
+        // Act
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var error = _logger.Collector.GetSnapshot().Where(entry => entry.Level == LogLevel.Error).ShouldHaveSingleItem();
+        error.Message.ShouldBe("Failed to publish readings. Reason: Failed to publish 1 of 1 meter readings");
+    }
+
+    [Fact]
     public async Task IngestReadingsAsync_ClientFails_ReturnsFailureWithClientErrorMessage()
     {
         // Arrange
@@ -163,5 +226,11 @@ public sealed class ExternalMetersServiceTests
     {
         A.CallTo(() => _metersClient.GetMetersAsync(A<CancellationToken>._))
             .Returns(Result<List<MeterReading>>.Fail(errorMessage));
+    }
+
+    private void PublisherFails(string errorMessage)
+    {
+        A.CallTo(() => _readingsPublisher.PublishAsync(A<IReadOnlyCollection<MeterReading>>._, A<CancellationToken>._))
+            .Returns(Result.Fail(errorMessage));
     }
 }
