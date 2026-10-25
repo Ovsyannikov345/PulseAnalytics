@@ -6,6 +6,7 @@ using DataIngestor.Infrastructure.RabbitMq.Publishers;
 using DataIngestor.Infrastructure.WeakApp.Clients;
 using DataIngestor.Infrastructure.WeakApp.Configuration;
 using DataIngestor.Infrastructure.WeakApp.Constants;
+using DataIngestor.Infrastructure.WeakApp.Resilience;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -20,6 +21,11 @@ public static class DependencyInjection
         // Configuration
         services.AddOptions<WeakAppSettings>()
             .Bind(configuration.GetSection(WeakAppSettings.SectionName))
+            .ValidateOnStart()
+            .ValidateDataAnnotations();
+
+        services.AddOptions<WeakAppResilienceSettings>()
+            .Bind(configuration.GetSection(WeakAppResilienceSettings.SectionName))
             .ValidateOnStart()
             .ValidateDataAnnotations();
 
@@ -41,7 +47,15 @@ public static class DependencyInjection
 
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.DefaultRequestHeaders.Add(HeaderNames.ApiKey, weakAppSettings.ApiKey);
-        });
+        })
+        .AddResilienceHandler(
+            WeakAppResiliencePipeline.Name,
+            (builder, context) =>
+            {
+                var resilienceSettings = context.GetOptions<WeakAppResilienceSettings>();
+
+                WeakAppResiliencePipeline.Configure(builder, resilienceSettings);
+            });
 
         // Messaging
         services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
