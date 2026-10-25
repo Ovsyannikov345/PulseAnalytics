@@ -79,7 +79,7 @@ internal sealed class MeterPollingWorker(
     {
         var metersService = serviceScope.ServiceProvider.GetRequiredService<IExternalMetersService>();
 
-        return await metersService.ExtractReadingsAsync(ct);
+        return await metersService.IngestReadingsAsync(ct);
     }
 }
 

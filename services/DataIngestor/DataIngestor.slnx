@@ -10,6 +10,7 @@
   <Project Path="DataIngestor.Api/DataIngestor.Api.csproj" />
   <Project Path="DataIngestor.Application/DataIngestor.Application.csproj" />
   <Project Path="DataIngestor.Background/DataIngestor.Background.csproj" />
+  <Project Path="DataIngestor.Contracts/DataIngestor.Contracts.csproj" />
   <Project Path="DataIngestor.Domain/DataIngestor.Domain.csproj" />
   <Project Path="DataIngestor.Infrastructure/DataIngestor.Infrastructure.csproj" />
 </Solution>
