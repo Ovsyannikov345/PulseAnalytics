@@ -1,5 +1,3 @@
 ﻿namespace DataIngestor.Domain.Entities;
 
-public abstract record ReadingPayload
-{
-}
+public interface IReadingPayload;

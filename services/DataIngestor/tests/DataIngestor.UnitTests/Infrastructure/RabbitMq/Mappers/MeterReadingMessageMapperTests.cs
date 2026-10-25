@@ -107,15 +107,22 @@ public sealed class MeterReadingMessageMapperTests
         first.MessageId.ShouldNotBe(second.MessageId);
     }
 
-    [Theory]
-    [MemberData(nameof(ReadingsWithEventNames))]
-    public void ToOutgoingMessage_AnyReading_ExposesEventNameAsMessageType(MeterReading reading, string eventName)
+    [Fact]
+    public void ToOutgoingMessage_MotionReading_ExposesEventNameAsMessageType()
     {
-        // Act
-        var message = MeterReadingMessageMapper.ToOutgoingMessage(reading);
+        AssertMessageType(MeterReadings.Motion(), nameof(MotionReadingReceived));
+    }
 
-        // Assert
-        message.MessageType.ShouldBe(eventName);
+    [Fact]
+    public void ToOutgoingMessage_EnergyReading_ExposesEventNameAsMessageType()
+    {
+        AssertMessageType(MeterReadings.Energy(), nameof(EnergyReadingReceived));
+    }
+
+    [Fact]
+    public void ToOutgoingMessage_AirQualityReading_ExposesEventNameAsMessageType()
+    {
+        AssertMessageType(MeterReadings.AirQuality(), nameof(AirQualityReadingReceived));
     }
 
     [Fact]
@@ -131,15 +138,14 @@ public sealed class MeterReadingMessageMapperTests
         act.ShouldThrow<UnreachableException>();
     }
 
-    public static TheoryData<MeterReading, string> ReadingsWithEventNames()
+    private static void AssertMessageType(MeterReading reading, string eventName)
     {
-        return new()
-        {
-            { MeterReadings.Motion(), nameof(MotionReadingReceived) },
-            { MeterReadings.Energy(), nameof(EnergyReadingReceived) },
-            { MeterReadings.AirQuality(), nameof(AirQualityReadingReceived) }
-        };
+        // Act
+        var message = MeterReadingMessageMapper.ToOutgoingMessage(reading);
+
+        // Assert
+        message.MessageType.ShouldBe(eventName);
     }
 
-    private sealed record UnmappedPayload : ReadingPayload;
+    private sealed record UnmappedPayload : IReadingPayload;
 }

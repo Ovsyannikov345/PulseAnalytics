@@ -64,15 +64,17 @@ internal static class RabbitMqChannelFakeExtensions
 
     public static IReadOnlyList<PublishedMessage> PublishedMessages(this IChannel channel)
     {
-        return Fake.GetCalls(channel)
-            .Where(call => call.Method.Name == BasicPublishAsyncMethodName)
-            .Select(call => new PublishedMessage(
-                call.GetArgument<string>(0)!,
-                call.GetArgument<string>(1)!,
-                call.GetArgument<bool>(2),
-                call.GetArgument<BasicProperties>(3)!,
-                call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray()))
-            .ToList();
+        return
+        [
+            .. Fake.GetCalls(channel)
+                .Where(call => call.Method.Name == BasicPublishAsyncMethodName)
+                .Select(call => new PublishedMessage(
+                    call.GetArgument<string>(0)!,
+                    call.GetArgument<string>(1)!,
+                    call.GetArgument<bool>(2),
+                    call.GetArgument<BasicProperties>(3)!,
+                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray()))
+        ];
     }
 }
 

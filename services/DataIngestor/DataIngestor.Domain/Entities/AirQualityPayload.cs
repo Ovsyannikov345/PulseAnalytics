@@ -1,6 +1,6 @@
 ﻿namespace DataIngestor.Domain.Entities;
 
-public sealed record AirQualityPayload : ReadingPayload
+public sealed record AirQualityPayload : IReadingPayload
 {
     public required int Co2 { get; init; }
 
