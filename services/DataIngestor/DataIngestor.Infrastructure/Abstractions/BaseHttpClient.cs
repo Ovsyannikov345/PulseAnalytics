@@ -2,7 +2,6 @@
 using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using Microsoft.Extensions.Logging;
-using Polly.CircuitBreaker;
 
 namespace DataIngestor.Infrastructure.Abstractions;
 
@@ -21,12 +20,6 @@ internal abstract class BaseHttpClient(HttpClient httpClient, ILogger logger, Js
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
             throw;
-        }
-        catch (BrokenCircuitException)
-        {
-            Logger.CircuitOpen();
-
-            return Result<HttpResponseMessage>.Fail("Request was not sent because the circuit is open");
         }
         catch (Exception ex)
         {
@@ -101,11 +94,6 @@ internal static partial class BaseClientLogs
         Level = LogLevel.Error,
         Message = "Exception occurred while sending HTTP request")]
     public static partial void FailedToSend(this ILogger logger, Exception ex);
-
-    [LoggerMessage(
-        Level = LogLevel.Warning,
-        Message = "HTTP request was not sent because the circuit is open")]
-    public static partial void CircuitOpen(this ILogger logger);
 
     [LoggerMessage(
         Level = LogLevel.Error,

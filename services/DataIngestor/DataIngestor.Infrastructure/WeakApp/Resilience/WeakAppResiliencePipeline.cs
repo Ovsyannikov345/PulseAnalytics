@@ -2,7 +2,6 @@
 using DataIngestor.Infrastructure.WeakApp.Configuration;
 using Microsoft.Extensions.Http.Resilience;
 using Polly;
-using Polly.CircuitBreaker;
 using Polly.Retry;
 
 namespace DataIngestor.Infrastructure.WeakApp.Resilience;
@@ -14,14 +13,6 @@ internal static class WeakAppResiliencePipeline
     public static void Configure(ResiliencePipelineBuilder<HttpResponseMessage> builder, WeakAppResilienceSettings settings)
     {
         builder
-            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
-            {
-                FailureRatio = settings.CircuitBreakerFailureRatio,
-                MinimumThroughput = settings.CircuitBreakerMinimumThroughput,
-                SamplingDuration = TimeSpan.FromSeconds(settings.CircuitBreakerSamplingDurationInSeconds),
-                BreakDuration = TimeSpan.FromSeconds(settings.CircuitBreakerBreakDurationInSeconds),
-                ShouldHandle = ShouldBreak
-            })
             .AddTimeout(TimeSpan.FromSeconds(settings.TotalTimeoutInSeconds))
             .AddRetry(new HttpRetryStrategyOptions
             {
@@ -40,14 +31,6 @@ internal static class WeakAppResiliencePipeline
             && !IsRateLimited(args.Outcome);
 
         return ValueTask.FromResult(shouldRetry);
-    }
-
-    private static ValueTask<bool> ShouldBreak(CircuitBreakerPredicateArguments<HttpResponseMessage> args)
-    {
-        var shouldBreak = HttpClientResiliencePredicates.IsTransient(args.Outcome)
-            || IsRateLimited(args.Outcome);
-
-        return ValueTask.FromResult(shouldBreak);
     }
 
     private static bool IsRateLimited(Outcome<HttpResponseMessage> outcome)

@@ -8,7 +8,6 @@ using FakeItEasy.Core;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Time.Testing;
 using Polly;
-using Polly.CircuitBreaker;
 using Polly.Timeout;
 using Shouldly;
 using Xunit;
@@ -25,11 +24,7 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
         TotalTimeoutInSeconds = 20,
         AttemptTimeoutInSeconds = 5,
         MaxRetryAttempts = 2,
-        RetryBaseDelayInSeconds = 1,
-        CircuitBreakerFailureRatio = 0.5,
-        CircuitBreakerMinimumThroughput = 4,
-        CircuitBreakerSamplingDurationInSeconds = 60,
-        CircuitBreakerBreakDurationInSeconds = 30
+        RetryBaseDelayInSeconds = 1
     };
 
     private readonly HttpMessageHandler _handler = A.Fake<HttpMessageHandler>();
@@ -148,124 +143,6 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
     }
 
     [Fact]
-    public async Task Send_FailedRequestsReachMinimumThroughput_OpensCircuitAndStopsCallingHandler()
-    {
-        // Arrange
-        _handler.RespondsWith(HttpStatusCode.InternalServerError, "Unknown error");
-        var attemptsPerRequest = 1 + Settings.MaxRetryAttempts;
-
-        // Act
-        await SendIgnoringResultsAsync(Settings.CircuitBreakerMinimumThroughput);
-        var act = () => SendAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        // The breaker sees one outcome per request, after its retries.
-        await act.ShouldThrowAsync<BrokenCircuitException>();
-        _handler.CallsToSendAsync().MustHaveHappened(Settings.CircuitBreakerMinimumThroughput * attemptsPerRequest, Times.Exactly);
-
-        await act.ShouldThrowAsync<BrokenCircuitException>();
-        _handler.CallsToSendAsync().MustHaveHappened(Settings.CircuitBreakerMinimumThroughput * attemptsPerRequest, Times.Exactly);
-    }
-
-    [Fact]
-    public async Task Send_FailedAttemptsRecoveredByRetry_DoNotOpenCircuit()
-    {
-        // Arrange
-        var callCount = 0;
-        _handler.CallsToSendAsync()
-            .ReturnsLazily(call => Respond(call, ++callCount % 2 == 1 ? HttpStatusCode.BadGateway : HttpStatusCode.OK));
-
-        // Act
-        var statusCodes = new List<HttpStatusCode>();
-
-        for (var i = 0; i < 3 * Settings.CircuitBreakerMinimumThroughput; i++)
-        {
-            using var response = await SendAsync(TestContext.Current.CancellationToken);
-
-            statusCodes.Add(response.StatusCode);
-        }
-
-        // Assert
-        statusCodes.ShouldAllBe(statusCode => statusCode == HttpStatusCode.OK);
-    }
-
-    [Fact]
-    public async Task Send_RepeatedRateLimitResponses_OpenCircuit()
-    {
-        // Arrange
-        _handler.RespondsWith(HttpStatusCode.TooManyRequests, "Too Many Requests: rate limit exceeded");
-
-        // Act
-        await SendIgnoringResultsAsync(Settings.CircuitBreakerMinimumThroughput);
-        var act = () => SendAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        await act.ShouldThrowAsync<BrokenCircuitException>();
-        _handler.CallsToSendAsync().MustHaveHappened(Settings.CircuitBreakerMinimumThroughput, Times.Exactly);
-    }
-
-    [Fact]
-    public async Task Send_RequestsReachTotalTimeout_OpenCircuit()
-    {
-        // Arrange
-        // More retries than fit into the total timeout, and a sampling window that holds all the timed-out requests.
-        _httpClient.Dispose();
-        _httpClient = CreateHttpClient(Settings with { MaxRetryAttempts = 5, CircuitBreakerSamplingDurationInSeconds = 300 });
-        _handler.CallsToSendAsync().ReturnsLazily(call => HangAsync(call));
-
-        for (var i = 0; i < Settings.CircuitBreakerMinimumThroughput; i++)
-        {
-            await Should.ThrowAsync<TimeoutRejectedException>(() => SendAsync(TestContext.Current.CancellationToken));
-        }
-
-        // Act
-        var act = () => SendAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        await act.ShouldThrowAsync<BrokenCircuitException>();
-    }
-
-    [Fact]
-    public async Task Send_BreakDurationElapsed_LetsRequestThroughAgain()
-    {
-        // Arrange
-        _handler.CallsToSendAsync()
-            .ReturnsLazily(call => Respond(call, HttpStatusCode.TooManyRequests))
-            .NumberOfTimes(Settings.CircuitBreakerMinimumThroughput)
-            .Then.ReturnsLazily(call => Respond(call, HttpStatusCode.OK));
-
-        await OpenCircuitAsync();
-
-        // Act
-        using var response = await SendAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-    }
-
-    [Fact]
-    public async Task Send_ProbeRequestFirstAttemptFails_RetriesAndClosesCircuit()
-    {
-        // Arrange
-        _handler.CallsToSendAsync()
-            .ReturnsLazily(call => Respond(call, HttpStatusCode.TooManyRequests))
-            .NumberOfTimes(Settings.CircuitBreakerMinimumThroughput)
-            .Then.ReturnsLazily(call => Respond(call, HttpStatusCode.InternalServerError)).Once()
-            .Then.ReturnsLazily(call => Respond(call, HttpStatusCode.OK));
-
-        await OpenCircuitAsync();
-
-        // Act
-        using var probeResponse = await SendAsync(TestContext.Current.CancellationToken);
-        using var nextResponse = await SendAsync(TestContext.Current.CancellationToken);
-
-        // Assert
-        probeResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
-        nextResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
-        _handler.CallsToSendAsync().MustHaveHappened(Settings.CircuitBreakerMinimumThroughput + 3, Times.Exactly);
-    }
-
-    [Fact]
     public async Task Send_CallerCancelsWhileRequestIsInFlight_ThrowsOperationCanceledExceptionWithoutRetrying()
     {
         // Arrange
@@ -318,23 +195,5 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
         }
 
         return await sendTask;
-    }
-
-    private async Task SendIgnoringResultsAsync(int count)
-    {
-        for (var i = 0; i < count; i++)
-        {
-            using var response = await SendAsync(TestContext.Current.CancellationToken);
-        }
-    }
-
-    // Expects the handler to fail the first CircuitBreakerMinimumThroughput requests; leaves the circuit half-open.
-    private async Task OpenCircuitAsync()
-    {
-        await SendIgnoringResultsAsync(Settings.CircuitBreakerMinimumThroughput);
-
-        await Should.ThrowAsync<BrokenCircuitException>(() => SendAsync(TestContext.Current.CancellationToken));
-
-        _timeProvider.Advance(TimeSpan.FromSeconds(Settings.CircuitBreakerBreakDurationInSeconds));
     }
 }

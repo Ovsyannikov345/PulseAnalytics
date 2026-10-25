@@ -18,18 +18,6 @@ internal sealed record WeakAppResilienceSettings : IValidatableObject
     [Range(1, 60)]
     public int RetryBaseDelayInSeconds { get; init; }
 
-    [Range(0.01, 1.0)]
-    public double CircuitBreakerFailureRatio { get; init; }
-
-    [Range(2, 1000)]
-    public int CircuitBreakerMinimumThroughput { get; init; }
-
-    [Range(1, 3600)]
-    public int CircuitBreakerSamplingDurationInSeconds { get; init; }
-
-    [Range(1, 3600)]
-    public int CircuitBreakerBreakDurationInSeconds { get; init; }
-
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (AttemptTimeoutInSeconds >= TotalTimeoutInSeconds)

@@ -12,11 +12,7 @@ public sealed class WeakAppResilienceSettingsTests
         TotalTimeoutInSeconds = 20,
         AttemptTimeoutInSeconds = 5,
         MaxRetryAttempts = 2,
-        RetryBaseDelayInSeconds = 1,
-        CircuitBreakerFailureRatio = 0.5,
-        CircuitBreakerMinimumThroughput = 4,
-        CircuitBreakerSamplingDurationInSeconds = 60,
-        CircuitBreakerBreakDurationInSeconds = 30
+        RetryBaseDelayInSeconds = 1
     };
 
     [Fact]
@@ -81,60 +77,6 @@ public sealed class WeakAppResilienceSettingsTests
 
         // Assert
         results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(WeakAppResilienceSettings.RetryBaseDelayInSeconds)]);
-    }
-
-    [Theory]
-    [InlineData(0.0)]
-    [InlineData(1.1)]
-    public void Validate_CircuitBreakerFailureRatioOutOfRange_Fails(double failureRatio)
-    {
-        // Arrange
-        var settings = ValidSettings with { CircuitBreakerFailureRatio = failureRatio };
-
-        // Act
-        var results = DataAnnotationsValidator.Validate(settings);
-
-        // Assert
-        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(WeakAppResilienceSettings.CircuitBreakerFailureRatio)]);
-    }
-
-    [Fact]
-    public void Validate_CircuitBreakerMinimumThroughputBelowTwo_Fails()
-    {
-        // Arrange
-        var settings = ValidSettings with { CircuitBreakerMinimumThroughput = 1 };
-
-        // Act
-        var results = DataAnnotationsValidator.Validate(settings);
-
-        // Assert
-        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(WeakAppResilienceSettings.CircuitBreakerMinimumThroughput)]);
-    }
-
-    [Fact]
-    public void Validate_ZeroCircuitBreakerSamplingDuration_Fails()
-    {
-        // Arrange
-        var settings = ValidSettings with { CircuitBreakerSamplingDurationInSeconds = 0 };
-
-        // Act
-        var results = DataAnnotationsValidator.Validate(settings);
-
-        // Assert
-        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(WeakAppResilienceSettings.CircuitBreakerSamplingDurationInSeconds)]);
-    }
-
-    [Fact]
-    public void Validate_ZeroCircuitBreakerBreakDuration_Fails()
-    {
-        // Arrange
-        var settings = ValidSettings with { CircuitBreakerBreakDurationInSeconds = 0 };
-
-        // Act
-        var results = DataAnnotationsValidator.Validate(settings);
-
-        // Assert
-        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(WeakAppResilienceSettings.CircuitBreakerBreakDurationInSeconds)]);
     }
 
     [Theory]
