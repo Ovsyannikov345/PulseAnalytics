@@ -20,6 +20,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\DataIngestor.Api\DataIngestor.Api.csproj" />
 		<ProjectReference Include="..\..\DataIngestor.Application\DataIngestor.Application.csproj" />
 		<ProjectReference Include="..\..\DataIngestor.Background\DataIngestor.Background.csproj" />
 		<ProjectReference Include="..\..\DataIngestor.Infrastructure\DataIngestor.Infrastructure.csproj" />
