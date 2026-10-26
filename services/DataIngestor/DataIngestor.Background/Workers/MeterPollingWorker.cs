@@ -1,4 +1,5 @@
 ﻿using Ausiannikau.Utilities.Results;
+using DataIngestor.Application.Correlation;
 using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Background.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,8 @@ internal sealed class MeterPollingWorker(
             {
                 try
                 {
+                    CorrelationContext.CorrelationId = Guid.CreateVersion7(timeProvider.GetUtcNow());
+
                     await using var serviceScope = scopeFactory.CreateAsyncScope();
 
                     var result = await DoWorkAsync(serviceScope, stoppingToken);
@@ -63,6 +66,10 @@ internal sealed class MeterPollingWorker(
                 catch (Exception ex)
                 {
                     logger.JobFailed(ex);
+                }
+                finally
+                {
+                    CorrelationContext.Reset();
                 }
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));

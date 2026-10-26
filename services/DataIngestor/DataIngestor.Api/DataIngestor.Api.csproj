@@ -16,4 +16,9 @@
 		<ProjectReference Include="..\DataIngestor.Infrastructure\DataIngestor.Infrastructure.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="DataIngestor.UnitTests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+	</ItemGroup>
+
 </Project>

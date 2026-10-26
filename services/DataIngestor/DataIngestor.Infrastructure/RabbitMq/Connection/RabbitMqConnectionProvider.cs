@@ -1,4 +1,5 @@
 ﻿using Ausiannikau.Utilities.Results;
+using DataIngestor.Application.Correlation;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,7 +27,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     public async Task<Result<IConnection>> GetConnectionAsync(CancellationToken ct)
     {
-        // Once created, the connection recovers from network failures automatically, so it is reused even while it is temporarily closed.
+        // Once created, the connection recovers from network failures automatically,
+        // so it is reused even while it is temporarily closed.
         if (_connection is not null)
         {
             return Result<IConnection>.Succeed(_connection);
@@ -103,6 +105,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     private Task OnConnectionShutdownAsync(object sender, ShutdownEventArgs args)
     {
+        CorrelationContext.Reset();
+
         logger.ConnectionShutDown(args.Initiator, args.ReplyCode, args.ReplyText);
 
         return Task.CompletedTask;
@@ -110,6 +114,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     private Task OnRecoverySucceededAsync(object sender, AsyncEventArgs args)
     {
+        CorrelationContext.Reset();
+
         logger.ConnectionRecovered();
 
         return Task.CompletedTask;
@@ -117,6 +123,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     private Task OnConnectionRecoveryErrorAsync(object sender, ConnectionRecoveryErrorEventArgs args)
     {
+        CorrelationContext.Reset();
+
         logger.ConnectionRecoveryFailed(args.Exception);
 
         return Task.CompletedTask;
@@ -124,6 +132,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     private Task OnConnectionBlockedAsync(object sender, ConnectionBlockedEventArgs args)
     {
+        CorrelationContext.Reset();
+
         logger.ConnectionBlocked(args.Reason);
 
         return Task.CompletedTask;
@@ -131,6 +141,8 @@ internal sealed class RabbitMqConnectionProvider(
 
     private Task OnConnectionUnblockedAsync(object sender, AsyncEventArgs args)
     {
+        CorrelationContext.Reset();
+
         logger.ConnectionUnblocked();
 
         return Task.CompletedTask;

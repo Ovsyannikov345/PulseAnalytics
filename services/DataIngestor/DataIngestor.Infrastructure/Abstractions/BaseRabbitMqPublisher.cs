@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
+using DataIngestor.Application.Correlation;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
 using DataIngestor.Infrastructure.RabbitMq.Connection;
 using Microsoft.Extensions.Logging;
@@ -84,6 +85,7 @@ internal abstract class BaseRabbitMqPublisher(
                 ContentType = "application/json",
                 DeliveryMode = DeliveryModes.Persistent,
                 MessageId = message.MessageId.ToString(),
+                CorrelationId = CorrelationContext.CorrelationId.ToString(),
                 Type = message.MessageType,
                 Timestamp = new AmqpTimestamp(timeProvider.GetUtcNow().ToUnixTimeSeconds())
             };
