@@ -14,12 +14,11 @@ internal interface IRabbitMqConnectionProvider
 }
 
 internal sealed class RabbitMqConnectionProvider(
+    IConnectionFactory connectionFactory,
     IOptions<RabbitMqSettings> options,
     ILogger<RabbitMqConnectionProvider> logger)
     : IRabbitMqConnectionProvider, IAsyncDisposable
 {
-    private const string ClientProvidedName = "pulse-analytics.data-ingestor";
-
     private readonly RabbitMqSettings _settings = options.Value;
     private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
@@ -79,18 +78,7 @@ internal sealed class RabbitMqConnectionProvider(
 
     private async Task<IConnection> CreateConnectionAsync(CancellationToken ct)
     {
-        var factory = new ConnectionFactory
-        {
-            HostName = _settings.Host,
-            Port = _settings.Port,
-            VirtualHost = _settings.VirtualHost,
-            UserName = _settings.UserName,
-            Password = _settings.Password,
-            ClientProvidedName = ClientProvidedName,
-            AutomaticRecoveryEnabled = true
-        };
-
-        var connection = await factory.CreateConnectionAsync(ct);
+        var connection = await connectionFactory.CreateConnectionAsync(ct);
 
         connection.ConnectionShutdownAsync += OnConnectionShutdownAsync;
         connection.RecoverySucceededAsync += OnRecoverySucceededAsync;

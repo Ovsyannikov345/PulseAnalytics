@@ -21,6 +21,9 @@ internal sealed record RabbitMqSettings
     [Required(AllowEmptyStrings = false)]
     public required string Password { get; init; }
 
+    [Required(AllowEmptyStrings = false)]
+    public required string ClientProvidedName { get; init; }
+
     [Range(1, 60)]
     public int PublishTimeoutInSeconds { get; init; }
 }

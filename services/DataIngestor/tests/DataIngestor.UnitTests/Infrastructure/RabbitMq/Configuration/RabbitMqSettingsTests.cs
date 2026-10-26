@@ -14,6 +14,7 @@ public sealed class RabbitMqSettingsTests
         VirtualHost = "/",
         UserName = "ingestor",
         Password = "secret",
+        ClientProvidedName = "pulse-analytics.data-ingestor",
         PublishTimeoutInSeconds = 5
     };
 
@@ -86,6 +87,21 @@ public sealed class RabbitMqSettingsTests
 
         // Assert
         results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(RabbitMqSettings.Password)]);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Validate_MissingClientProvidedName_Fails(string? clientProvidedName)
+    {
+        // Arrange
+        var settings = ValidSettings with { ClientProvidedName = clientProvidedName! };
+
+        // Act
+        var results = DataAnnotationsValidator.Validate(settings);
+
+        // Assert
+        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(RabbitMqSettings.ClientProvidedName)]);
     }
 
     [Theory]

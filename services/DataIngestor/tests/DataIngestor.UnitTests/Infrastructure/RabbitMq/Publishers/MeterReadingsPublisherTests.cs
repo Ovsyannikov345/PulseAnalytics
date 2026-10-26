@@ -50,6 +50,7 @@ public sealed class MeterReadingsPublisherTests
             VirtualHost = "/",
             UserName = "ingestor",
             Password = "secret",
+            ClientProvidedName = "pulse-analytics.data-ingestor",
             PublishTimeoutInSeconds = PublishTimeoutInSeconds
         };
 
