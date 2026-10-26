@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Ausiannikau.Utilities.Results;
+using DataIngestor.Application.Correlation;
 using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Background.Configuration;
 using DataIngestor.Background.Workers;
@@ -31,11 +32,19 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     private readonly IServiceScopeFactory _scopeFactory = A.Fake<IServiceScopeFactory>();
     private readonly ConcurrentQueue<IServiceScope> _createdScopes = new();
     private readonly TimerTrackingFakeTimeProvider _timeProvider = new();
-    private readonly FakeLogger<MeterPollingWorker> _logger = new();
+    private readonly ConcurrentQueue<(string Record, Guid CorrelationId)> _correlatedLogRecords = new();
+    private readonly FakeLogger<MeterPollingWorker> _logger;
     private MeterPollingWorker? _sut;
 
     public MeterPollingWorkerTests()
     {
+        // The output sink runs synchronously inside each log call, so it sees the correlation ID the record was written under.
+        _logger = new FakeLogger<MeterPollingWorker>(FakeLogCollector.Create(new FakeLogCollectorOptions
+        {
+            OutputSink = record => _correlatedLogRecords.Enqueue((record, CorrelationContext.CorrelationId))
+        }));
+
+
         A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Succeed());
 
@@ -225,6 +234,86 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         {
             A.CallTo(() => scope.Dispose()).MustHaveHappenedOnceExactly();
         }
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_EachPoll_RunsUnderNewVersion7CorrelationIdCreatedAtPollTime()
+    {
+        // Arrange
+        var pollCorrelationIds = new ConcurrentQueue<Guid>();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .Invokes(() => pollCorrelationIds.Enqueue(CorrelationContext.CorrelationId))
+            .Returns(Result.Succeed());
+        var firstPollTime = _timeProvider.GetUtcNow();
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
+        await WaitForPollsAsync(2);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        pollCorrelationIds.Count.ShouldBe(2);
+        var (first, second) = (pollCorrelationIds.First(), pollCorrelationIds.Last());
+        first.Version.ShouldBe(7);
+        second.Version.ShouldBe(7);
+        second.ShouldNotBe(first);
+        GuidVersion7.GetTimestamp(first).ShouldBe(firstPollTime);
+        GuidVersion7.GetTimestamp(second).ShouldBe(firstPollTime + PollingPeriod);
+    }
+
+    [Theory]
+    [InlineData(PollOutcome.ReturnsFailure)]
+    [InlineData(PollOutcome.Throws)]
+    public async Task ExecuteAsync_PollFails_LogsFailureUnderPollCorrelationId(PollOutcome outcome)
+    {
+        // Arrange
+        var pollCorrelationId = Guid.Empty;
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(() =>
+            {
+                pollCorrelationId = CorrelationContext.CorrelationId;
+
+                return outcome == PollOutcome.ReturnsFailure
+                    ? Task.FromResult(Result.Fail("Weak App API responded with failure"))
+                    : Task.FromException<Result>(new InvalidOperationException("Unexpected failure"));
+            });
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var failure = _correlatedLogRecords
+            .Where(entry => entry.Record.Contains("Meter polling job failed", StringComparison.Ordinal))
+            .ShouldHaveSingleItem();
+        failure.CorrelationId.ShouldBe(pollCorrelationId);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StoppedAfterPoll_DoesNotLogShutdownUnderPollCorrelationId()
+    {
+        // Arrange
+        var pollCorrelationId = Guid.Empty;
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .Invokes(() => pollCorrelationId = CorrelationContext.CorrelationId)
+            .Returns(Result.Succeed());
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var shutdown = _correlatedLogRecords
+            .Where(entry => entry.Record.Contains(ShuttingDownMessage, StringComparison.Ordinal))
+            .ShouldHaveSingleItem();
+        shutdown.CorrelationId.ShouldNotBe(pollCorrelationId);
     }
 
     [Fact]

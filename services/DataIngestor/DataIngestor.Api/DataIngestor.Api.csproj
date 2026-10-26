@@ -6,12 +6,19 @@
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\DataIngestor.Application\DataIngestor.Application.csproj" />
 		<ProjectReference Include="..\DataIngestor.Background\DataIngestor.Background.csproj" />
 		<ProjectReference Include="..\DataIngestor.Infrastructure\DataIngestor.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="DataIngestor.UnitTests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
 	</ItemGroup>
 
 </Project>

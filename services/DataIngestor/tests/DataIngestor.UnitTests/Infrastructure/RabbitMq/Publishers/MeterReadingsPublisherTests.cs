@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
+using DataIngestor.Application.Correlation;
 using DataIngestor.Contracts.Events;
 using DataIngestor.Domain.Entities;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
@@ -49,6 +50,7 @@ public sealed class MeterReadingsPublisherTests
             VirtualHost = "/",
             UserName = "ingestor",
             Password = "secret",
+            ClientProvidedName = "pulse-analytics.data-ingestor",
             PublishTimeoutInSeconds = PublishTimeoutInSeconds
         };
 
@@ -126,6 +128,22 @@ public sealed class MeterReadingsPublisherTests
         published.Properties.DeliveryMode.ShouldBe(DeliveryModes.Persistent);
         published.Properties.AppId.ShouldBe("data-ingestor");
         published.Properties.Timestamp.UnixTime.ShouldBe(Now.ToUnixTimeSeconds());
+    }
+
+    [Fact]
+    public async Task PublishAsync_AnyBatch_SetsCurrentCorrelationIdOnEveryMessage()
+    {
+        // Arrange
+        var correlationId = Guid.CreateVersion7();
+        CorrelationContext.CorrelationId = correlationId;
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.Motion(), MeterReadings.Energy()], TestContext.Current.CancellationToken);
+
+        // Assert
+        var published = _channel.PublishedMessages();
+        published.Count.ShouldBe(2);
+        published.ShouldAllBe(message => message.Properties.CorrelationId == correlationId.ToString());
     }
 
     [Fact]
