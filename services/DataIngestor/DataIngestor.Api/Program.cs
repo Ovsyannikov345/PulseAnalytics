@@ -41,7 +41,7 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Data ingestor terminated unexpectedly");
-    throw;
+    Environment.ExitCode = 1;
 }
 finally
 {
