@@ -1,4 +1,4 @@
-name: Data Ingestor Build And Analysis
+name: Data Ingestor CI/CD
 
 on:
   pull_request:
@@ -9,6 +9,7 @@ on:
       - .github/workflows/data-ingestor.yml
       - .github/workflows/_dotnet-ci.yml
       - .github/workflows/_dotnet-sonar.yml
+      - .github/workflows/_docker-image.yml
   push:
     branches: [main]
     paths:
@@ -16,6 +17,7 @@ on:
       - .github/workflows/data-ingestor.yml
       - .github/workflows/_dotnet-ci.yml
       - .github/workflows/_dotnet-sonar.yml
+      - .github/workflows/_docker-image.yml
 
 concurrency:
   group: data-ingestor-${{ github.event.pull_request.number || github.ref }}
@@ -42,3 +44,14 @@ jobs:
       coverage-exclusions: "**/Program.cs,**/DependencyInjection.cs,**/Topology/*.cs"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  docker:
+    name: Docker
+    needs: [ci, sonar]
+    uses: ./.github/workflows/_docker-image.yml
+    with:
+      context: services/DataIngestor
+      image: pulse-analytics-data-ingestor
+      push: ${{ github.event_name == 'push' }}
+    secrets:
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
