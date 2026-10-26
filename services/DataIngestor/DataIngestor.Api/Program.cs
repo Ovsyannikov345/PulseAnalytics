@@ -2,28 +2,48 @@
 using DataIngestor.Application;
 using DataIngestor.Background;
 using DataIngestor.Infrastructure;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var configuration = builder.Configuration;
-
-builder.Services
-    .AddInfrastructureServices(configuration)
-    .AddApplicationServices()
-    .AddBackgroundServices(configuration)
-    .AddApiServices();
-
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
+try
 {
-    app.MapOpenApi();
+    var builder = WebApplication.CreateBuilder(args);
+
+    var configuration = builder.Configuration;
+
+    builder.Services
+        .AddSerilogLogging(configuration)
+        .AddInfrastructureServices(configuration)
+        .AddApplicationServices()
+        .AddBackgroundServices(configuration)
+        .AddApiServices();
+
+    var app = builder.Build();
+
+    app.UseSerilogRequestLogging();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapOpenApi();
+    }
+
+    app.MapGet("/ping", () =>
+    {
+        return "pong";
+    })
+    .WithName("Ping");
+
+    await app.RunAsync();
 }
-
-app.MapGet("/ping", () =>
+catch (Exception ex)
 {
-    return "pong";
-})
-.WithName("Ping");
-
-await app.RunAsync();
+    Log.Fatal(ex, "Data ingestor terminated unexpectedly");
+    throw;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
