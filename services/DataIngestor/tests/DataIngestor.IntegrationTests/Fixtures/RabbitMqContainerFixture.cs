@@ -19,10 +19,6 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
 
     public int Port => _container.GetMappedPublicPort(AmqpPort);
 
-    public string UserName => RabbitMqBuilder.DefaultUsername;
-
-    public string Password => RabbitMqBuilder.DefaultPassword;
-
     public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
@@ -39,8 +35,8 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
         {
             HostName = Host,
             Port = Port,
-            UserName = UserName,
-            Password = Password,
+            UserName = RabbitMqBuilder.DefaultUsername,
+            Password = RabbitMqBuilder.DefaultPassword,
             ClientProvidedName = "pulse-analytics.data-ingestor.integration-tests"
         };
 

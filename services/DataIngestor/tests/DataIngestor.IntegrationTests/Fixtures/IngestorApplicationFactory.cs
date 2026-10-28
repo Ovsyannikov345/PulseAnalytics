@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Testcontainers.RabbitMq;
 
 namespace DataIngestor.IntegrationTests.Fixtures;
 
@@ -45,8 +46,8 @@ public sealed class IngestorApplicationFactory(
 
             ["RabbitMq:Host"] = rabbitMq.Host,
             ["RabbitMq:Port"] = rabbitMq.Port.ToString(CultureInfo.InvariantCulture),
-            ["RabbitMq:UserName"] = rabbitMq.UserName,
-            ["RabbitMq:Password"] = rabbitMq.Password,
+            ["RabbitMq:UserName"] = RabbitMqBuilder.DefaultUsername,
+            ["RabbitMq:Password"] = RabbitMqBuilder.DefaultPassword,
             ["RabbitMq:PublishTimeoutInSeconds"] = "5",
 
             ["MeterPollingWorker:StartupDelayInSeconds"] = "300",
