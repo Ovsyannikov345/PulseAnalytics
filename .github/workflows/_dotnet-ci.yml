@@ -7,6 +7,11 @@ on:
         description: Path to the solution file, relative to the repo root
         required: true
         type: string
+      integration-tests:
+        description: Also run the tests marked Category=Integration (they start Docker containers via Testcontainers)
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -15,7 +20,7 @@ jobs:
   build-and-test:
     name: Build and test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -29,5 +34,9 @@ jobs:
       - name: Build
         run: dotnet build ${{ inputs.solution }} --configuration Release --no-restore
 
-      - name: Test
-        run: dotnet test ${{ inputs.solution }} --configuration Release --no-build
+      - name: Unit tests
+        run: dotnet test ${{ inputs.solution }} --configuration Release --no-build --filter "Category=Unit"
+
+      - name: Integration tests
+        if: inputs.integration-tests
+        run: dotnet test ${{ inputs.solution }} --configuration Release --no-build --filter "Category=Integration"

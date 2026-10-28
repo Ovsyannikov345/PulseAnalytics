@@ -33,6 +33,7 @@ jobs:
     uses: ./.github/workflows/_dotnet-ci.yml
     with:
       solution: services/DataIngestor/DataIngestor.slnx
+      integration-tests: ${{ github.event_name == 'push' }}
 
   sonar:
     name: Sonar
