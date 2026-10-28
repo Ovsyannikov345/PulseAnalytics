@@ -8,5 +8,5 @@ using Xunit;
 // so they run one at a time.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-// Integration tests can be filtered out.
+// CI runs unit and integration tests in separate steps, selected by this trait: --filter "Category=Integration".
 [assembly: Trait("Category", "Integration")]

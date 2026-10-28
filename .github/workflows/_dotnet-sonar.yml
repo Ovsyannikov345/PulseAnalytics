@@ -72,7 +72,7 @@ jobs:
           dotnet test ${{ inputs.solution }}
           --configuration Release
           --no-build
-          --filter "Category!=Integration"
+          --filter "Category=Unit"
           --collect "Code Coverage;Format=xml"
           --results-directory "${{ runner.temp }}/coverage"
 
