@@ -44,6 +44,54 @@ services:
     volumes:
       - seq-data:/data
     restart: unless-stopped
+    
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.163.2
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "${OTEL_COLLECTOR_GRPC_PORT:-4317}:4317"
+      - "${OTEL_COLLECTOR_HTTP_PORT:-4318}:4318"
+    depends_on:
+      seq:
+        condition: service_started
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    depends_on:
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    
+  grafana:
+    image: grafana/grafana:13.2.4
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in deploy/.env}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in deploy/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /etc/grafana/dashboards/data-ingestor.json
+    volumes:
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    depends_on:
+      prometheus:
+        condition: service_started
+    restart: unless-stopped
 
   data-ingestor:
     image: ilyaovsyannikov/pulse-analytics-data-ingestor:${DATA_INGESTOR_TAG:-latest}
@@ -55,6 +103,7 @@ services:
       RabbitMq__Password: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in deploy/.env}
       Seq__ServerUrl: http://seq:5341
       Seq__ApiKey: ${SEQ_API_KEY:-}
+      OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
     ports:
       - "${DATA_INGESTOR_PORT:-5101}:8080"
     depends_on:
@@ -64,8 +113,12 @@ services:
         condition: service_healthy
       seq:
         condition: service_started
+      otel-collector:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
   rabbitmq-data:
   seq-data:
+  prometheus-data:
+  grafana-data:

@@ -8,6 +8,19 @@ namespace DataIngestor.Infrastructure.RabbitMq.Mappers;
 
 internal static class MeterReadingMessageMapper
 {
+    public static string GetMessageType(MeterReading reading)
+    {
+        return reading.Payload switch
+        {
+            MotionPayload => nameof(MotionReadingReceived),
+            EnergyPayload => nameof(EnergyReadingReceived),
+            AirQualityPayload => nameof(AirQualityReadingReceived),
+
+            _ => throw new UnreachableException(
+                $"No message type for reading payload type {reading.Payload.GetType().Name}")
+        };
+    }
+
     public static OutgoingMessage ToOutgoingMessage(MeterReading reading)
     {
         var messageId = Guid.CreateVersion7(reading.ReceivedAt);
@@ -46,7 +59,8 @@ internal static class MeterReadingMessageMapper
                 },
                 MeterReadingsTopology.RoutingKeys.AirQualityReadingReceived),
 
-            _ => throw new UnreachableException($"No message mapping for reading payload type {reading.Payload.GetType().Name}")
+            _ => throw new UnreachableException(
+                $"No message mapping for reading payload type {reading.Payload.GetType().Name}")
         };
     }
 

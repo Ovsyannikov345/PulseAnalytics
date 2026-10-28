@@ -2,6 +2,8 @@
 using DataIngestor.Application.ExternalMeters;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Application.Interfaces.Messaging;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
 using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.Domain.Entities;
 using FakeItEasy;
@@ -18,6 +20,7 @@ public sealed class ExternalMetersServiceTests
 
     private readonly IExternalMetersClient _metersClient = A.Fake<IExternalMetersClient>();
     private readonly IMeterReadingsPublisher _readingsPublisher = A.Fake<IMeterReadingsPublisher>();
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
     private readonly FakeLogger<ExternalMetersService> _logger = new();
     private readonly ExternalMetersService _sut;
 
@@ -26,7 +29,54 @@ public sealed class ExternalMetersServiceTests
         A.CallTo(() => _readingsPublisher.PublishAsync(A<IReadOnlyCollection<MeterReading>>._, A<CancellationToken>._))
             .Returns(Result.Succeed());
 
-        _sut = new ExternalMetersService(_metersClient, _readingsPublisher, _logger);
+        _sut = new ExternalMetersService(_metersClient, _readingsPublisher, _metrics, _logger);
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_ClientReturnsReadings_RecordsSucceededFetchAndReceivedReadings()
+    {
+        // Arrange
+        MeterReading[] readings = [CreateMotionReading("Garage"), CreateEnergyReading("Office")];
+        ClientReturns(readings);
+
+        // Act
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordFetch(A<FetchOutcome>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordFetch(FetchOutcome.Succeeded)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReadingsReceived(A<IEnumerable<MeterReading>>.That.IsSameSequenceAs(readings)))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_ClientReturnsNoReadings_RecordsEmptyFetchAndNoReceivedReadings()
+    {
+        // Arrange
+        ClientReturns();
+
+        // Act
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordFetch(A<FetchOutcome>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordFetch(FetchOutcome.Empty)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReadingsReceived(A<IEnumerable<MeterReading>>._)).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task IngestReadingsAsync_ClientFails_RecordsFailedFetchAndNoReceivedReadings()
+    {
+        // Arrange
+        ClientFails("Weak App API responded with failure");
+
+        // Act
+        await _sut.IngestReadingsAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordFetch(A<FetchOutcome>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordFetch(FetchOutcome.Failed)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReadingsReceived(A<IEnumerable<MeterReading>>._)).MustNotHaveHappened();
     }
 
     [Fact]

@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: pulse-analytics
+    folder: Pulse Analytics
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards

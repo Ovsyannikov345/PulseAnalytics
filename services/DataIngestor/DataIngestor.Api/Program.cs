@@ -1,4 +1,5 @@
 ﻿using DataIngestor.Api;
+using DataIngestor.Api.Observability;
 using DataIngestor.Application;
 using DataIngestor.Background;
 using DataIngestor.Infrastructure;
@@ -16,6 +17,7 @@ try
 
     builder.Services
         .AddSerilogLogging(configuration)
+        .AddObservability(configuration)
         .AddInfrastructureServices(configuration)
         .AddApplicationServices()
         .AddBackgroundServices(configuration)

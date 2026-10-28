@@ -1,0 +1,430 @@
+{
+  "uid": "data-ingestor",
+  "title": "Data Ingestor",
+  "description": "Polling of WeakApp, publishing to RabbitMQ and runtime health of the data-ingestor service.",
+  "tags": ["pulse-analytics", "data-ingestor"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "schemaVersion": 41,
+  "version": 1,
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "links": [],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Polling",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Successful polls",
+      "description": "Share of polls in the selected range that fetched and published every reading.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.4 },
+              { "color": "green", "value": 0.7 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_ingestor_poll_duration_seconds_count{job=\"data-ingestor\", app_outcome=\"succeeded\"}[$__range])) / sum(increase(data_ingestor_poll_duration_seconds_count{job=\"data-ingestor\"}[$__range]))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Readings received",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_ingestor_readings_received_total{job=\"data-ingestor\"}[$__range]))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Messages confirmed by RabbitMQ",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_ingestor_messages_published_total{job=\"data-ingestor\", app_outcome=\"confirmed\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "WeakApp retries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "orange" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(resilience_polly_strategy_events_total{job=\"data-ingestor\", event_name=\"OnRetry\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Polls per minute by outcome",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "succeeded" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "failed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(data_ingestor_poll_duration_seconds_count{job=\"data-ingestor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Fetches per minute by outcome",
+      "description": "Fetch outcome after the resilience pipeline: failed = no usable body (errors, timeouts, corrupted data); empty = WeakApp returned [].",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "succeeded" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "empty" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] },
+          { "matcher": { "id": "byName", "options": "failed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(data_ingestor_fetches_total{job=\"data-ingestor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Poll duration",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(data_ingestor_poll_duration_seconds_bucket{job=\"data-ingestor\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(data_ingestor_poll_duration_seconds_bucket{job=\"data-ingestor\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "WeakApp HTTP",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "WeakApp responses per minute",
+      "description": "Every HTTP attempt, retries included. Attempts without a response (timeouts, dropped connections) are shown by error type.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "200" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "429" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "purple" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_response_status_code) (rate(http_client_request_duration_seconds_count{job=\"data-ingestor\", server_address=\"weakapp\", http_response_status_code!=\"\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{http_response_status_code}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (error_type) (rate(http_client_request_duration_seconds_count{job=\"data-ingestor\", server_address=\"weakapp\", http_response_status_code=\"\"}[$__rate_interval])) * 60",
+          "legendFormat": "no response: {{error_type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "WeakApp request latency",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_client_request_duration_seconds_bucket{job=\"data-ingestor\", server_address=\"weakapp\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_client_request_duration_seconds_bucket{job=\"data-ingestor\", server_address=\"weakapp\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Resilience events per minute",
+      "description": "Retries and timeouts of the weak-app resilience pipeline (Polly).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (event_name, error_type) (rate(resilience_polly_strategy_events_total{job=\"data-ingestor\", event_name=~\"OnRetry|OnTimeout\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{event_name}} {{error_type}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Readings and publishing",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Readings received per minute by reading type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_reading_type) (rate(data_ingestor_readings_received_total{job=\"data-ingestor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_reading_type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages per minute by publish outcome",
+      "description": "returned = no queue is bound to the routing key yet; skipped = the reading was never sent because the channel was unavailable.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "confirmed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "returned" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(data_ingestor_messages_published_total{job=\"data-ingestor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Unconfirmed messages per minute by message type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_message_type, app_outcome) (rate(data_ingestor_messages_published_total{job=\"data-ingestor\", app_outcome!=\"confirmed\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_message_type}} {{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "RabbitMQ",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Broker messages per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(rabbitmq_global_messages_received_total{job=\"rabbitmq\"}[$__rate_interval])) * 60",
+          "legendFormat": "received"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(rabbitmq_global_messages_routed_total{job=\"rabbitmq\"}[$__rate_interval])) * 60",
+          "legendFormat": "routed"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(rabbitmq_global_messages_unroutable_returned_total{job=\"rabbitmq\"}[$__rate_interval])) * 60",
+          "legendFormat": "unroutable, returned"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(rate(rabbitmq_global_messages_confirmed_total{job=\"rabbitmq\"}[$__rate_interval])) * 60",
+          "legendFormat": "confirmed"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Connections, channels and queues",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(rabbitmq_connections{job=\"rabbitmq\"})", "legendFormat": "connections" },
+        { "refId": "B", "expr": "sum(rabbitmq_channels{job=\"rabbitmq\"})", "legendFormat": "channels" },
+        { "refId": "C", "expr": "sum(rabbitmq_queues{job=\"rabbitmq\"})", "legendFormat": "queues" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Runtime",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cpu_mode) (rate(dotnet_process_cpu_time_seconds_total{job=\"data-ingestor\"}[$__rate_interval])) / scalar(max(dotnet_process_cpu_count{job=\"data-ingestor\"}))",
+          "legendFormat": "{{cpu_mode}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_process_memory_working_set_bytes{job=\"data-ingestor\"})", "legendFormat": "working set" },
+        { "refId": "B", "expr": "sum(dotnet_gc_last_collection_heap_size_bytes{job=\"data-ingestor\"})", "legendFormat": "GC heap" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GC collections per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (gc_heap_generation) (rate(dotnet_gc_collections_total{job=\"data-ingestor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{gc_heap_generation}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Thread pool and exceptions",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_thread_pool_thread_count_total{job=\"data-ingestor\"})", "legendFormat": "thread pool threads" },
+        { "refId": "B", "expr": "sum(dotnet_thread_pool_queue_length_total{job=\"data-ingestor\"})", "legendFormat": "thread pool queue" },
+        { "refId": "C", "expr": "sum(rate(dotnet_exceptions_total{job=\"data-ingestor\"}[$__rate_interval])) * 60", "legendFormat": "exceptions / min" }
+      ]
+    }
+  ]
+}
