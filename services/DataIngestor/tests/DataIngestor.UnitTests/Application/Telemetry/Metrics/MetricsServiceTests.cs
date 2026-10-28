@@ -1,7 +1,9 @@
-﻿using System.Diagnostics.Metrics;
+﻿using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using DataIngestor.Application.Telemetry;
 using DataIngestor.Application.Telemetry.Metrics;
 using DataIngestor.Application.Telemetry.Metrics.Enums;
+using DataIngestor.Domain.Constants.Enums;
 using DataIngestor.UnitTests.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.Metrics.Testing;
@@ -125,6 +127,49 @@ public sealed class MetricsServiceTests : IDisposable
         measurement.Value.ShouldBe(1);
         measurement.Tags["app.message.type"].ShouldBe("MotionReadingReceived");
         measurement.Tags["app.outcome"].ShouldBe(expectedOutcome);
+    }
+
+    [Fact]
+    public void RecordPoll_UndefinedOutcome_ThrowsUnreachableException()
+    {
+        // Act
+        var act = () => _sut.RecordPoll(TimeSpan.FromSeconds(1), (PollOutcome)int.MaxValue);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
+    }
+
+    [Fact]
+    public void RecordFetch_UndefinedOutcome_ThrowsUnreachableException()
+    {
+        // Act
+        var act = () => _sut.RecordFetch((FetchOutcome)int.MaxValue);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
+    }
+
+    [Fact]
+    public void RecordReadingsReceived_UndefinedReadingType_ThrowsUnreachableException()
+    {
+        // Arrange
+        var reading = MeterReadings.Motion() with { Type = (MeterType)int.MaxValue };
+
+        // Act
+        var act = () => _sut.RecordReadingsReceived([reading]);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
+    }
+
+    [Fact]
+    public void RecordPublish_UndefinedOutcome_ThrowsUnreachableException()
+    {
+        // Act
+        var act = () => _sut.RecordPublish("MotionReadingReceived", (PublishOutcome)int.MaxValue);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
     }
 
     private MetricCollector<T> Collect<T>(string instrumentName)
