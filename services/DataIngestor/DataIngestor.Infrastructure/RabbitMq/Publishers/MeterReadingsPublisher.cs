@@ -1,5 +1,7 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Messaging;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
 using DataIngestor.Domain.Entities;
 using DataIngestor.Infrastructure.Abstractions;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
@@ -15,8 +17,9 @@ internal sealed class MeterReadingsPublisher(
     IRabbitMqConnectionProvider connectionProvider,
     IOptions<RabbitMqSettings> options,
     TimeProvider timeProvider,
+    IMetricsService metrics,
     ILogger<MeterReadingsPublisher> logger)
-    : BaseRabbitMqPublisher(connectionProvider, timeProvider, options, logger), IMeterReadingsPublisher
+    : BaseRabbitMqPublisher(connectionProvider, timeProvider, options, metrics, logger), IMeterReadingsPublisher
 {
     public async Task<Result> PublishAsync(IReadOnlyCollection<MeterReading> readings, CancellationToken ct)
     {
@@ -24,6 +27,8 @@ internal sealed class MeterReadingsPublisher(
 
         if (!channelResult.TryGetSuccessValue(out var channel))
         {
+            RecordSkipped(readings);
+
             return channelResult;
         }
 
@@ -37,6 +42,8 @@ internal sealed class MeterReadingsPublisher(
 
             if (declarationResult.IsFailure)
             {
+                RecordSkipped(readings);
+
                 return declarationResult;
             }
 
@@ -48,6 +55,8 @@ internal sealed class MeterReadingsPublisher(
                 if (channel.IsClosed)
                 {
                     Logger.ChannelClosedDuringBatch(readings.Count - attemptedCount);
+
+                    RecordSkipped(readings.Skip(attemptedCount));
 
                     break;
                 }
@@ -76,6 +85,14 @@ internal sealed class MeterReadingsPublisher(
             Logger.PublishedReadings(readings.Count);
 
             return Result.Succeed();
+        }
+    }
+
+    private void RecordSkipped(IEnumerable<MeterReading> readings)
+    {
+        foreach (var reading in readings)
+        {
+            Metrics.RecordPublish(MeterReadingMessageMapper.GetMessageType(reading), PublishOutcome.Skipped);
         }
     }
 }

@@ -1,6 +1,9 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Correlation;
+using DataIngestor.Application.Telemetry;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
 using DataIngestor.Infrastructure.RabbitMq.Connection;
 using Microsoft.Extensions.Logging;
@@ -14,10 +17,9 @@ internal abstract class BaseRabbitMqPublisher(
     IRabbitMqConnectionProvider connectionProvider,
     TimeProvider timeProvider,
     IOptions<RabbitMqSettings> options,
+    IMetricsService metrics,
     ILogger logger)
 {
-    private const string ApplicationId = "data-ingestor";
-
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
     private static readonly CreateChannelOptions ChannelOptions = new(
@@ -27,6 +29,8 @@ internal abstract class BaseRabbitMqPublisher(
     protected RabbitMqSettings Settings => options.Value;
 
     protected ILogger Logger => logger;
+
+    protected IMetricsService Metrics => metrics;
 
     protected async Task<Result<IChannel>> OpenChannelAsync(CancellationToken ct)
     {
@@ -81,7 +85,7 @@ internal abstract class BaseRabbitMqPublisher(
 
             var properties = new BasicProperties
             {
-                AppId = ApplicationId,
+                AppId = IngestorTelemetry.ServiceName,
                 ContentType = "application/json",
                 DeliveryMode = DeliveryModes.Persistent,
                 MessageId = message.MessageId.ToString(),
@@ -90,12 +94,19 @@ internal abstract class BaseRabbitMqPublisher(
                 Timestamp = new AmqpTimestamp(timeProvider.GetUtcNow().ToUnixTimeSeconds())
             };
 
-            using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(Settings.PublishTimeoutInSeconds), timeProvider);
+            using var timeoutCts = new CancellationTokenSource(
+                TimeSpan.FromSeconds(Settings.PublishTimeoutInSeconds),
+                timeProvider);
+
             using var publishCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-            await channel.BasicPublishAsync(message.Exchange, message.RoutingKey, mandatory: true, properties, body, publishCts.Token);
-
-            return Result.Succeed();
+            await channel.BasicPublishAsync(
+                message.Exchange,
+                message.RoutingKey,
+                mandatory: true,
+                properties,
+                body,
+                publishCts.Token);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -103,13 +114,28 @@ internal abstract class BaseRabbitMqPublisher(
         }
         catch (OperationCanceledException)
         {
-            Logger.PublishTimedOut(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, Settings.PublishTimeoutInSeconds);
+            Logger.PublishTimedOut(
+                message.MessageType,
+                message.MessageId,
+                message.Exchange,
+                message.RoutingKey,
+                Settings.PublishTimeoutInSeconds);
+
+            Metrics.RecordPublish(message.MessageType, PublishOutcome.TimedOut);
 
             return Result.Fail("Message was not confirmed by RabbitMQ in time");
         }
         catch (PublishReturnException ex)
         {
-            Logger.MessageReturned(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, ex.ReplyCode, ex.ReplyText);
+            Logger.MessageReturned(
+                message.MessageType,
+                message.MessageId,
+                message.Exchange,
+                message.RoutingKey,
+                ex.ReplyCode,
+                ex.ReplyText);
+
+            Metrics.RecordPublish(message.MessageType, PublishOutcome.Returned);
 
             return Result.Fail("Message was returned by RabbitMQ as unroutable");
         }
@@ -117,14 +143,22 @@ internal abstract class BaseRabbitMqPublisher(
         {
             Logger.MessageNacked(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, ex);
 
+            Metrics.RecordPublish(message.MessageType, PublishOutcome.Nacked);
+
             return Result.Fail("Message was rejected by RabbitMQ");
         }
         catch (Exception ex)
         {
             Logger.FailedToPublish(message.MessageType, message.MessageId, message.Exchange, message.RoutingKey, ex);
 
+            Metrics.RecordPublish(message.MessageType, PublishOutcome.Failed);
+
             return Result.Fail("Failed to publish message to RabbitMQ");
         }
+
+        Metrics.RecordPublish(message.MessageType, PublishOutcome.Confirmed);
+
+        return Result.Succeed();
     }
 }
 

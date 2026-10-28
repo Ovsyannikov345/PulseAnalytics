@@ -1,6 +1,9 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Correlation;
 using DataIngestor.Application.ExternalMeters;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
+using DataIngestor.Application.Telemetry.Traces;
 using DataIngestor.Background.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -13,6 +16,8 @@ internal sealed class MeterPollingWorker(
     IServiceScopeFactory scopeFactory,
     IOptions<MeterPollingWorkerSettings> options,
     TimeProvider timeProvider,
+    IMetricsService metrics,
+    ITracingService tracing,
     ILogger<MeterPollingWorker> logger)
     : BackgroundService
 {
@@ -46,39 +51,58 @@ internal sealed class MeterPollingWorker(
         {
             do
             {
-                try
-                {
-                    CorrelationContext.CorrelationId = Guid.CreateVersion7(timeProvider.GetUtcNow());
-
-                    await using var serviceScope = scopeFactory.CreateAsyncScope();
-
-                    var result = await DoWorkAsync(serviceScope, stoppingToken);
-
-                    if (result.IsFailure)
-                    {
-                        logger.JobFailed(result.ErrorMessage);
-                    }
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    logger.JobFailed(ex);
-                }
-                finally
-                {
-                    CorrelationContext.Reset();
-                }
+                await PollAsync(stoppingToken);
             }
             while (await timer.WaitForNextTickAsync(stoppingToken));
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
         {
             logger.JobShuttingDown();
 
             throw;
+        }
+    }
+
+    private async Task PollAsync(CancellationToken stoppingToken)
+    {
+        CorrelationContext.CorrelationId = Guid.CreateVersion7(timeProvider.GetUtcNow());
+
+        using var activity = tracing.StartPoll(CorrelationContext.CorrelationId);
+
+        var startedAt = timeProvider.GetTimestamp();
+
+        try
+        {
+            await using var serviceScope = scopeFactory.CreateAsyncScope();
+
+            var result = await DoWorkAsync(serviceScope, stoppingToken);
+
+            if (result.IsFailure)
+            {
+                logger.JobFailed(result.ErrorMessage);
+
+                activity.MarkFailed(result.ErrorMessage);
+            }
+
+            metrics.RecordPoll(
+                timeProvider.GetElapsedTime(startedAt),
+                result.IsSuccess ? PollOutcome.Succeeded : PollOutcome.Failed);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.JobFailed(ex);
+
+            activity.MarkFailed(ex);
+
+            metrics.RecordPoll(timeProvider.GetElapsedTime(startedAt), PollOutcome.Failed);
+        }
+        finally
+        {
+            CorrelationContext.Reset();
         }
     }
 
