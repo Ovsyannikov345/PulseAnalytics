@@ -260,7 +260,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Readings received per minute by meter type",
+      "title": "Readings received per minute by reading type",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
