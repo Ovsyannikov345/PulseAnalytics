@@ -15,5 +15,12 @@ public static class IngestorTelemetry
         public const string MessageType = "app.message.type";
 
         public const string CorrelationId = "app.correlation_id";
+
+        public const string ErrorType = "error.type";
+    }
+
+    public static class SpanNames
+    {
+        public const string Polling = "poll meters";
     }
 }

@@ -1,6 +1,8 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Interfaces.Clients;
 using DataIngestor.Application.Interfaces.Messaging;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace DataIngestor.Application.ExternalMeters;
@@ -13,6 +15,7 @@ public interface IExternalMetersService
 internal sealed class ExternalMetersService(
     IExternalMetersClient metersClient,
     IMeterReadingsPublisher readingsPublisher,
+    IMetricsService metrics,
     ILogger<ExternalMetersService> logger)
     : IExternalMetersService
 {
@@ -22,6 +25,8 @@ internal sealed class ExternalMetersService(
 
         if (!extractionResult.TryGetSuccessValue(out var readings))
         {
+            metrics.RecordFetch(FetchOutcome.Failed);
+
             logger.FailedToExtractReadings(extractionResult.ErrorMessage);
 
             return extractionResult;
@@ -29,10 +34,15 @@ internal sealed class ExternalMetersService(
 
         if (readings.Count == 0)
         {
+            metrics.RecordFetch(FetchOutcome.Empty);
+
             logger.NoReadingsToPublish();
 
             return Result.Succeed();
         }
+
+        metrics.RecordFetch(FetchOutcome.Succeeded);
+        metrics.RecordReadingsReceived(readings);
 
         var publishingResult = await readingsPublisher.PublishAsync(readings, ct);
 
