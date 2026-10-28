@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Correlation;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
 using DataIngestor.Contracts.Events;
 using DataIngestor.Domain.Entities;
 using DataIngestor.Infrastructure.RabbitMq.Configuration;
@@ -32,6 +34,7 @@ public sealed class MeterReadingsPublisherTests
     private readonly IConnection _connection = A.Fake<IConnection>();
     private readonly IChannel _channel = A.Fake<IChannel>();
     private readonly FakeTimeProvider _timeProvider = new(Now);
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
     private readonly FakeLogger<MeterReadingsPublisher> _logger = new();
     private readonly MeterReadingsPublisher _sut;
 
@@ -54,7 +57,7 @@ public sealed class MeterReadingsPublisherTests
             PublishTimeoutInSeconds = PublishTimeoutInSeconds
         };
 
-        _sut = new MeterReadingsPublisher(_connectionProvider, Options.Create(settings), _timeProvider, _logger);
+        _sut = new MeterReadingsPublisher(_connectionProvider, Options.Create(settings), _timeProvider, _metrics, _logger);
     }
 
     [Fact]
@@ -454,9 +457,140 @@ public sealed class MeterReadingsPublisherTests
         _logger.Collector.GetSnapshot().ShouldNotContain(entry => entry.Level >= LogLevel.Warning);
     }
 
+    [Fact]
+    public async Task PublishAsync_AllReadingsPublished_RecordsConfirmedPublishPerMessage()
+    {
+        // Act
+        await _sut.PublishAsync(
+            [MeterReadings.Motion(), MeterReadings.Energy(), MeterReadings.AirQuality()],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe(
+        [
+            ("MotionReadingReceived", PublishOutcome.Confirmed),
+            ("EnergyReadingReceived", PublishOutcome.Confirmed),
+            ("AirQualityReadingReceived", PublishOutcome.Confirmed)
+        ]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_MessageReturnedAsUnroutable_RecordsReturnedPublish()
+    {
+        // Arrange
+        _channel.CallsToBasicPublishAsync()
+            .ThrowsAsync(new PublishReturnException(1, "Message returned", ExchangeName, "meter-reading.motion.received", 312, "NO_ROUTE"));
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.Motion()], TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe([("MotionReadingReceived", PublishOutcome.Returned)]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_MessageNackedByBroker_RecordsNackedPublish()
+    {
+        // Arrange
+        _channel.CallsToBasicPublishAsync().ThrowsAsync(new PublishException(1, isReturn: false));
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.Energy()], TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe([("EnergyReadingReceived", PublishOutcome.Nacked)]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_PublishThrowsUnexpectedException_RecordsFailedPublish()
+    {
+        // Arrange
+        _channel.CallsToBasicPublishAsync().ThrowsAsync(new InvalidOperationException("Channel is broken"));
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.AirQuality()], TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe([("AirQualityReadingReceived", PublishOutcome.Failed)]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_ConfirmNotReceivedWithinTimeout_RecordsTimedOutPublish()
+    {
+        // Arrange
+        _channel.HangsUntilPublishIsCancelled();
+
+        // Act
+        var publishTask = _sut.PublishAsync([MeterReadings.Motion()], TestContext.Current.CancellationToken);
+        await TestWait.UntilAsync(() => _channel.PublishedMessages().Count == 1, TestContext.Current.CancellationToken);
+        _timeProvider.Advance(TimeSpan.FromSeconds(PublishTimeoutInSeconds));
+        await publishTask;
+
+        // Assert
+        RecordedPublishes().ShouldBe([("MotionReadingReceived", PublishOutcome.TimedOut)]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_ChannelClosesAfterFailedPublish_RecordsRemainingReadingsAsSkipped()
+    {
+        // Arrange
+        _channel.CallsToBasicPublishAsync().ThrowsAsync(new AlreadyClosedException(CreateShutdownArgs()));
+        A.CallTo(() => _channel.IsClosed).ReturnsNextFromSequence(false, true);
+
+        // Act
+        await _sut.PublishAsync(
+            [MeterReadings.Motion(), MeterReadings.Energy(), MeterReadings.AirQuality()],
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe(
+        [
+            ("MotionReadingReceived", PublishOutcome.Failed),
+            ("EnergyReadingReceived", PublishOutcome.Skipped),
+            ("AirQualityReadingReceived", PublishOutcome.Skipped)
+        ]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_ConnectionUnavailable_RecordsEveryReadingAsSkipped()
+    {
+        // Arrange
+        A.CallTo(() => _connectionProvider.GetConnectionAsync(A<CancellationToken>._))
+            .Returns(Result<IConnection>.Fail("Failed to connect to RabbitMQ"));
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.Motion(), MeterReadings.Energy()], TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe([("MotionReadingReceived", PublishOutcome.Skipped), ("EnergyReadingReceived", PublishOutcome.Skipped)]);
+    }
+
+    [Fact]
+    public async Task PublishAsync_ExchangeCannotBeDeclared_RecordsEveryReadingAsSkipped()
+    {
+        // Arrange
+        _channel.CallsToExchangeDeclareAsync().ThrowsAsync(new InvalidOperationException("PRECONDITION_FAILED"));
+
+        // Act
+        await _sut.PublishAsync([MeterReadings.Motion(), MeterReadings.Energy()], TestContext.Current.CancellationToken);
+
+        // Assert
+        RecordedPublishes().ShouldBe([("MotionReadingReceived", PublishOutcome.Skipped), ("EnergyReadingReceived", PublishOutcome.Skipped)]);
+    }
+
     private static ShutdownEventArgs CreateShutdownArgs()
     {
         return new ShutdownEventArgs(ShutdownInitiator.Peer, 320, "CONNECTION_FORCED");
+    }
+
+    private List<(string MessageType, PublishOutcome Outcome)> RecordedPublishes()
+    {
+        return
+        [
+            .. Fake.GetCalls(_metrics)
+                .Where(call => call.Method.Name == nameof(IMetricsService.RecordPublish))
+                .Select(call => (call.GetArgument<string>(0)!, call.GetArgument<PublishOutcome>(1)))
+        ];
     }
 
     private string SinglePublishedMessageId()

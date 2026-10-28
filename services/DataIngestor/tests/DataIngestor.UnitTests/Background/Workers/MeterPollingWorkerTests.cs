@@ -1,7 +1,11 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Application.Correlation;
 using DataIngestor.Application.ExternalMeters;
+using DataIngestor.Application.Telemetry.Metrics;
+using DataIngestor.Application.Telemetry.Metrics.Enums;
+using DataIngestor.Application.Telemetry.Traces;
 using DataIngestor.Background.Configuration;
 using DataIngestor.Background.Workers;
 using DataIngestor.UnitTests.TestDoubles;
@@ -34,6 +38,9 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     private readonly TimerTrackingFakeTimeProvider _timeProvider = new();
     private readonly ConcurrentQueue<(string Record, Guid CorrelationId)> _correlatedLogRecords = new();
     private readonly FakeLogger<MeterPollingWorker> _logger;
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
+    private readonly ITracingService _tracing = A.Fake<ITracingService>();
+    private readonly RecordingActivitySource _pollActivities = new();
     private MeterPollingWorker? _sut;
 
     public MeterPollingWorkerTests()
@@ -44,15 +51,17 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
             OutputSink = record => _correlatedLogRecords.Enqueue((record, CorrelationContext.CorrelationId))
         }));
 
-
         A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
             .Returns(Result.Succeed());
 
         A.CallTo(() => _scopeFactory.CreateScope())
             .ReturnsLazily(CreateScope);
+
+        A.CallTo(() => _tracing.StartPoll(A<Guid>._))
+            .ReturnsLazily(() => _pollActivities.Start());
     }
 
-    public enum PollOutcome
+    public enum PollBehavior
     {
         Succeeds,
         ReturnsFailure,
@@ -69,6 +78,8 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
 
             _sut.Dispose();
         }
+
+        _pollActivities.Dispose();
     }
 
     [Fact]
@@ -206,17 +217,17 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     }
 
     [Theory]
-    [InlineData(PollOutcome.Succeeds)]
-    [InlineData(PollOutcome.ReturnsFailure)]
-    [InlineData(PollOutcome.Throws)]
-    public async Task ExecuteAsync_AnyPollOutcome_UsesNewServiceScopePerPollAndDisposesIt(PollOutcome outcome)
+    [InlineData(PollBehavior.Succeeds)]
+    [InlineData(PollBehavior.ReturnsFailure)]
+    [InlineData(PollBehavior.Throws)]
+    public async Task ExecuteAsync_AnyPollOutcome_UsesNewServiceScopePerPollAndDisposesIt(PollBehavior behavior)
     {
         // Arrange
         A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
-            .ReturnsLazily(() => outcome switch
+            .ReturnsLazily(() => behavior switch
             {
-                PollOutcome.Succeeds => Task.FromResult(Result.Succeed()),
-                PollOutcome.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
+                PollBehavior.Succeeds => Task.FromResult(Result.Succeed()),
+                PollBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
                 _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
             });
         var sut = CreateSut();
@@ -265,9 +276,9 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     }
 
     [Theory]
-    [InlineData(PollOutcome.ReturnsFailure)]
-    [InlineData(PollOutcome.Throws)]
-    public async Task ExecuteAsync_PollFails_LogsFailureUnderPollCorrelationId(PollOutcome outcome)
+    [InlineData(PollBehavior.ReturnsFailure)]
+    [InlineData(PollBehavior.Throws)]
+    public async Task ExecuteAsync_PollFails_LogsFailureUnderPollCorrelationId(PollBehavior behavior)
     {
         // Arrange
         var pollCorrelationId = Guid.Empty;
@@ -276,7 +287,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
             {
                 pollCorrelationId = CorrelationContext.CorrelationId;
 
-                return outcome == PollOutcome.ReturnsFailure
+                return behavior == PollBehavior.ReturnsFailure
                     ? Task.FromResult(Result.Fail("Weak App API responded with failure"))
                     : Task.FromException<Result>(new InvalidOperationException("Unexpected failure"));
             });
@@ -401,6 +412,123 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         A.CallTo(() => scope.Dispose()).MustHaveHappenedOnceExactly();
     }
 
+    [Theory]
+    [InlineData(PollBehavior.Succeeds, PollOutcome.Succeeded)]
+    [InlineData(PollBehavior.ReturnsFailure, PollOutcome.Failed)]
+    [InlineData(PollBehavior.Throws, PollOutcome.Failed)]
+    public async Task ExecuteAsync_PollCompletes_RecordsPollDurationWithOutcome(PollBehavior behavior, PollOutcome expectedOutcome)
+    {
+        // Arrange
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(() =>
+            {
+                _timeProvider.Advance(TimeSpan.FromSeconds(3));
+
+                return behavior switch
+                {
+                    PollBehavior.Succeeds => Task.FromResult(Result.Succeed()),
+                    PollBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
+                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+                };
+            });
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordPoll(A<TimeSpan>._, A<PollOutcome>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordPoll(TimeSpan.FromSeconds(3), expectedOutcome)).MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StoppedWhilePollIsInProgress_DoesNotRecordPollDuration()
+    {
+        // Arrange
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(async (CancellationToken token) =>
+            {
+                await Task.Delay(Timeout.Infinite, token);
+
+                return Result.Succeed();
+            });
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordPoll(A<TimeSpan>._, A<PollOutcome>._)).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_EachPoll_RunsPollInsideItsOwnSpanStartedForPollCorrelationId()
+    {
+        // Arrange
+        var pollCorrelationIds = new ConcurrentQueue<Guid>();
+        var currentActivities = new ConcurrentQueue<Activity?>();
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .Invokes(() =>
+            {
+                pollCorrelationIds.Enqueue(CorrelationContext.CorrelationId);
+                currentActivities.Enqueue(Activity.Current);
+            })
+            .Returns(Result.Succeed());
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        _timeProvider.Advance(PollingPeriod);
+        await WaitForPollsAsync(2);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        Fake.GetCalls(_tracing)
+            .Select(call => call.GetArgument<Guid>("correlationId"))
+            .ShouldBe(pollCorrelationIds);
+        _pollActivities.StoppedActivities.Count.ShouldBe(2);
+        _pollActivities.StoppedActivities.ShouldAllBe(activity => activity.Status == ActivityStatusCode.Unset);
+        currentActivities.ShouldBe(_pollActivities.StoppedActivities.Cast<Activity?>());
+    }
+
+    [Theory]
+    [InlineData(PollBehavior.ReturnsFailure)]
+    [InlineData(PollBehavior.Throws)]
+    public async Task ExecuteAsync_PollFails_MarksPollActivityAsError(PollBehavior behavior)
+    {
+        // Arrange
+        var exception = new InvalidOperationException("Unexpected failure");
+        A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
+            .ReturnsLazily(() => behavior == PollBehavior.ReturnsFailure
+                ? Task.FromResult(Result.Fail("Weak App API responded with failure"))
+                : Task.FromException<Result>(exception));
+        var sut = CreateSut();
+
+        // Act
+        await sut.StartAsync(TestContext.Current.CancellationToken);
+        await WaitForPollsAsync(1);
+        await sut.StopAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        var activity = _pollActivities.StoppedActivities.ShouldHaveSingleItem();
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        if (behavior == PollBehavior.ReturnsFailure)
+        {
+            activity.StatusDescription.ShouldBe("Weak App API responded with failure");
+        }
+        else
+        {
+            activity.StatusDescription.ShouldBe(exception.Message);
+            activity.Events.ShouldContain(activityEvent => activityEvent.Name == "exception");
+            activity.GetTagItem("error.type").ShouldBe(typeof(InvalidOperationException).FullName);
+        }
+    }
+
     [Fact]
     public async Task ExecuteAsync_StartupDelayNotYetElapsed_DoesNotPoll()
     {
@@ -487,6 +615,8 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
             _scopeFactory,
             Options.Create(settings),
             _timeProvider,
+            _metrics,
+            _tracing,
             _logger);
 
         return _sut;

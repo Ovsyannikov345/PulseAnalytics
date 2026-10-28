@@ -138,6 +138,40 @@ public sealed class MeterReadingMessageMapperTests
         act.ShouldThrow<UnreachableException>();
     }
 
+    [Theory]
+    [InlineData("motion")]
+    [InlineData("energy")]
+    [InlineData("air_quality")]
+    public void GetMessageType_AnyReading_MatchesOutgoingMessageType(string readingKind)
+    {
+        // Arrange
+        var reading = readingKind switch
+        {
+            "motion" => MeterReadings.Motion(),
+            "energy" => MeterReadings.Energy(),
+            _ => MeterReadings.AirQuality()
+        };
+
+        // Act
+        var messageType = MeterReadingMessageMapper.GetMessageType(reading);
+
+        // Assert
+        messageType.ShouldBe(MeterReadingMessageMapper.ToOutgoingMessage(reading).MessageType);
+    }
+
+    [Fact]
+    public void GetMessageType_UnmappedPayloadType_ThrowsUnreachableException()
+    {
+        // Arrange
+        var reading = MeterReadings.Motion() with { Payload = new UnmappedPayload() };
+
+        // Act
+        var act = () => MeterReadingMessageMapper.GetMessageType(reading);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
+    }
+
     private static void AssertMessageType(MeterReading reading, string eventName)
     {
         // Act
