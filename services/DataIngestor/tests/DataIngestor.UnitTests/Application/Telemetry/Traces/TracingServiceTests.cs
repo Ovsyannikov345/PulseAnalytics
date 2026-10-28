@@ -72,6 +72,6 @@ public sealed class TracingServiceTests : IDisposable
 
     private IEnumerable<Activity> StartedActivitiesFor(Guid correlationId)
     {
-        return _startedActivities.Where(activity => Equals(activity.GetTagItem("pulse.correlation_id"), correlationId.ToString()));
+        return _startedActivities.Where(activity => Equals(activity.GetTagItem("app.correlation_id"), correlationId.ToString()));
     }
 }
