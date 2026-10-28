@@ -5,7 +5,7 @@ using DataIngestor.Application.Telemetry.Traces;
 using Shouldly;
 using Xunit;
 
-namespace DataIngestor.UnitTests.Application.Telemetry;
+namespace DataIngestor.UnitTests.Application.Telemetry.Traces;
 
 // The listener is process-wide, so tests only look at activities tagged with their own correlation ID.
 public sealed class TracingServiceTests : IDisposable
@@ -43,9 +43,9 @@ public sealed class TracingServiceTests : IDisposable
         // Assert
         activity.ShouldNotBeNull();
         activity.Source.Name.ShouldBe(IngestorTelemetry.ScopeName);
-        activity.OperationName.ShouldBe(TracingService.PollSpanName);
+        activity.OperationName.ShouldBe(IngestorTelemetry.SpanNames.Polling);
         activity.Kind.ShouldBe(ActivityKind.Internal);
-        activity.GetTagItem("pulse.correlation_id").ShouldBe(correlationId.ToString());
+        activity.GetTagItem("app.correlation_id").ShouldBe(correlationId.ToString());
         StartedActivitiesFor(correlationId).ShouldHaveSingleItem().ShouldBeSameAs(activity);
     }
 

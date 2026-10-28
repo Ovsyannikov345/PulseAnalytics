@@ -4,7 +4,7 @@ using DataIngestor.UnitTests.TestDoubles;
 using Shouldly;
 using Xunit;
 
-namespace DataIngestor.UnitTests.Application.Telemetry;
+namespace DataIngestor.UnitTests.Application.Telemetry.Traces;
 
 public sealed class ActivityExtensionsTests : IDisposable
 {

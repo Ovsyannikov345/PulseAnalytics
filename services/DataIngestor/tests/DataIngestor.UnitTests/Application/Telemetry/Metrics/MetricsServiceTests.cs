@@ -8,7 +8,7 @@ using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Shouldly;
 using Xunit;
 
-namespace DataIngestor.UnitTests.Application.Telemetry;
+namespace DataIngestor.UnitTests.Application.Telemetry.Metrics;
 
 // Each test class instance gets its own meter factory, so collectors only see what the current test records.
 public sealed class MetricsServiceTests : IDisposable
@@ -45,7 +45,7 @@ public sealed class MetricsServiceTests : IDisposable
         collector.Instrument.ShouldNotBeNull().Unit.ShouldBe("s");
         var measurement = collector.GetMeasurementSnapshot().ShouldHaveSingleItem();
         measurement.Value.ShouldBe(1.5);
-        measurement.Tags["outcome"].ShouldBe(expectedOutcome);
+        measurement.Tags["app.outcome"].ShouldBe(expectedOutcome);
     }
 
     [Theory]
@@ -63,7 +63,7 @@ public sealed class MetricsServiceTests : IDisposable
         // Assert
         var measurement = collector.GetMeasurementSnapshot().ShouldHaveSingleItem();
         measurement.Value.ShouldBe(1);
-        measurement.Tags["outcome"].ShouldBe(expectedOutcome);
+        measurement.Tags["app.outcome"].ShouldBe(expectedOutcome);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class MetricsServiceTests : IDisposable
 
         // Assert
         var countsByType = collector.GetMeasurementSnapshot()
-            .ToDictionary(measurement => (string)measurement.Tags["pulse.reading.type"]!, measurement => measurement.Value);
+            .ToDictionary(measurement => (string)measurement.Tags["app.reading.type"]!, measurement => measurement.Value);
         countsByType.ShouldBe(new Dictionary<string, long>
         {
             ["motion"] = 2,
@@ -123,8 +123,8 @@ public sealed class MetricsServiceTests : IDisposable
         // Assert
         var measurement = collector.GetMeasurementSnapshot().ShouldHaveSingleItem();
         measurement.Value.ShouldBe(1);
-        measurement.Tags["pulse.message.type"].ShouldBe("MotionReadingReceived");
-        measurement.Tags["outcome"].ShouldBe(expectedOutcome);
+        measurement.Tags["app.message.type"].ShouldBe("MotionReadingReceived");
+        measurement.Tags["app.outcome"].ShouldBe(expectedOutcome);
     }
 
     private MetricCollector<T> Collect<T>(string instrumentName)
