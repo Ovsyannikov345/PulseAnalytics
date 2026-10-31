@@ -59,7 +59,7 @@ internal class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvi
             info.CorrelationId,
             info.Type,
             info.Timestamp,
-            message.Body.ToString());
+            Encoding.UTF8.GetString(message.Body.Span));
 
         return Task.FromResult(Result.Succeed());
     }

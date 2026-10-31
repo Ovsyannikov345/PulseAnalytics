@@ -1,6 +1,7 @@
 ﻿using System.Data.Common;
 using System.Threading.Channels;
 using Ausiannikau.Utilities.Results;
+using DataProcessor.Application.Correlation;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.Hosting;
@@ -25,13 +26,17 @@ internal abstract class BaseRabbitMqConsumer(
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        await base.StopAsync(cancellationToken);
+
         if (_channel is not null)
         {
-            await _channel.CloseAsync(cancellationToken);
-            _channel.Dispose();
+            try
+            {
+                await _channel.CloseAsync(cancellationToken);
+                _channel.Dispose();
+            }
+            catch { }
         }
-
-        await base.StopAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -149,6 +154,17 @@ internal abstract class BaseRabbitMqConsumer(
         BasicDeliverEventArgs message,
         CancellationToken serviceStoppingToken)
     {
+        if (message.BasicProperties.CorrelationId is { Length: > 0 } correlationString
+            && Guid.TryParse(correlationString, out var correlationId))
+        {
+            CorrelationContext.CorrelationId = correlationId;
+        }
+        else
+        {
+            CorrelationContext.CorrelationId = Guid.NewGuid();
+            Logger.FailedToRestoreCorrelationId(message.BasicProperties.CorrelationId);
+        }
+
         ArgumentNullException.ThrowIfNull(_channel);
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(serviceStoppingToken, message.CancellationToken);
@@ -237,4 +253,9 @@ internal static partial class BaseRabbitMqPublisherLogs
 
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq message is nacked. Requeued: {IsRequeued}")]
     public static partial void MessageNacked(this ILogger logger, bool isRequeued);
+
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Failed to restore correlation ID from message. Received correlation ID: {ReceivedId}")]
+    public static partial void FailedToRestoreCorrelationId(this ILogger logger, string? receivedId);
 }
