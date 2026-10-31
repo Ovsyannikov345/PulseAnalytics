@@ -42,7 +42,7 @@ internal class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvi
         return Result.Succeed();
     }
 
-    protected override Task<Result> ProcessMessageAsync(BasicDeliverEventArgs message)
+    protected override Task ProcessMessageAsync(BasicDeliverEventArgs message)
     {
         var info = message.BasicProperties;
 
