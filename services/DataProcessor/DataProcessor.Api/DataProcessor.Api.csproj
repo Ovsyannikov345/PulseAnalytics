@@ -4,6 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>181b13dc-17d6-432c-aec8-635cc48858bf</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataProcessor.Application\DataProcessor.Application.csproj" />
+    <ProjectReference Include="..\DataProcessor.Infrastructure\DataProcessor.Infrastructure.csproj" />
+  </ItemGroup>
 
 </Project>
