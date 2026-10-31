@@ -14,4 +14,9 @@
 		<ProjectReference Include="..\DataProcessor.Application\DataProcessor.Application.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="DataProcessor.UnitTests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+	</ItemGroup>
+
 </Project>
