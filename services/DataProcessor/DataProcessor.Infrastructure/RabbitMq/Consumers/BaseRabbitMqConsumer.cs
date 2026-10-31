@@ -170,20 +170,23 @@ internal abstract class BaseRabbitMqConsumer(
 
             if (processingResult.IsFailure)
             {
-                Logger.MessageProcessingFailed(processingResult.ErrorMessage);
+                Logger.MessageProcessingFailed(
+                    message.BasicProperties.MessageId,
+                    message.BasicProperties.Type,
+                    processingResult.ErrorMessage);
 
                 await _channel.BasicNackAsync(message.DeliveryTag, multiple: false, requeue: false, CancellationToken.None);
 
-                Logger.MessageNacked(isRequeued: false);
+                Logger.MessageNacked(message.BasicProperties.MessageId, message.BasicProperties.Type, isRequeued: false);
 
                 return;
             }
 
-            Logger.MessageProcessed();
+            Logger.MessageProcessed(message.BasicProperties.MessageId, message.BasicProperties.Type);
 
             await _channel.BasicAckAsync(message.DeliveryTag, multiple: false, CancellationToken.None);
 
-            Logger.MessageAcked();
+            Logger.MessageAcked(message.BasicProperties.MessageId, message.BasicProperties.Type);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -191,19 +194,19 @@ internal abstract class BaseRabbitMqConsumer(
                 ? "Consumer shutting down"
                 : "Message processing cancelled";
 
-            Logger.MessageProcessingFailed(reason);
+            Logger.MessageProcessingFailed(message.BasicProperties.MessageId, message.BasicProperties.Type, reason);
 
             await _channel.BasicNackAsync(message.DeliveryTag, multiple: false, requeue: true, CancellationToken.None);
 
-            Logger.MessageNacked(isRequeued: true);
+            Logger.MessageNacked(message.BasicProperties.MessageId, message.BasicProperties.Type, isRequeued: true);
         }
         catch (Exception ex)
         {
-            Logger.MessageProcessingFailed(ex);
+            Logger.MessageProcessingFailed(message.BasicProperties.MessageId, message.BasicProperties.Type, ex);
 
             await _channel.BasicNackAsync(message.DeliveryTag, multiple: false, requeue: false, CancellationToken.None);
 
-            Logger.MessageNacked(isRequeued: false);
+            Logger.MessageNacked(message.BasicProperties.MessageId, message.BasicProperties.Type, isRequeued: false);
         }
     }
 
@@ -214,15 +217,20 @@ internal abstract class BaseRabbitMqConsumer(
             try
             {
                 await _channel.CloseAsync(ct);
-                await _channel.DisposeAsync();
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to dispose the connection");
+                Logger.FailedToCloseChannel(ex);
             }
+            finally
+            {
+                await _channel.DisposeAsync();
+            }
+
+            _channel = null;
         }
     }
 }
@@ -249,22 +257,25 @@ internal static partial class BaseRabbitMqConsumerLogs
     public static partial void ShuttingDown(this ILogger logger);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is processed")]
-    public static partial void MessageProcessed(this ILogger logger, string messageId, string messageType);
+    public static partial void MessageProcessed(this ILogger logger, string? messageId, string? messageType);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is acked")]
-    public static partial void MessageAcked(this ILogger logger, string messageId, string messageType);
+    public static partial void MessageAcked(this ILogger logger, string? messageId, string? messageType);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message {MessageId} ({MessageType}) processing failed. {Reason}")]
-    public static partial void MessageProcessingFailed(this ILogger logger, string messageId, string messageType, string reason);
+    public static partial void MessageProcessingFailed(this ILogger logger, string? messageId, string? messageType, string reason);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message {MessageId} ({MessageType}) processing failed")]
-    public static partial void MessageProcessingFailed(this ILogger logger, string messageId, string messageType, Exception exception);
+    public static partial void MessageProcessingFailed(this ILogger logger, string? messageId, string? messageType, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is nacked. Requeued: {IsRequeued}")]
-    public static partial void MessageNacked(this ILogger logger, bool isRequeued, string messageId, string messageType);
+    public static partial void MessageNacked(this ILogger logger, string? messageId, string? messageType, bool isRequeued);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
         Message = "Failed to restore correlation ID from RabbitMQ message. Received correlation ID: {ReceivedId}")]
     public static partial void FailedToRestoreCorrelationId(this ILogger logger, string? receivedId);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to close the channel")]
+    public static partial void FailedToCloseChannel(this ILogger logger, Exception exception);
 }

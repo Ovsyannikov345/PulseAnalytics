@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <UserSecretsId>181b13dc-17d6-432c-aec8-635cc48858bf</UserSecretsId>
-  </PropertyGroup>
+	<PropertyGroup>
+		<UserSecretsId>181b13dc-17d6-432c-aec8-635cc48858bf</UserSecretsId>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DataProcessor.Application\DataProcessor.Application.csproj" />
-    <ProjectReference Include="..\DataProcessor.Infrastructure\DataProcessor.Infrastructure.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DataProcessor.Application\DataProcessor.Application.csproj" />
+		<ProjectReference Include="..\DataProcessor.Infrastructure\DataProcessor.Infrastructure.csproj" />
+	</ItemGroup>
 
 </Project>
