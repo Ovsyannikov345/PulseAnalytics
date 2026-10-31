@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DataProcessor.UnitTests/DataProcessor.UnitTests.csproj" />
+  </Folder>
+  <Project Path="DataProcessor.Api/DataProcessor.Api.csproj" />
+  <Project Path="DataProcessor.Application/DataProcessor.Application.csproj" />
+  <Project Path="DataProcessor.Domain/DataProcessor.Domain.csproj" />
+  <Project Path="DataProcessor.Infrastructure/DataProcessor.Infrastructure.csproj" />
+</Solution>

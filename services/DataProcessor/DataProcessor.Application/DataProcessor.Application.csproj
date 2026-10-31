@@ -1,0 +1,7 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\DataProcessor.Domain\DataProcessor.Domain.csproj" />
+	</ItemGroup>
+
+</Project>

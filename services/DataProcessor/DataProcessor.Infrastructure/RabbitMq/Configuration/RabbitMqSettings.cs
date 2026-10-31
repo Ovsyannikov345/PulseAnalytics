@@ -1,0 +1,26 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace DataProcessor.Infrastructure.RabbitMq.Configuration;
+
+internal sealed record RabbitMqSettings
+{
+    public const string SectionName = "RabbitMq";
+
+    [Required(AllowEmptyStrings = false)]
+    public required string Host { get; init; }
+
+    [Range(1, 65535)]
+    public int Port { get; init; }
+
+    [Required(AllowEmptyStrings = false)]
+    public required string VirtualHost { get; init; }
+
+    [Required(AllowEmptyStrings = false)]
+    public required string UserName { get; init; }
+
+    [Required(AllowEmptyStrings = false)]
+    public required string Password { get; init; }
+
+    [Required(AllowEmptyStrings = false)]
+    public required string ClientProvidedName { get; init; }
+}
