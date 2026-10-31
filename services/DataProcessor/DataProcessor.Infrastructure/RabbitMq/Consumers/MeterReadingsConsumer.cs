@@ -7,10 +7,10 @@ using RabbitMQ.Client;
 
 namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
-internal sealed class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger<MeterReadingsConsumer> logger)
+internal abstract class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger logger)
     : BaseRabbitMqConsumer(connectionProvider, logger)
 {
-    protected override string QueueName => RabbitMqTopology.QueueNames.MeterReadingsProcessing;
+    protected abstract string RoutingKey { get; }
 
     protected override async Task<Result> SetupQueueAsync(IChannel channel, CancellationToken ct)
     {
@@ -26,7 +26,7 @@ internal sealed class MeterReadingsConsumer(IRabbitMqConnectionProvider connecti
         await channel.QueueBindAsync(
             queue: QueueName,
             exchange: RabbitMqTopology.Exchanges.MeterReadingsExchange.Name,
-            routingKey: RabbitMqTopology.Exchanges.MeterReadingsExchange.RoutingKeys.AnyReadingReceived,
+            routingKey: RoutingKey,
             cancellationToken: ct);
 
         await channel.BasicQosAsync(
@@ -36,25 +36,5 @@ internal sealed class MeterReadingsConsumer(IRabbitMqConnectionProvider connecti
             cancellationToken: ct);
 
         return Result.Succeed();
-    }
-
-    protected override Task<Result> ProcessMessageAsync(ReceivedMessage message, CancellationToken ct)
-    {
-        var info = message.BasicProperties;
-
-        // TODO replace with real handling
-        Logger.LogInformation(
-            "Processed a new reading. App ID: {AppId}. Content type: {ContentType}. Delivery mode: {Mode}. " +
-            "Message ID: {Id}. Correlation ID: {CorrelationId}. Type: {Type}. Timestamp: {Timestamp}. Body: {Body}",
-            info.AppId,
-            info.ContentType,
-            info.DeliveryMode,
-            info.MessageId,
-            info.CorrelationId,
-            info.Type,
-            info.Timestamp,
-            Encoding.UTF8.GetString(message.Body.Span));
-
-        return Task.FromResult(Result.Succeed());
     }
 }

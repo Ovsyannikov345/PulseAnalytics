@@ -37,7 +37,9 @@ public static class DependencyInjection
 
         services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
 
-        services.AddHostedService<MeterReadingsConsumer>();
+        services.AddHostedService<MotionReadingsConsumer>();
+        services.AddHostedService<EnergyReadingsConsumer>();
+        services.AddHostedService<AirQualityReadingsConsumer>();
 
         return services;
     }

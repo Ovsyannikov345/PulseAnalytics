@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace DataProcessor.Infrastructure.RabbitMq.Topology;
+﻿namespace DataProcessor.Infrastructure.RabbitMq.Topology;
 
 internal static class RabbitMqTopology
 {
@@ -14,13 +10,21 @@ internal static class RabbitMqTopology
 
             public static class RoutingKeys
             {
-                public const string AnyReadingReceived = "meter-reading.*.received";
+                public const string MotionReadingReceived = "meter-reading.motion.received";
+
+                public const string EnergyReadingReceived = "meter-reading.energy.received";
+
+                public const string AirQualityReadingReceived = "meter-reading.air-quality.received";
             }
         }
     }
 
     public static class QueueNames
     {
-        public const string MeterReadingsProcessing = "pulse.meter-readings.process";
+        public const string MotionReadingsProcessing = "pulse.meter-readings.motion.process";
+
+        public const string EnergyReadingsProcessing = "pulse.meter-readings.energy.process";
+
+        public const string AirQualityReadingsProcessing = "pulse.meter-readings.air-quality.process";
     }
 }
