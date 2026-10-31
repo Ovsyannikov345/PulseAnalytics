@@ -1,9 +1,6 @@
-﻿using System.Data.Common;
-using System.Threading.Channels;
-using Ausiannikau.Utilities.Results;
+﻿using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Correlation;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
-using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
@@ -27,16 +24,7 @@ internal abstract class BaseRabbitMqConsumer(
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         await base.StopAsync(cancellationToken);
-
-        if (_channel is not null)
-        {
-            try
-            {
-                await _channel.CloseAsync(cancellationToken);
-                _channel.Dispose();
-            }
-            catch { }
-        }
+        await DisposeChannelSafelyAsync(cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,6 +33,7 @@ internal abstract class BaseRabbitMqConsumer(
         {
             await ConsumeAsync();
 
+            await DisposeChannelSafelyAsync(stoppingToken);
             await Task.Delay(RestartDelay, stoppingToken);
         }
 
@@ -114,8 +103,7 @@ internal abstract class BaseRabbitMqConsumer(
                     queue: QueueName,
                     autoAck: false,
                     consumer: consumer,
-                    cancellationToken: stoppingToken
-                );
+                    cancellationToken: stoppingToken);
 
                 await Task.Delay(Timeout.Infinite, stoppingToken);
             }
@@ -161,13 +149,13 @@ internal abstract class BaseRabbitMqConsumer(
         }
         else
         {
-            CorrelationContext.CorrelationId = Guid.NewGuid();
+            CorrelationContext.CorrelationId = Guid.CreateVersion7();
             Logger.FailedToRestoreCorrelationId(message.BasicProperties.CorrelationId);
         }
 
         ArgumentNullException.ThrowIfNull(_channel);
 
-        var cts = CancellationTokenSource.CreateLinkedTokenSource(serviceStoppingToken, message.CancellationToken);
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(serviceStoppingToken, message.CancellationToken);
         var ct = cts.Token;
 
         try
@@ -178,7 +166,7 @@ internal abstract class BaseRabbitMqConsumer(
                     BasicProperties = message.BasicProperties,
                     Body = message.Body
                 },
-                cts.Token);
+                ct);
 
             if (processingResult.IsFailure)
             {
@@ -187,6 +175,8 @@ internal abstract class BaseRabbitMqConsumer(
                 await _channel.BasicNackAsync(message.DeliveryTag, multiple: false, requeue: false, CancellationToken.None);
 
                 Logger.MessageNacked(isRequeued: false);
+
+                return;
             }
 
             Logger.MessageProcessed();
@@ -216,6 +206,25 @@ internal abstract class BaseRabbitMqConsumer(
             Logger.MessageNacked(isRequeued: false);
         }
     }
+
+    private async Task DisposeChannelSafelyAsync(CancellationToken ct)
+    {
+        if (_channel is not null)
+        {
+            try
+            {
+                await _channel.CloseAsync(ct);
+                await _channel.DisposeAsync();
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to dispose the connection");
+            }
+        }
+    }
 }
 
 internal sealed record ReceivedMessage
@@ -239,20 +248,20 @@ internal static partial class BaseRabbitMqConsumerLogs
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ consumer is shutting down")]
     public static partial void ShuttingDown(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is processed")]
-    public static partial void MessageProcessed(this ILogger logger);
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is processed")]
+    public static partial void MessageProcessed(this ILogger logger, string messageId, string messageType);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is acked")]
-    public static partial void MessageAcked(this ILogger logger);
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is acked")]
+    public static partial void MessageAcked(this ILogger logger, string messageId, string messageType);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message processing failed. {Reason}")]
-    public static partial void MessageProcessingFailed(this ILogger logger, string reason);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message {MessageId} ({MessageType}) processing failed. {Reason}")]
+    public static partial void MessageProcessingFailed(this ILogger logger, string messageId, string messageType, string reason);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message processing failed")]
-    public static partial void MessageProcessingFailed(this ILogger logger, Exception exception);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message {MessageId} ({MessageType}) processing failed")]
+    public static partial void MessageProcessingFailed(this ILogger logger, string messageId, string messageType, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is nacked. Requeued: {IsRequeued}")]
-    public static partial void MessageNacked(this ILogger logger, bool isRequeued);
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message {MessageId} ({MessageType}) is nacked. Requeued: {IsRequeued}")]
+    public static partial void MessageNacked(this ILogger logger, bool isRequeued, string messageId, string messageType);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
