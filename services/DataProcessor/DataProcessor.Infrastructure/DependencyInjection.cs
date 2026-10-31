@@ -12,7 +12,7 @@ using RabbitMQ.Client;
 
 namespace DataProcessor.Infrastructure;
 
-public static class DependendencyInjection
+public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {

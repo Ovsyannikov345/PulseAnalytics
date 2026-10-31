@@ -13,7 +13,7 @@ using RabbitMQ.Client.Events;
 
 namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
-internal class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger<MeterReadingsConsumer> logger)
+internal sealed class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger<MeterReadingsConsumer> logger)
     : BaseRabbitMqConsumer(connectionProvider, logger)
 {
     protected override string QueueName => RabbitMqTopology.QueueNames.MeterReadingsProcessing;

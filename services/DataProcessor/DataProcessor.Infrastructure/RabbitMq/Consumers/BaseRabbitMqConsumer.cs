@@ -18,11 +18,11 @@ internal abstract class BaseRabbitMqConsumer(
 {
     private static readonly TimeSpan RestartDelay = TimeSpan.FromSeconds(5);
 
-    protected ILogger Logger = logger;
+    protected ILogger Logger => logger;
 
     protected abstract string QueueName { get; }
 
-    private IChannel? _channel = null;
+    private IChannel? _channel;
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
@@ -225,37 +225,37 @@ internal sealed record ReceivedMessage
     public required ReadOnlyMemory<byte> Body { get; init; }
 }
 
-internal static partial class BaseRabbitMqPublisherLogs
+internal static partial class BaseRabbitMqConsumerLogs
 {
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to start RabbitMq consumer. {Reason}")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to start RabbitMQ consumer. {Reason}")]
     public static partial void FailedToStart(this ILogger logger, string reason);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to start RabbitMq consumer")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to start RabbitMQ consumer")]
     public static partial void FailedToStart(this ILogger logger, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Error, Message = "Exception occurred while listening to RabbitMq messages")]
+    [LoggerMessage(Level = LogLevel.Error, Message = "Exception occurred while listening to RabbitMQ messages")]
     public static partial void ListeningError(this ILogger logger, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq consumer is shutting down")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ consumer is shutting down")]
     public static partial void ShuttingDown(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq message is processed")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is processed")]
     public static partial void MessageProcessed(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq message is acked")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is acked")]
     public static partial void MessageAcked(this ILogger logger);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMq message processing failed. {Reason}")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message processing failed. {Reason}")]
     public static partial void MessageProcessingFailed(this ILogger logger, string reason);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMq message processing failed")]
+    [LoggerMessage(Level = LogLevel.Warning, Message = "RabbitMQ message processing failed")]
     public static partial void MessageProcessingFailed(this ILogger logger, Exception exception);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq message is nacked. Requeued: {IsRequeued}")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMQ message is nacked. Requeued: {IsRequeued}")]
     public static partial void MessageNacked(this ILogger logger, bool isRequeued);
 
     [LoggerMessage(
         Level = LogLevel.Warning,
-        Message = "Failed to restore correlation ID from message. Received correlation ID: {ReceivedId}")]
+        Message = "Failed to restore correlation ID from RabbitMQ message. Received correlation ID: {ReceivedId}")]
     public static partial void FailedToRestoreCorrelationId(this ILogger logger, string? receivedId);
 }
