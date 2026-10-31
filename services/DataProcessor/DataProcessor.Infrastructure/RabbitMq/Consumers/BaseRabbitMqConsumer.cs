@@ -15,6 +15,8 @@ internal abstract class BaseRabbitMqConsumer(
     ILogger logger)
     : BackgroundService
 {
+    private static readonly TimeSpan RestartDelay = TimeSpan.FromSeconds(5);
+
     protected ILogger Logger = logger;
 
     protected abstract string QueueName { get; }
@@ -34,72 +36,97 @@ internal abstract class BaseRabbitMqConsumer(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
+        while (!stoppingToken.IsCancellationRequested)
         {
-            var channelOpeningResult = await OpenChannelAsync(stoppingToken);
+            await ConsumeAsync();
 
-            if (channelOpeningResult.TryGetSuccessValue(out var channel))
+            await Task.Delay(RestartDelay, stoppingToken);
+        }
+
+        async Task ConsumeAsync()
+        {
+            try
             {
-                _channel = channel;
+                var channelOpeningResult = await OpenChannelAsync(stoppingToken);
+
+                if (channelOpeningResult.TryGetSuccessValue(out var channel))
+                {
+                    _channel = channel;
+                }
+                else
+                {
+                    Logger.FailedToStart(channelOpeningResult.ErrorMessage);
+
+                    return;
+                }
             }
-            else
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
-                Logger.FailedToStart(channelOpeningResult.ErrorMessage);
+                Logger.ShuttingDown();
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.FailedToStart(ex);
+
+                return;
+            }
+
+            try
+            {
+                var queueSetupResult = await SetupQueueAsync(_channel, stoppingToken);
+
+                if (queueSetupResult.IsFailure)
+                {
+                    Logger.FailedToStart(queueSetupResult.ErrorMessage);
+
+                    return;
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                Logger.ShuttingDown();
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.FailedToStart(ex);
+
+                return;
+            }
+
+            try
+            {
+                var consumer = new AsyncEventingBasicConsumer(_channel);
+                consumer.ReceivedAsync += async (_, args) =>
+                {
+                    await ProcessMessageSafelyAsync(args, stoppingToken);
+                };
+
+                await _channel.BasicConsumeAsync(
+                    queue: QueueName,
+                    autoAck: false,
+                    consumer: consumer,
+                    cancellationToken: stoppingToken
+                );
+
+                await Task.Delay(Timeout.Infinite, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                Logger.ShuttingDown();
+
+                return;
+            }
+            catch (Exception ex)
+            {
+                Logger.ListeningError(ex);
 
                 return;
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            Logger.ShuttingDown();
-
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Logger.FailedToStart(ex);
-
-            return;
-        }
-
-        try
-        {
-            var queueSetupResult = await SetupQueueAsync(_channel, stoppingToken);
-
-            if (queueSetupResult.IsFailure)
-            {
-                Logger.FailedToStart(queueSetupResult.ErrorMessage);
-
-                return;
-            }
-        }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-        {
-            Logger.ShuttingDown();
-
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Logger.FailedToStart(ex);
-
-            return;
-        }
-
-        var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.ReceivedAsync += async (_, args) =>
-        {
-            await ProcessMessageSafelyAsync(args, stoppingToken);
-        };
-
-        await _channel.BasicConsumeAsync(
-            queue: QueueName,
-            autoAck: false,
-            consumer: consumer,
-            cancellationToken: stoppingToken
-        );
-
-        await Task.Delay(Timeout.Infinite, stoppingToken);
     }
 
     protected abstract Task<Result> SetupQueueAsync(IChannel channel, CancellationToken ct);
@@ -189,6 +216,9 @@ internal static partial class BaseRabbitMqPublisherLogs
 
     [LoggerMessage(Level = LogLevel.Error, Message = "Failed to start RabbitMq consumer")]
     public static partial void FailedToStart(this ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Exception occurred while listening to RabbitMq messages")]
+    public static partial void ListeningError(this ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "RabbitMq consumer is shutting down")]
     public static partial void ShuttingDown(this ILogger logger);

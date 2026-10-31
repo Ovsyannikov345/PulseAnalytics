@@ -20,6 +20,8 @@ internal class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvi
 
     protected override async Task<Result> SetupQueueAsync(IChannel channel, CancellationToken ct)
     {
+        await channel.ExchangeDeclarePassiveAsync(RabbitMqTopology.Exchanges.MeterReadingsExchange.Name, ct);
+
         await channel.QueueDeclareAsync(
             queue: QueueName,
             durable: true,
@@ -42,7 +44,7 @@ internal class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvi
         return Result.Succeed();
     }
 
-    protected override Task ProcessMessageAsync(BasicDeliverEventArgs message)
+    protected override Task<Result> ProcessMessageAsync(ReceivedMessage message, CancellationToken ct)
     {
         var info = message.BasicProperties;
 
