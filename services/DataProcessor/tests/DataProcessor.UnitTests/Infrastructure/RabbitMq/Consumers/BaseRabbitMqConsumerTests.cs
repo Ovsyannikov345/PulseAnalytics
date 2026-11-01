@@ -370,7 +370,7 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
         // Arrange
         var consumer = await StartConsumingAsync();
         var properties = RabbitMqDeliveries.Properties();
-        byte[] body = """{"location":"Kitchen"}"""u8.ToArray();
+        var body = """{"location":"Kitchen"}"""u8.ToArray();
         ReceivedMessage? received = null;
         byte[]? receivedBody = null;
         A.CallTo(() => _processMessage(A<ReceivedMessage>._, A<CancellationToken>._))

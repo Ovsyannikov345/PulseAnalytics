@@ -25,133 +25,142 @@ internal abstract class BaseRabbitMqConsumer(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await ConsumeAsync();
+            await ConsumeAsync(stoppingToken);
 
             await Task.Delay(RestartDelay, stoppingToken);
-        }
-
-        async Task ConsumeAsync()
-        {
-            IConnection connection;
-            IChannel channel;
-
-            try
-            {
-                var connectionResult = await connectionProvider.GetConnectionAsync(stoppingToken);
-
-                if (!connectionResult.TryGetSuccessValue(out var openedConnection))
-                {
-                    Logger.FailedToStart(connectionResult.ErrorMessage);
-
-                    return;
-                }
-
-                connection = openedConnection;
-                channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                Logger.ShuttingDown();
-
-                return;
-            }
-            catch (Exception ex)
-            {
-                Logger.FailedToStart(ex);
-
-                return;
-            }
-
-            try
-            {
-                try
-                {
-                    var queueSetupResult = await SetupQueueAsync(channel, stoppingToken);
-
-                    if (queueSetupResult.IsFailure)
-                    {
-                        Logger.FailedToStart(queueSetupResult.ErrorMessage);
-
-                        return;
-                    }
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    Logger.ShuttingDown();
-
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    Logger.FailedToStart(ex);
-
-                    return;
-                }
-
-                try
-                {
-                    var consumerStopped = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-                    var consumer = new AsyncEventingBasicConsumer(channel);
-                    consumer.ReceivedAsync += async (_, args) =>
-                    {
-                        await ProcessMessageSafelyAsync(channel, args, stoppingToken);
-                    };
-
-                    consumer.ShutdownAsync += (_, args) =>
-                    {
-                        if (connection.IsOpen)
-                        {
-                            consumerStopped.TrySetResult(
-                                $"Channel was closed. Reply code: {args.ReplyCode}. Reply text: {args.ReplyText}");
-                        }
-
-                        return Task.CompletedTask;
-                    };
-
-                    consumer.UnregisteredAsync += (_, _) =>
-                    {
-                        if (channel.IsOpen)
-                        {
-                            consumerStopped.TrySetResult("Consumer was cancelled by the broker");
-                        }
-
-                        return Task.CompletedTask;
-                    };
-
-                    await channel.BasicConsumeAsync(
-                        queue: QueueName,
-                        autoAck: false,
-                        consumer: consumer,
-                        cancellationToken: stoppingToken);
-
-                    var stopReason = await consumerStopped.Task.WaitAsync(stoppingToken);
-
-                    Logger.ConsumerStopped(QueueName, stopReason, RestartDelay.TotalSeconds);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    Logger.ShuttingDown();
-
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    Logger.ListeningError(ex);
-
-                    return;
-                }
-            }
-            finally
-            {
-                await DisposeChannelSafelyAsync(channel);
-            }
         }
     }
 
     protected abstract Task<Result> SetupQueueAsync(IChannel channel, CancellationToken ct);
 
     protected abstract Task<Result> ProcessMessageAsync(ReceivedMessage message, CancellationToken ct);
+
+    private async Task ConsumeAsync(CancellationToken stoppingToken)
+    {
+        IConnection connection;
+        IChannel channel;
+
+        try
+        {
+            var connectionResult = await connectionProvider.GetConnectionAsync(stoppingToken);
+
+            if (!connectionResult.TryGetSuccessValue(out var openedConnection))
+            {
+                Logger.FailedToStart(connectionResult.ErrorMessage);
+
+                return;
+            }
+
+            connection = openedConnection;
+            channel = await connection.CreateChannelAsync(cancellationToken: stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            Logger.ShuttingDown();
+
+            return;
+        }
+        catch (Exception ex)
+        {
+            Logger.FailedToStart(ex);
+
+            return;
+        }
+
+        try
+        {
+            if (await TrySetupQueueAsync(channel, stoppingToken))
+            {
+                await ListenAsync(connection, channel, stoppingToken);
+            }
+        }
+        finally
+        {
+            await DisposeChannelSafelyAsync(channel);
+        }
+    }
+
+    private async Task<bool> TrySetupQueueAsync(IChannel channel, CancellationToken stoppingToken)
+    {
+        try
+        {
+            var queueSetupResult = await SetupQueueAsync(channel, stoppingToken);
+
+            if (queueSetupResult.IsFailure)
+            {
+                Logger.FailedToStart(queueSetupResult.ErrorMessage);
+
+                return false;
+            }
+
+            return true;
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            Logger.ShuttingDown();
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Logger.FailedToStart(ex);
+
+            return false;
+        }
+    }
+
+    private async Task ListenAsync(IConnection connection, IChannel channel, CancellationToken stoppingToken)
+    {
+        try
+        {
+            var consumerStopped = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += async (_, args) =>
+            {
+                await ProcessMessageSafelyAsync(channel, args, stoppingToken);
+            };
+
+            consumer.ShutdownAsync += (_, args) =>
+            {
+                if (connection.IsOpen)
+                {
+                    consumerStopped.TrySetResult(
+                        $"Channel was closed. Reply code: {args.ReplyCode}. Reply text: {args.ReplyText}");
+                }
+
+                return Task.CompletedTask;
+            };
+
+            consumer.UnregisteredAsync += (_, _) =>
+            {
+                if (channel.IsOpen)
+                {
+                    consumerStopped.TrySetResult("Consumer was cancelled by the broker");
+                }
+
+                return Task.CompletedTask;
+            };
+
+            await channel.BasicConsumeAsync(
+                queue: QueueName,
+                autoAck: false,
+                consumer: consumer,
+                cancellationToken: stoppingToken);
+
+            var stopReason = await consumerStopped.Task.WaitAsync(stoppingToken);
+
+            Logger.ConsumerStopped(QueueName, stopReason, RestartDelay.TotalSeconds);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            Logger.ShuttingDown();
+        }
+        catch (Exception ex)
+        {
+            Logger.ListeningError(ex);
+        }
+    }
 
     private async Task ProcessMessageSafelyAsync(
         IChannel channel,
