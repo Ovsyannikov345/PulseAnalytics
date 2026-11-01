@@ -18,20 +18,20 @@ internal static class ReadingPayloadSerializer
         }
     };
 
-    public static string Serialize(ReadingPayload payload)
+    public static string Serialize(IReadingPayload payload)
     {
         return JsonSerializer.Serialize(payload, SerializerOptions);
     }
 
-    public static ReadingPayload Deserialize(string json)
+    public static IReadingPayload Deserialize(string json)
     {
-        return JsonSerializer.Deserialize<ReadingPayload>(json, SerializerOptions)
+        return JsonSerializer.Deserialize<IReadingPayload>(json, SerializerOptions)
             ?? throw new JsonException("Reading payload is null");
     }
 
     private static void AddPayloadTypes(JsonTypeInfo typeInfo)
     {
-        if (typeInfo.Type != typeof(ReadingPayload))
+        if (typeInfo.Type != typeof(IReadingPayload))
         {
             return;
         }

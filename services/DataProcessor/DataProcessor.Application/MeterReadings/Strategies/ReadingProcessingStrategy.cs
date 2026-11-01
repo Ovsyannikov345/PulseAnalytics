@@ -55,7 +55,7 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         return Result.Succeed();
     }
 
-    protected abstract ReadingPayload CreatePayload(TModel model);
+    protected abstract IReadingPayload CreatePayload(TModel model);
 }
 
 internal static partial class ReadingProcessingStrategyLogs

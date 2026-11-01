@@ -20,7 +20,7 @@ internal sealed class MeterReadingConfiguration : IEntityTypeConfiguration<Meter
             .HasConversion(
                 payload => ReadingPayloadSerializer.Serialize(payload),
                 json => ReadingPayloadSerializer.Deserialize(json),
-                new ValueComparer<ReadingPayload>(
+                new ValueComparer<IReadingPayload>(
                     (left, right) => Equals(left, right),
                     payload => payload.GetHashCode(),
                     payload => payload));

@@ -15,7 +15,7 @@ internal sealed class AirQualityReadingProcessingStrategy(
 
     public override bool CanProcess(MeterReadingModel model) => model is AirQualityReadingModel;
 
-    protected override ReadingPayload CreatePayload(AirQualityReadingModel model)
+    protected override IReadingPayload CreatePayload(AirQualityReadingModel model)
     {
         return new AirQualityPayload
         {

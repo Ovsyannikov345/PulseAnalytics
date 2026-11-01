@@ -7,33 +7,41 @@ namespace DataProcessor.UnitTests.Infrastructure.Database.Serialization;
 
 public sealed class ReadingPayloadSerializerTests
 {
-    public static TheoryData<ReadingPayload, string> PayloadsWithJson => new()
+    private const string MotionJson = """{"$type":"motion","motionDetected":true}""";
+    private const string EnergyJson = """{"$type":"energy","energy":845.62}""";
+    private const string AirQualityJson = """{"$type":"air_quality","co2":803,"pm25":25,"humidity":36}""";
+
+    public enum PayloadKind
     {
-        { new MotionPayload { MotionDetected = true }, """{"$type":"motion","motionDetected":true}""" },
-        { new EnergyPayload { Energy = 845.62 }, """{"$type":"energy","energy":845.62}""" },
-        { new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }, """{"$type":"air_quality","co2":803,"pm25":25,"humidity":36}""" }
-    };
+        Motion,
+        Energy,
+        AirQuality
+    }
 
     [Theory]
-    [MemberData(nameof(PayloadsWithJson))]
-    public void Serialize_AnyPayload_WritesTypeDiscriminatorAndCamelCaseValues(ReadingPayload payload, string expectedJson)
+    [InlineData(PayloadKind.Motion, MotionJson)]
+    [InlineData(PayloadKind.Energy, EnergyJson)]
+    [InlineData(PayloadKind.AirQuality, AirQualityJson)]
+    public void Serialize_AnyPayload_WritesTypeDiscriminatorAndCamelCaseValues(PayloadKind kind, string expectedJson)
     {
         // Act
-        var json = ReadingPayloadSerializer.Serialize(payload);
+        var json = ReadingPayloadSerializer.Serialize(CreatePayload(kind));
 
         // Assert
         json.ShouldBe(expectedJson);
     }
 
     [Theory]
-    [MemberData(nameof(PayloadsWithJson))]
-    public void Deserialize_JsonOfAnyPayload_ReadsPayloadOfDiscriminatedType(ReadingPayload expectedPayload, string json)
+    [InlineData(PayloadKind.Motion, MotionJson)]
+    [InlineData(PayloadKind.Energy, EnergyJson)]
+    [InlineData(PayloadKind.AirQuality, AirQualityJson)]
+    public void Deserialize_JsonOfAnyPayload_ReadsPayloadOfDiscriminatedType(PayloadKind kind, string json)
     {
         // Act
         var payload = ReadingPayloadSerializer.Deserialize(json);
 
         // Assert
-        payload.ShouldBe(expectedPayload);
+        payload.ShouldBe(CreatePayload(kind));
     }
 
     // jsonb sorts the keys of an object (shorter keys first), so the discriminator can come after the values.
@@ -56,5 +64,15 @@ public sealed class ReadingPayloadSerializerTests
     {
         // Act & Assert
         Should.Throw<Exception>(() => ReadingPayloadSerializer.Deserialize(json));
+    }
+
+    private static IReadingPayload CreatePayload(PayloadKind kind)
+    {
+        return kind switch
+        {
+            PayloadKind.Motion => new MotionPayload { MotionDetected = true },
+            PayloadKind.Energy => new EnergyPayload { Energy = 845.62 },
+            _ => new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }
+        };
     }
 }

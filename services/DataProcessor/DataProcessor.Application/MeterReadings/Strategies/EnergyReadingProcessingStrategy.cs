@@ -15,7 +15,7 @@ internal sealed class EnergyReadingProcessingStrategy(
 
     public override bool CanProcess(MeterReadingModel model) => model is EnergyReadingModel;
 
-    protected override ReadingPayload CreatePayload(EnergyReadingModel model)
+    protected override IReadingPayload CreatePayload(EnergyReadingModel model)
     {
         return new EnergyPayload
         {

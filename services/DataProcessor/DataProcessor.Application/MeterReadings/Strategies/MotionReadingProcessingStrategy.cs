@@ -15,7 +15,7 @@ internal sealed class MotionReadingProcessingStrategy(
 
     public override bool CanProcess(MeterReadingModel model) => model is MotionReadingModel;
 
-    protected override ReadingPayload CreatePayload(MotionReadingModel model)
+    protected override IReadingPayload CreatePayload(MotionReadingModel model)
     {
         return new MotionPayload
         {
