@@ -1,10 +1,14 @@
-﻿using DataProcessor.Infrastructure;
+﻿using DataProcessor.Application;
+using DataProcessor.Infrastructure;
+using DataProcessor.Infrastructure.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var configuration = builder.Configuration;
 
-builder.Services.AddInfrastructureServices(configuration);
+builder.Services
+    .AddInfrastructureServices(configuration)
+    .AddApplicationServices();
 
 var app = builder.Build();
 

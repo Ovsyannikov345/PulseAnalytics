@@ -1,14 +1,22 @@
-﻿using System.Text;
+﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
+using DataIngestor.Contracts.Events;
+using DataProcessor.Application.Readings;
+using DataProcessor.Application.Readings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
 namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
-internal abstract class MeterReadingsConsumer(IRabbitMqConnectionProvider connectionProvider, ILogger logger)
+internal abstract class MeterReadingsConsumer<TEvent>(
+    IRabbitMqConnectionProvider connectionProvider,
+    IServiceScopeFactory scopeFactory,
+    ILogger logger)
     : BaseRabbitMqConsumer(connectionProvider, logger)
+    where TEvent : MeterReadingEvent
 {
     protected abstract string RoutingKey { get; }
 
@@ -38,41 +46,46 @@ internal abstract class MeterReadingsConsumer(IRabbitMqConnectionProvider connec
         return Result.Succeed();
     }
 
-    protected override Task<Result> ProcessMessageAsync(ReceivedMessage message, CancellationToken ct)
+    protected override async Task<Result> ProcessMessageAsync(ReceivedMessage message, CancellationToken ct)
     {
-        if (Logger.IsEnabled(LogLevel.Information))
-        {
-            var info = message.BasicProperties;
+        var parsingResult = ParseMessage(message.Body);
 
-            Logger.ReadingProcessed(
-                info.AppId,
-                info.ContentType,
-                info.DeliveryMode,
-                info.MessageId,
-                info.CorrelationId,
-                info.Type,
-                info.Timestamp,
-                Encoding.UTF8.GetString(message.Body.Span));
+        if (!parsingResult.TryGetSuccessValue(out var readingEvent))
+        {
+            return parsingResult;
         }
 
-        return Task.FromResult(Result.Succeed());
+        // Consumers are singletons, while the processing service and its DbContext live per message.
+        await using var scope = scopeFactory.CreateAsyncScope();
+
+        var processingService = scope.ServiceProvider.GetRequiredService<IReadingsProcessingService>();
+
+        return await processingService.ProcessAsync(ToModel(readingEvent), ct);
+    }
+
+    protected abstract MeterReadingModel ToModel(TEvent message);
+
+    private Result<TEvent> ParseMessage(ReadOnlyMemory<byte> body)
+    {
+        try
+        {
+            var readingEvent = JsonSerializer.Deserialize<TEvent>(body.Span, JsonSerializerOptions.Web);
+
+            return readingEvent is null
+                ? Result<TEvent>.Fail($"Message body is not a {typeof(TEvent).Name}")
+                : Result<TEvent>.Succeed(readingEvent);
+        }
+        catch (JsonException ex)
+        {
+            Logger.FailedToParseMessage(typeof(TEvent).Name, ex);
+
+            return Result<TEvent>.Fail($"Message body is not a valid {typeof(TEvent).Name}");
+        }
     }
 }
 
 internal static partial class MeterReadingsConsumerLogs
 {
-    [LoggerMessage(
-        Level = LogLevel.Information,
-        Message = "Processed a new reading. App ID: {AppId}. Content type: {ContentType}. Delivery mode: {Mode}. " +
-            "Message ID: {Id}. Correlation ID: {CorrelationId}. Type: {Type}. Timestamp: {Timestamp}. Body: {Body}")]
-    public static partial void ReadingProcessed(
-        this ILogger logger,
-        string? appId,
-        string? contentType,
-        DeliveryModes mode,
-        string? id,
-        string? correlationId,
-        string? type,
-        AmqpTimestamp timestamp,
-        string body);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to parse the message body as {MessageType}")]
+    public static partial void FailedToParseMessage(this ILogger logger, string messageType, Exception exception);
 }
