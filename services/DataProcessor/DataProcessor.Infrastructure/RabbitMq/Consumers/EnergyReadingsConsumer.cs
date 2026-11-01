@@ -1,6 +1,6 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Contracts.Events;
-using DataProcessor.Application.Readings.Models;
+using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using DataProcessor.Infrastructure.RabbitMq.Topology;

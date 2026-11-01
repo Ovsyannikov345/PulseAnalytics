@@ -1,7 +1,7 @@
 ﻿using DataProcessor.Domain.Constants.Enums;
-using DataProcessor.Domain.Entities.Payloads;
+using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 
-namespace DataProcessor.Domain.Entities;
+namespace DataProcessor.Domain.Entities.MeterReadings;
 
 public sealed class MeterReading : BaseEntity
 {

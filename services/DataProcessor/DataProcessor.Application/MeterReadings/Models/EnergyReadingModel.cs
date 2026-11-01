@@ -1,4 +1,4 @@
-﻿namespace DataProcessor.Application.Readings.Models;
+﻿namespace DataProcessor.Application.MeterReadings.Models;
 
 public sealed record EnergyReadingModel : MeterReadingModel
 {

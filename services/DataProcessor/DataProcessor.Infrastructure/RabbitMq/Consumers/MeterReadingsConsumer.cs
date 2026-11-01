@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using DataIngestor.Contracts.Events;
-using DataProcessor.Application.Readings;
-using DataProcessor.Application.Readings.Models;
+using DataProcessor.Application.MeterReadings;
+using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,7 +62,6 @@ internal abstract class MeterReadingsConsumer<TEvent>(
             return mappingResult;
         }
 
-        // Consumers are singletons, while the processing service and its DbContext live per message.
         await using var scope = scopeFactory.CreateAsyncScope();
 
         var processingService = scope.ServiceProvider.GetRequiredService<IReadingsProcessingService>();

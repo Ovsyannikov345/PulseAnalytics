@@ -1,4 +1,4 @@
-﻿namespace DataProcessor.Domain.Entities.Payloads;
+﻿namespace DataProcessor.Domain.Entities.MeterReadings.Payloads;
 
 public sealed record MotionPayload : ReadingPayload
 {

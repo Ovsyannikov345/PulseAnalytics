@@ -1,6 +1,6 @@
-﻿namespace DataProcessor.Application.Readings.Models;
+﻿namespace DataProcessor.Domain.Entities.MeterReadings.Payloads;
 
-public sealed record AirQualityReadingModel : MeterReadingModel
+public sealed record AirQualityPayload : ReadingPayload
 {
     public required int Co2 { get; init; }
 

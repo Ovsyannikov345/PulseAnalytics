@@ -1,11 +1,11 @@
-﻿using DataProcessor.Domain.Entities;
-using DataProcessor.Domain.Entities.Payloads;
+﻿using DataProcessor.Domain.Entities.MeterReadings;
+using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 using DataProcessor.Infrastructure.Database.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace DataProcessor.Infrastructure.Database.EntityConfigurations;
+namespace DataProcessor.Infrastructure.Database.Configurations;
 
 internal sealed class MeterReadingConfiguration : IEntityTypeConfiguration<MeterReading>
 {

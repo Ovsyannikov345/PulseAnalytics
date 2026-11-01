@@ -1,13 +1,10 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using DataProcessor.Domain.Entities.Payloads;
+using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 
 namespace DataProcessor.Infrastructure.Database.Serialization;
 
-/// <summary>
-/// Converts reading payloads to and from the JSON stored in the <c>jsonb</c> payload column.
-/// </summary>
 internal static class ReadingPayloadSerializer
 {
     private const string TypeDiscriminatorPropertyName = "$type";

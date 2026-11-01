@@ -1,13 +1,12 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataIngestor.Contracts.Events;
-using DataProcessor.Application.Readings.Models;
+using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Domain.Constants.Enums;
 
 namespace DataProcessor.Infrastructure.RabbitMq.Mappers;
 
 internal static class MeterReadingMessageMapper
 {
-    // Location names as the ingestor publishes them (taken unchanged from WeakApp).
     private static readonly Dictionary<string, MeterLocation> Locations = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Kitchen"] = MeterLocation.Kitchen,
