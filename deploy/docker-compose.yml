@@ -44,6 +44,24 @@ services:
     volumes:
       - seq-data:/data
     restart: unless-stopped
+
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: ${POSTGRES_DB:-pulse_analytics}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
     
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.163.2
@@ -120,5 +138,6 @@ services:
 volumes:
   rabbitmq-data:
   seq-data:
+  postgres-data:
   prometheus-data:
   grafana-data:

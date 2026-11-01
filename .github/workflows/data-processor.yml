@@ -42,7 +42,7 @@ jobs:
     with:
       solution: services/DataProcessor/DataProcessor.slnx
       project-key: Ovsyannikov345_PulseAnalytics_DataProcessor
-      coverage-exclusions: "**/Program.cs,**/DependencyInjection.cs,**/Topology/*.cs"
+      coverage-exclusions: "**/Program.cs,**/DependencyInjection.cs,**/Topology/*.cs,**/Database/Migrations/*.cs"
     secrets:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

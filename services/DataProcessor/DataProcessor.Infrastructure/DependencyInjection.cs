@@ -1,6 +1,10 @@
-﻿using DataProcessor.Infrastructure.RabbitMq.Configuration;
+﻿using DataProcessor.Application.Interfaces.Database;
+using DataProcessor.Infrastructure.Database;
+using DataProcessor.Infrastructure.Database.Configuration;
+using DataProcessor.Infrastructure.RabbitMq.Configuration;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -17,6 +21,21 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(RabbitMqSettings.SectionName))
             .ValidateOnStart()
             .ValidateDataAnnotations();
+
+        services.AddOptions<DatabaseSettings>()
+            .Bind(configuration.GetSection(DatabaseSettings.SectionName))
+            .ValidateOnStart()
+            .ValidateDataAnnotations();
+
+        // Database
+        services.AddDbContext<IApplicationDbContext, ApplicationDbContext>((serviceProvider, options) =>
+        {
+            var databaseSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
+
+            options
+                .UseNpgsql(databaseSettings.ConnectionString)
+                .UseSnakeCaseNamingConvention();
+        });
 
         // Messaging
         services.AddSingleton<IConnectionFactory>(serviceProvider =>
