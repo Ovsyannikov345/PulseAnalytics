@@ -8,6 +8,8 @@ builder.Services.AddInfrastructureServices(configuration);
 
 var app = builder.Build();
 
+await app.Services.MigrateDatabaseAsync(app.Lifetime.ApplicationStopping);
+
 app.MapGet("/ping", () =>
 {
     return "pong";

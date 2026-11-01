@@ -5,6 +5,7 @@
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
     <File Path="Dockerfile" />
+    <File Path="dotnet-tools.json" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/DataProcessor.UnitTests/DataProcessor.UnitTests.csproj" />
