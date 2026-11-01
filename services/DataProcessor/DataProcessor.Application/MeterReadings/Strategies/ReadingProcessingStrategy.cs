@@ -27,7 +27,7 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
     {
         if (model is not TModel typedModel)
         {
-            return Result<MeterReading>.Fail($"{GetType().Name} cannot process a {model.GetType().Name}");
+            return Result.Fail($"{GetType().Name} cannot process a {model.GetType().Name}");
         }
 
         var isDuplicate = await dbContext.Query<MeterReading>().AnyAsync(r => r.DeduplicationKey == model.DeduplicationKey, ct);
@@ -53,7 +53,6 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         logger.ReadingStored(MeterType, model.Location, model.DeduplicationKey);
 
         return Result.Succeed();
-
     }
 
     protected abstract ReadingPayload CreatePayload(TModel model);
@@ -65,9 +64,6 @@ internal static partial class ReadingProcessingStrategyLogs
         Level = LogLevel.Information,
         Message = "Reading {DeduplicationKey} for location {Location} is already stored, skipped")]
     public static partial void DuplicateReadingSkipped(this ILogger logger, Guid deduplicationKey, MeterLocation location);
-
-    [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to create a reading from {ModelType}. Reason: {Reason}")]
-    public static partial void FailedToCreateReading(this ILogger logger, string modelType, string reason);
 
     [LoggerMessage(
         Level = LogLevel.Debug,

@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using Ausiannikau.Utilities.Results;
-using DataProcessor.Application.Readings;
-using DataProcessor.Application.Readings.Models;
+using DataProcessor.Application.MeterReadings;
+using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;

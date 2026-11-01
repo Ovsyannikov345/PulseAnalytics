@@ -1,4 +1,4 @@
-﻿using DataProcessor.Domain.Entities.Payloads;
+﻿using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 using DataProcessor.Infrastructure.Database.Serialization;
 using Shouldly;
 using Xunit;

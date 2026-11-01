@@ -1,5 +1,5 @@
 ﻿using DataIngestor.Contracts.Events;
-using DataProcessor.Application.Readings.Models;
+using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using Shouldly;

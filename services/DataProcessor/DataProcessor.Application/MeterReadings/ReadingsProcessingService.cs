@@ -1,10 +1,6 @@
 ﻿using Ausiannikau.Utilities.Results;
-using DataProcessor.Application.Interfaces.Database;
 using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.MeterReadings.Strategies;
-using DataProcessor.Domain.Constants.Enums;
-using DataProcessor.Domain.Entities.MeterReadings;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace DataProcessor.Application.MeterReadings;

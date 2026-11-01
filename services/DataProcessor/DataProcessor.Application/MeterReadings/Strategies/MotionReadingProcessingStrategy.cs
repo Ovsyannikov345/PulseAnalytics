@@ -8,7 +8,7 @@ namespace DataProcessor.Application.MeterReadings.Strategies;
 
 internal sealed class MotionReadingProcessingStrategy(
     IApplicationDbContext dbContext,
-    ILogger<AirQualityReadingProcessingStrategy> logger)
+    ILogger<MotionReadingProcessingStrategy> logger)
     : ReadingProcessingStrategy<MotionReadingModel>(dbContext, logger)
 {
     protected override MeterType MeterType => MeterType.Motion;
