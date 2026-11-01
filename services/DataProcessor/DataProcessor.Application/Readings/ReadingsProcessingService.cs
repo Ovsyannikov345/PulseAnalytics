@@ -71,7 +71,7 @@ internal static partial class ReadingsProcessingServiceLogs
     [LoggerMessage(
         Level = LogLevel.Information,
         Message = "Reading {DeduplicationKey} for location {Location} is already stored, skipped")]
-    public static partial void DuplicateReadingSkipped(this ILogger logger, Guid deduplicationKey, string location);
+    public static partial void DuplicateReadingSkipped(this ILogger logger, Guid deduplicationKey, MeterLocation location);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Failed to create a reading from {ModelType}. Reason: {Reason}")]
     public static partial void FailedToCreateReading(this ILogger logger, string modelType, string reason);
@@ -79,5 +79,5 @@ internal static partial class ReadingsProcessingServiceLogs
     [LoggerMessage(
         Level = LogLevel.Debug,
         Message = "Stored {MeterType} reading {DeduplicationKey} for location {Location}")]
-    public static partial void ReadingStored(this ILogger logger, MeterType meterType, string location, Guid deduplicationKey);
+    public static partial void ReadingStored(this ILogger logger, MeterType meterType, MeterLocation location, Guid deduplicationKey);
 }

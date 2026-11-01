@@ -2,6 +2,7 @@
 using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Readings;
 using DataProcessor.Application.Readings.Models;
+using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
 using DataProcessor.UnitTests.TestDoubles;
@@ -253,6 +254,9 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
     [InlineData(ReadingType.Energy, "null")]
     [InlineData(ReadingType.Energy, "{}")]
     [InlineData(ReadingType.AirQuality, """{"messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Kitchen","co2":803}""")]
+    [InlineData(
+        ReadingType.Motion,
+        """{"messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Attic","receivedAt":"2026-11-01T12:00:00+00:00","motionDetected":true}""")]
     public async Task MessageDelivered_InvalidBody_NacksWithoutRequeueAndDoesNotProcessIt(ReadingType readingType, string body)
     {
         // Arrange
@@ -305,21 +309,21 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
             ReadingType.Motion => new MotionReadingModel
             {
                 DeduplicationKey = MessageId,
-                Location = "Kitchen",
+                Location = MeterLocation.Kitchen,
                 ReceivedAt = ReceivedAt,
                 MotionDetected = true
             },
             ReadingType.Energy => new EnergyReadingModel
             {
                 DeduplicationKey = MessageId,
-                Location = "Kitchen",
+                Location = MeterLocation.Kitchen,
                 ReceivedAt = ReceivedAt,
                 Energy = 845.62
             },
             _ => new AirQualityReadingModel
             {
                 DeduplicationKey = MessageId,
-                Location = "Kitchen",
+                Location = MeterLocation.Kitchen,
                 ReceivedAt = ReceivedAt,
                 Co2 = 803,
                 Pm25 = 25,

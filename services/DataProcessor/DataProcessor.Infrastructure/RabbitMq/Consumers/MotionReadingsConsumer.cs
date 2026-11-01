@@ -1,4 +1,5 @@
-﻿using DataIngestor.Contracts.Events;
+﻿using Ausiannikau.Utilities.Results;
+using DataIngestor.Contracts.Events;
 using DataProcessor.Application.Readings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
@@ -18,7 +19,7 @@ internal sealed class MotionReadingsConsumer(
 
     protected override string RoutingKey => RabbitMqTopology.Exchanges.MeterReadingsExchange.RoutingKeys.MotionReadingReceived;
 
-    protected override MeterReadingModel ToModel(MotionReadingReceived message)
+    protected override Result<MeterReadingModel> ToModel(MotionReadingReceived message)
     {
         return MeterReadingMessageMapper.ToModel(message);
     }

@@ -104,7 +104,7 @@ public sealed class ReadingsProcessingServiceTests
         var model = new AirQualityReadingModel
         {
             DeduplicationKey = Guid.CreateVersion7(),
-            Location = "Kitchen",
+            Location = MeterLocation.Kitchen,
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
@@ -156,7 +156,7 @@ public sealed class ReadingsProcessingServiceTests
         return new EnergyReadingModel
         {
             DeduplicationKey = Guid.CreateVersion7(),
-            Location = "Office",
+            Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
             Energy = 845.62
         };
@@ -168,7 +168,7 @@ public sealed class ReadingsProcessingServiceTests
         {
             DeduplicationKey = deduplicationKey,
             Type = MeterType.Energy,
-            Location = "Office",
+            Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
             Payload = new EnergyPayload { Energy = 845.62 }
         };

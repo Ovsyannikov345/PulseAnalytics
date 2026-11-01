@@ -9,16 +9,11 @@ namespace DataProcessor.Infrastructure.Database.EntityConfigurations;
 
 internal sealed class MeterReadingConfiguration : IEntityTypeConfiguration<MeterReading>
 {
-    private const int LocationMaxLength = 50;
-
     public void Configure(EntityTypeBuilder<MeterReading> builder)
     {
         builder.ToTable("meter_readings");
 
         builder.HasKey(reading => reading.Id);
-
-        builder.Property(reading => reading.Location)
-            .HasMaxLength(LocationMaxLength);
 
         builder.Property(reading => reading.Payload)
             .HasColumnType("jsonb")

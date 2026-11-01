@@ -1,5 +1,6 @@
 ﻿using DataIngestor.Contracts.Events;
 using DataProcessor.Application.Readings.Models;
+using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using Shouldly;
 using Xunit;
@@ -25,13 +26,14 @@ public sealed class MeterReadingMessageMapperTests
         };
 
         // Act
-        var model = MeterReadingMessageMapper.ToModel(message);
+        var result = MeterReadingMessageMapper.ToModel(message);
 
         // Assert
+        result.TryGetSuccessValue(out var model).ShouldBeTrue();
         model.ShouldBe(new MotionReadingModel
         {
             DeduplicationKey = MessageId,
-            Location = "Garage",
+            Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
             MotionDetected = true
         });
@@ -50,13 +52,14 @@ public sealed class MeterReadingMessageMapperTests
         };
 
         // Act
-        var model = MeterReadingMessageMapper.ToModel(message);
+        var result = MeterReadingMessageMapper.ToModel(message);
 
         // Assert
+        result.TryGetSuccessValue(out var model).ShouldBeTrue();
         model.ShouldBe(new EnergyReadingModel
         {
             DeduplicationKey = MessageId,
-            Location = "Office",
+            Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
             Energy = 845.62
         });
@@ -77,17 +80,61 @@ public sealed class MeterReadingMessageMapperTests
         };
 
         // Act
-        var model = MeterReadingMessageMapper.ToModel(message);
+        var result = MeterReadingMessageMapper.ToModel(message);
 
         // Assert
+        result.TryGetSuccessValue(out var model).ShouldBeTrue();
         model.ShouldBe(new AirQualityReadingModel
         {
             DeduplicationKey = MessageId,
-            Location = "Kitchen",
+            Location = MeterLocation.Kitchen,
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
             Humidity = 36
         });
+    }
+
+    [Theory]
+    [InlineData("Kitchen", MeterLocation.Kitchen)]
+    [InlineData("Living Room", MeterLocation.LivingRoom)]
+    [InlineData("Bedroom", MeterLocation.Bedroom)]
+    [InlineData("Garage", MeterLocation.Garage)]
+    [InlineData("Office", MeterLocation.Office)]
+    [InlineData("Corridor", MeterLocation.Corridor)]
+    [InlineData("living room", MeterLocation.LivingRoom)]
+    public void ToModel_KnownLocationName_MapsItToLocation(string locationName, MeterLocation expectedLocation)
+    {
+        // Act
+        var result = MeterReadingMessageMapper.ToModel(CreateEnergyMessage(locationName));
+
+        // Assert
+        result.TryGetSuccessValue(out var model).ShouldBeTrue();
+        model.Location.ShouldBe(expectedLocation);
+    }
+
+    [Theory]
+    [InlineData("Attic")]
+    [InlineData("LivingRoom")]
+    [InlineData("")]
+    public void ToModel_UnknownLocationName_Fails(string locationName)
+    {
+        // Act
+        var result = MeterReadingMessageMapper.ToModel(CreateEnergyMessage(locationName));
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.ErrorMessage.ShouldBe($"Unknown location '{locationName}'");
+    }
+
+    private static EnergyReadingReceived CreateEnergyMessage(string location)
+    {
+        return new EnergyReadingReceived
+        {
+            MessageId = MessageId,
+            Location = location,
+            ReceivedAt = ReceivedAt,
+            Energy = 845.62
+        };
     }
 }

@@ -43,7 +43,7 @@ public sealed class ReadingProcessingStrategiesTests
         var model = new MotionReadingModel
         {
             DeduplicationKey = DeduplicationKey,
-            Location = "Garage",
+            Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
             MotionDetected = true
         };
@@ -52,7 +52,7 @@ public sealed class ReadingProcessingStrategiesTests
         var result = new MotionReadingProcessingStrategy().CreateReading(model);
 
         // Assert
-        var reading = ShouldBeCreated(result, MeterType.Motion, "Garage");
+        var reading = ShouldBeCreated(result, MeterType.Motion, MeterLocation.Garage);
         reading.Payload.ShouldBe(new MotionPayload { MotionDetected = true });
     }
 
@@ -63,7 +63,7 @@ public sealed class ReadingProcessingStrategiesTests
         var model = new EnergyReadingModel
         {
             DeduplicationKey = DeduplicationKey,
-            Location = "Office",
+            Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
             Energy = 845.62
         };
@@ -72,7 +72,7 @@ public sealed class ReadingProcessingStrategiesTests
         var result = new EnergyReadingProcessingStrategy().CreateReading(model);
 
         // Assert
-        var reading = ShouldBeCreated(result, MeterType.Energy, "Office");
+        var reading = ShouldBeCreated(result, MeterType.Energy, MeterLocation.Office);
         reading.Payload.ShouldBe(new EnergyPayload { Energy = 845.62 });
     }
 
@@ -83,7 +83,7 @@ public sealed class ReadingProcessingStrategiesTests
         var model = new AirQualityReadingModel
         {
             DeduplicationKey = DeduplicationKey,
-            Location = "Kitchen",
+            Location = MeterLocation.Kitchen,
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
@@ -94,7 +94,7 @@ public sealed class ReadingProcessingStrategiesTests
         var result = new AirQualityReadingProcessingStrategy().CreateReading(model);
 
         // Assert
-        var reading = ShouldBeCreated(result, MeterType.AirQuality, "Kitchen");
+        var reading = ShouldBeCreated(result, MeterType.AirQuality, MeterLocation.Kitchen);
         reading.Payload.ShouldBe(new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 });
     }
 
@@ -107,7 +107,7 @@ public sealed class ReadingProcessingStrategiesTests
         var model = new EnergyReadingModel
         {
             DeduplicationKey = DeduplicationKey,
-            Location = "Office",
+            Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
             Energy = 845.62
         };
@@ -134,7 +134,7 @@ public sealed class ReadingProcessingStrategiesTests
     private static MeterReading ShouldBeCreated(
         Result<MeterReading> result,
         MeterType expectedType,
-        string expectedLocation)
+        MeterLocation expectedLocation)
     {
         result.TryGetSuccessValue(out var reading).ShouldBeTrue();
         reading.DeduplicationKey.ShouldBe(DeduplicationKey);

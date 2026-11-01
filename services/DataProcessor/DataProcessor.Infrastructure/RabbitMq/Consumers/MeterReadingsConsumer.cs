@@ -55,15 +55,22 @@ internal abstract class MeterReadingsConsumer<TEvent>(
             return parsingResult;
         }
 
+        var mappingResult = ToModel(readingEvent);
+
+        if (!mappingResult.TryGetSuccessValue(out var reading))
+        {
+            return mappingResult;
+        }
+
         // Consumers are singletons, while the processing service and its DbContext live per message.
         await using var scope = scopeFactory.CreateAsyncScope();
 
         var processingService = scope.ServiceProvider.GetRequiredService<IReadingsProcessingService>();
 
-        return await processingService.ProcessAsync(ToModel(readingEvent), ct);
+        return await processingService.ProcessAsync(reading, ct);
     }
 
-    protected abstract MeterReadingModel ToModel(TEvent message);
+    protected abstract Result<MeterReadingModel> ToModel(TEvent message);
 
     private Result<TEvent> ParseMessage(ReadOnlyMemory<byte> body)
     {

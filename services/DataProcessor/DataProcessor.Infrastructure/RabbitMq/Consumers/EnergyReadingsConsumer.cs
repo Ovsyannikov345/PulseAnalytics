@@ -1,4 +1,5 @@
-﻿using DataIngestor.Contracts.Events;
+﻿using Ausiannikau.Utilities.Results;
+using DataIngestor.Contracts.Events;
 using DataProcessor.Application.Readings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
@@ -18,7 +19,7 @@ internal sealed class EnergyReadingsConsumer(
 
     protected override string RoutingKey => RabbitMqTopology.Exchanges.MeterReadingsExchange.RoutingKeys.EnergyReadingReceived;
 
-    protected override MeterReadingModel ToModel(EnergyReadingReceived message)
+    protected override Result<MeterReadingModel> ToModel(EnergyReadingReceived message)
     {
         return MeterReadingMessageMapper.ToModel(message);
     }

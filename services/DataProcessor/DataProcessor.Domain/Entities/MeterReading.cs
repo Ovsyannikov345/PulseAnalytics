@@ -9,7 +9,7 @@ public sealed class MeterReading : BaseEntity
 
     public required MeterType Type { get; init; }
 
-    public required string Location { get; init; }
+    public required MeterLocation Location { get; init; }
 
     public required DateTimeOffset ReceivedAt { get; init; }
 
