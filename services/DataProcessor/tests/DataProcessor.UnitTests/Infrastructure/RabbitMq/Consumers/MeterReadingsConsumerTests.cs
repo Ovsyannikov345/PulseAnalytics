@@ -1,9 +1,13 @@
-﻿using Ausiannikau.Utilities.Results;
+﻿using System.Text;
+using Ausiannikau.Utilities.Results;
+using DataProcessor.Application.Readings;
+using DataProcessor.Application.Readings.Models;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
 using DataProcessor.UnitTests.TestDoubles;
 using DataProcessor.UnitTests.Utilities;
 using FakeItEasy;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using RabbitMQ.Client;
@@ -14,14 +18,22 @@ using Xunit;
 
 namespace DataProcessor.UnitTests.Infrastructure.RabbitMq.Consumers;
 
-// Covers what the concrete consumers add on top of BaseRabbitMqConsumer: the queue topology of each reading type.
+// Covers what the concrete consumers add on top of BaseRabbitMqConsumer: the queue topology of each reading type
+// and turning a delivered message into a reading for the processing service.
 public sealed class MeterReadingsConsumerTests : IAsyncDisposable
 {
     private const string ExchangeName = "pulse.meter-readings";
+    private const ulong DeliveryTag = 7;
+
+    private static readonly Guid MessageId = Guid.Parse(RabbitMqDeliveries.MessageId);
+    private static readonly DateTimeOffset ReceivedAt = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly IRabbitMqConnectionProvider _connectionProvider = A.Fake<IRabbitMqConnectionProvider>();
     private readonly IConnection _connection = A.Fake<IConnection>();
     private readonly IChannel _channel = A.Fake<IChannel>();
+    private readonly IServiceScopeFactory _scopeFactory = A.Fake<IServiceScopeFactory>();
+    private readonly IServiceScope _scope = A.Fake<IServiceScope>();
+    private readonly IReadingsProcessingService _processingService = A.Fake<IReadingsProcessingService>();
     private readonly FakeLogCollector _logCollector = new();
     private BaseRabbitMqConsumer? _sut;
 
@@ -32,6 +44,14 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
 
         A.CallTo(() => _connection.CreateChannelAsync(A<CreateChannelOptions?>._, A<CancellationToken>._))
             .Returns(_channel);
+
+        var serviceProvider = A.Fake<IServiceProvider>();
+        A.CallTo(() => serviceProvider.GetService(typeof(IReadingsProcessingService))).Returns(_processingService);
+        A.CallTo(() => _scope.ServiceProvider).Returns(serviceProvider);
+        A.CallTo(() => _scopeFactory.CreateScope()).Returns(_scope);
+
+        A.CallTo(() => _processingService.ProcessAsync(A<MeterReadingModel>._, A<CancellationToken>._))
+            .Returns(Result.Succeed());
     }
 
     public enum ReadingType
@@ -184,17 +204,137 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
     [InlineData(ReadingType.Motion)]
     [InlineData(ReadingType.Energy)]
     [InlineData(ReadingType.AirQuality)]
-    public async Task MessageDelivered_AnyReadingType_AcksMessage(ReadingType readingType)
+    public async Task MessageDelivered_ValidBody_ProcessesReadingMappedFromIt(ReadingType readingType)
     {
         // Arrange
         var consumer = await StartConsumingAsync(readingType);
 
         // Act
-        await consumer.DeliverAsync(7, RabbitMqDeliveries.Properties(), TestContext.Current.CancellationToken);
+        await DeliverAsync(consumer, CreateBody(readingType));
 
         // Assert
-        A.CallTo(() => _channel.BasicAckAsync(7, false, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _processingService.ProcessAsync(CreateExpectedModel(readingType), A<CancellationToken>._))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Theory]
+    [InlineData(ReadingType.Motion)]
+    [InlineData(ReadingType.Energy)]
+    [InlineData(ReadingType.AirQuality)]
+    public async Task MessageDelivered_ReadingProcessed_AcksMessage(ReadingType readingType)
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync(readingType);
+
+        // Act
+        await DeliverAsync(consumer, CreateBody(readingType));
+
+        // Assert
+        A.CallTo(() => _channel.BasicAckAsync(DeliveryTag, false, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
         _channel.CallsToBasicNackAsync().MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task MessageDelivered_ReadingProcessed_DisposesScopeOfMessage()
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync(ReadingType.Energy);
+
+        // Act
+        await DeliverAsync(consumer, CreateBody(ReadingType.Energy));
+
+        // Assert
+        A.CallTo(() => _scopeFactory.CreateScope()).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _scope.Dispose()).MustHaveHappenedOnceExactly();
+    }
+
+    [Theory]
+    [InlineData(ReadingType.Motion, "not json")]
+    [InlineData(ReadingType.Energy, "null")]
+    [InlineData(ReadingType.Energy, "{}")]
+    [InlineData(ReadingType.AirQuality, """{"messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Kitchen","co2":803}""")]
+    public async Task MessageDelivered_InvalidBody_NacksWithoutRequeueAndDoesNotProcessIt(ReadingType readingType, string body)
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync(readingType);
+
+        // Act
+        await DeliverAsync(consumer, body);
+
+        // Assert
+        A.CallTo(() => _channel.BasicNackAsync(DeliveryTag, false, false, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        _channel.CallsToBasicAckAsync().MustNotHaveHappened();
+        A.CallTo(_processingService).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task MessageDelivered_ProcessingFails_NacksWithoutRequeue()
+    {
+        // Arrange
+        A.CallTo(() => _processingService.ProcessAsync(A<MeterReadingModel>._, A<CancellationToken>._))
+            .Returns(Result.Fail("No processing strategy for EnergyReadingModel"));
+        var consumer = await StartConsumingAsync(ReadingType.Energy);
+
+        // Act
+        await DeliverAsync(consumer, CreateBody(ReadingType.Energy));
+
+        // Assert
+        A.CallTo(() => _channel.BasicNackAsync(DeliveryTag, false, false, A<CancellationToken>._)).MustHaveHappenedOnceExactly();
+        _channel.CallsToBasicAckAsync().MustNotHaveHappened();
+    }
+
+    // Bodies as the ingestor serializes the contract events: camelCase JSON.
+    private static string CreateBody(ReadingType readingType)
+    {
+        const string commonFields = """
+            "messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Kitchen","receivedAt":"2026-11-01T12:00:00+00:00"
+            """;
+
+        return readingType switch
+        {
+            ReadingType.Motion => $$"""{{{commonFields}},"motionDetected":true}""",
+            ReadingType.Energy => $$"""{{{commonFields}},"energy":845.62}""",
+            _ => $$"""{{{commonFields}},"co2":803,"pm25":25,"humidity":36}"""
+        };
+    }
+
+    private static MeterReadingModel CreateExpectedModel(ReadingType readingType)
+    {
+        return readingType switch
+        {
+            ReadingType.Motion => new MotionReadingModel
+            {
+                DeduplicationKey = MessageId,
+                Location = "Kitchen",
+                ReceivedAt = ReceivedAt,
+                MotionDetected = true
+            },
+            ReadingType.Energy => new EnergyReadingModel
+            {
+                DeduplicationKey = MessageId,
+                Location = "Kitchen",
+                ReceivedAt = ReceivedAt,
+                Energy = 845.62
+            },
+            _ => new AirQualityReadingModel
+            {
+                DeduplicationKey = MessageId,
+                Location = "Kitchen",
+                ReceivedAt = ReceivedAt,
+                Co2 = 803,
+                Pm25 = 25,
+                Humidity = 36
+            }
+        };
+    }
+
+    private static Task DeliverAsync(IAsyncBasicConsumer consumer, string body)
+    {
+        return consumer.DeliverAsync(
+            DeliveryTag,
+            RabbitMqDeliveries.Properties(),
+            Encoding.UTF8.GetBytes(body),
+            TestContext.Current.CancellationToken);
     }
 
     private BaseRabbitMqConsumer CreateSut(ReadingType readingType)
@@ -203,12 +343,15 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
         {
             ReadingType.Motion => new MotionReadingsConsumer(
                 _connectionProvider,
+                _scopeFactory,
                 new FakeLogger<MotionReadingsConsumer>(_logCollector)),
             ReadingType.Energy => new EnergyReadingsConsumer(
                 _connectionProvider,
+                _scopeFactory,
                 new FakeLogger<EnergyReadingsConsumer>(_logCollector)),
             _ => new AirQualityReadingsConsumer(
                 _connectionProvider,
+                _scopeFactory,
                 new FakeLogger<AirQualityReadingsConsumer>(_logCollector))
         };
 
