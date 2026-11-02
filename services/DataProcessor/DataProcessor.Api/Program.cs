@@ -1,5 +1,6 @@
 ﻿using DataProcessor.Api;
-﻿using DataProcessor.Application;
+using DataProcessor.Api.Observability;
+using DataProcessor.Application;
 using DataProcessor.Infrastructure;
 using DataProcessor.Infrastructure.Database;
 using Serilog;
@@ -10,28 +11,29 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
-var builder = WebApplication.CreateBuilder(args);
+    var builder = WebApplication.CreateBuilder(args);
 
-var configuration = builder.Configuration;
+    var configuration = builder.Configuration;
 
-builder.Services
+    builder.Services
         .AddSerilogLogging(configuration)
-    .AddInfrastructureServices(configuration)
-    .AddApplicationServices();
+        .AddObservability(configuration)
+        .AddInfrastructureServices(configuration)
+        .AddApplicationServices();
 
-var app = builder.Build();
+    var app = builder.Build();
 
     app.UseSerilogRequestLogging();
 
-await app.Services.MigrateDatabaseAsync(app.Lifetime.ApplicationStopping);
+    await app.Services.MigrateDatabaseAsync(app.Lifetime.ApplicationStopping);
 
-app.MapGet("/ping", () =>
-{
-    return "pong";
-})
-.WithName("Ping");
+    app.MapGet("/ping", () =>
+    {
+        return "pong";
+    })
+    .WithName("Ping");
 
-await app.RunAsync();
+    await app.RunAsync();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
 {
