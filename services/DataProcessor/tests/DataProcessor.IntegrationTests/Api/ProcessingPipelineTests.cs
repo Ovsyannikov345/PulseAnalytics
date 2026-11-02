@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net;
+using System.Text;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 using DataProcessor.IntegrationTests.Fixtures;
@@ -134,16 +135,18 @@ public sealed class ProcessingPipelineTests(RabbitMqContainerFixture rabbitMq, P
     }
 
     [Fact]
-    public async Task Ping_HostIsRunning_ReturnsPong()
+    public async Task Health_HostIsRunning_ReturnsHealthy()
     {
         // Arrange
+        var ct = TestContext.Current.CancellationToken;
         await using var factory = new ProcessorApplicationFactory(rabbitMq, postgreSql);
         using var client = factory.CreateClient();
 
         // Act
-        var response = await client.GetStringAsync(new Uri("/ping", UriKind.Relative), TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), ct);
 
         // Assert
-        response.ShouldBe("pong");
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync(ct)).ShouldBe("Healthy");
     }
 }

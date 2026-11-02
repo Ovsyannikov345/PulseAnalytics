@@ -1,6 +1,9 @@
 ﻿using DataProcessor.Api.Observability;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using OpenTelemetry.Instrumentation.AspNetCore;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Shouldly;
@@ -35,6 +38,26 @@ public sealed class ObservabilityExtensionsTests
         // Assert
         serviceProvider.GetService<MeterProvider>().ShouldNotBeNull();
         serviceProvider.GetService<TracerProvider>().ShouldNotBeNull();
+    }
+
+    [Theory]
+    [InlineData("/health", false)]
+    [InlineData("/metrics", true)]
+    public void AddObservability_OtlpEndpointConfigured_TracesAllRequestsExceptHealthChecks(string path, bool isTraced)
+    {
+        // Arrange
+        using var serviceProvider = BuildServiceProvider(OtlpEndpoint);
+        var filter = serviceProvider
+            .GetRequiredService<IOptionsMonitor<AspNetCoreTraceInstrumentationOptions>>()
+            .Get(Options.DefaultName)
+            .Filter
+            .ShouldNotBeNull();
+
+        // Act
+        var result = filter(new DefaultHttpContext { Request = { Path = path } });
+
+        // Assert
+        result.ShouldBe(isTraced);
     }
 
     private static ServiceProvider BuildServiceProvider(string? otlpEndpoint)
