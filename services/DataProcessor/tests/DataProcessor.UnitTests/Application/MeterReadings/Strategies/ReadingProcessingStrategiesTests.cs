@@ -6,6 +6,8 @@ using DataProcessor.Domain.Entities.MeterReadings;
 using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 using DataProcessor.UnitTests.TestDoubles;
 using FakeItEasy;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Shouldly;
@@ -21,11 +23,15 @@ public sealed class ReadingProcessingStrategiesTests
     private static readonly DateTimeOffset ReceivedAt = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly IApplicationDbContext _dbContext = A.Fake<IApplicationDbContext>();
+    private readonly IValidator<MotionReadingModel> _motionValidator = A.Fake<IValidator<MotionReadingModel>>();
+    private readonly IValidator<EnergyReadingModel> _energyValidator = A.Fake<IValidator<EnergyReadingModel>>();
+    private readonly IValidator<AirQualityReadingModel> _airQualityValidator = A.Fake<IValidator<AirQualityReadingModel>>();
     private readonly FakeLogCollector _logCollector = new();
 
     public ReadingProcessingStrategiesTests()
     {
         StoredReadingsAre(CreateStoredReading(Guid.CreateVersion7()));
+        ValidationReturns(new ValidationResult());
     }
 
     public enum StrategyKind
@@ -161,6 +167,49 @@ public sealed class ReadingProcessingStrategiesTests
         A.CallTo(_dbContext).MustNotHaveHappened();
     }
 
+    [Theory]
+    [InlineData(StrategyKind.Motion)]
+    [InlineData(StrategyKind.Energy)]
+    [InlineData(StrategyKind.AirQuality)]
+    public async Task ProcessAsync_InvalidReading_FailsWithValidationErrorsWithoutTouchingDatabase(StrategyKind kind)
+    {
+        // Arrange
+        StoredReadingsAre(CreateStoredReading(DeduplicationKey));
+        ValidationReturns(new ValidationResult(
+        [
+            new ValidationFailure("ReceivedAt", "'Received At' must not be in the future."),
+            new ValidationFailure("Location", "'Location' has a range of values which does not include '99'.")
+        ]));
+
+        // Act
+        var result = await CreateSut(kind).ProcessAsync(CreateModel(kind), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.ErrorMessage.ShouldBe(
+            "'Received At' must not be in the future.; 'Location' has a range of values which does not include '99'.");
+        A.CallTo(_dbContext).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InvalidReading_LogsThatItIsRejected()
+    {
+        // Arrange
+        ValidationReturns(new ValidationResult(
+        [
+            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+        ]));
+
+        // Act
+        await CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        var entry = _logCollector.GetSnapshot().ShouldHaveSingleItem();
+        entry.Level.ShouldBe(LogLevel.Warning);
+        entry.Message.ShouldBe(
+            $"Rejected invalid Energy reading {DeduplicationKey} for location Office. 'Energy' must be a finite number.");
+    }
+
     private static MeterReadingModel CreateModel(StrategyKind kind)
     {
         return kind switch
@@ -209,12 +258,15 @@ public sealed class ReadingProcessingStrategiesTests
         {
             StrategyKind.Motion => new MotionReadingProcessingStrategy(
                 _dbContext,
+                _motionValidator,
                 new FakeLogger<MotionReadingProcessingStrategy>(_logCollector)),
             StrategyKind.Energy => new EnergyReadingProcessingStrategy(
                 _dbContext,
+                _energyValidator,
                 new FakeLogger<EnergyReadingProcessingStrategy>(_logCollector)),
             _ => new AirQualityReadingProcessingStrategy(
                 _dbContext,
+                _airQualityValidator,
                 new FakeLogger<AirQualityReadingProcessingStrategy>(_logCollector))
         };
     }
@@ -238,5 +290,15 @@ public sealed class ReadingProcessingStrategiesTests
     private void StoredReadingsAre(params MeterReading[] readings)
     {
         A.CallTo(() => _dbContext.Query<MeterReading>()).ReturnsLazily(() => readings.AsAsyncQueryable());
+    }
+
+    private void ValidationReturns(ValidationResult validationResult)
+    {
+        A.CallTo(() => _motionValidator.ValidateAsync(A<MotionReadingModel>._, A<CancellationToken>._))
+            .Returns(validationResult);
+        A.CallTo(() => _energyValidator.ValidateAsync(A<EnergyReadingModel>._, A<CancellationToken>._))
+            .Returns(validationResult);
+        A.CallTo(() => _airQualityValidator.ValidateAsync(A<AirQualityReadingModel>._, A<CancellationToken>._))
+            .Returns(validationResult);
     }
 }

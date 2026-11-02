@@ -30,6 +30,15 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
             return Result.Fail($"{GetType().Name} cannot process a {model.GetType().Name}");
         }
 
+        var validationResult = await ValidateAsync(typedModel, ct);
+
+        if (validationResult.IsFailure)
+        {
+            logger.InvalidReadingRejected(MeterType, model.Location, model.DeduplicationKey, validationResult.ErrorMessage);
+
+            return validationResult;
+        }
+
         var isDuplicate = await dbContext.Query<MeterReading>().AnyAsync(r => r.DeduplicationKey == model.DeduplicationKey, ct);
 
         if (isDuplicate)
@@ -55,11 +64,23 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         return Result.Succeed();
     }
 
+    protected abstract Task<Result> ValidateAsync(TModel model, CancellationToken ct);
+
     protected abstract IReadingPayload CreatePayload(TModel model);
 }
 
 internal static partial class ReadingProcessingStrategyLogs
 {
+    [LoggerMessage(
+        Level = LogLevel.Warning,
+        Message = "Rejected invalid {MeterType} reading {DeduplicationKey} for location {Location}. {Reason}")]
+    public static partial void InvalidReadingRejected(
+        this ILogger logger,
+        MeterType meterType,
+        MeterLocation location,
+        Guid deduplicationKey,
+        string reason);
+
     [LoggerMessage(
         Level = LogLevel.Information,
         Message = "Reading {DeduplicationKey} for location {Location} is already stored, skipped")]
