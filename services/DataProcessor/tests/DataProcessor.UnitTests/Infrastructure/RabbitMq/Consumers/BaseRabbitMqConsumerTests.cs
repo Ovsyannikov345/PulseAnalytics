@@ -28,6 +28,10 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
 
     private const string ShuttingDownMessage = "RabbitMQ consumer is shutting down";
 
+    // Set only on the thread that completes the channel close, so code running inline on it can be detected.
+    [ThreadStatic]
+    private static bool _completingChannelClose;
+
     private readonly IRabbitMqConnectionProvider _connectionProvider = A.Fake<IRabbitMqConnectionProvider>();
     private readonly IConnection _connection = A.Fake<IConnection>();
     private readonly IChannel _channel = A.Fake<IChannel>();
@@ -389,6 +393,30 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
         warning.Message.ShouldBe("Failed to close the channel");
         warning.Exception.ShouldBeSameAs(exception);
         A.CallTo(() => _channel.DisposeAsync()).MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_StoppedWhileConsuming_ContinuesShutdownOffTheThreadThatCompletesChannelClose()
+    {
+        // Arrange
+        var ct = TestContext.Current.CancellationToken;
+        var channelClose = new TaskCompletionSource();
+        bool? disposedInline = null;
+        _channel.CallsToCloseAsync().Returns(channelClose.Task);
+        A.CallTo(() => _channel.DisposeAsync()).Invokes(() => disposedInline = _completingChannelClose);
+        await StartConsumingAsync();
+        var stopping = _sut.StopAsync(ct);
+        await TestWait.UntilAsync(() => Fake.GetCalls(_channel).Any(call => call.Method.Name == nameof(IChannel.CloseAsync)), ct);
+
+        // Act
+        // RabbitMQ.Client completes the close on its consumer dispatcher thread, which must not be blocked by the host shutdown.
+        _completingChannelClose = true;
+        channelClose.SetResult();
+        _completingChannelClose = false;
+        await stopping;
+
+        // Assert
+        disposedInline.ShouldBe(false);
     }
 
     [Fact]
