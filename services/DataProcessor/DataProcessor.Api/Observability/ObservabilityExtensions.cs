@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using DataProcessor.Api.Configuration;
+using DataProcessor.Api.HealthCheck;
 using DataProcessor.Application.Telemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -48,7 +49,7 @@ public static class ObservabilityExtensions
                 .AddSource(ProcessorTelemetry.ScopeName)
                 .AddSource(RabbitMqSubscriberSourceName)
                 .AddSource(NpgsqlTelemetryName)
-                .AddAspNetCoreInstrumentation()
+                .AddAspNetCoreInstrumentation(options => options.Filter = context => !context.IsHealthCheckRequest())
                 .AddOtlpExporter(exporterOptions => exporterOptions.Endpoint = otlpEndpoint));
 
         return services;
