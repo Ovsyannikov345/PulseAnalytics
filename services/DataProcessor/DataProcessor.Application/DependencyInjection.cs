@@ -1,7 +1,5 @@
 ﻿using DataProcessor.Application.MeterReadings;
-using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.MeterReadings.Strategies;
-using DataProcessor.Application.MeterReadings.Validators;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,10 +12,7 @@ public static class DependencyInjection
     {
         services.TryAddSingleton(TimeProvider.System);
 
-        services
-            .AddSingleton<IValidator<MotionReadingModel>, MotionReadingModelValidator>()
-            .AddSingleton<IValidator<EnergyReadingModel>, EnergyReadingModelValidator>()
-            .AddSingleton<IValidator<AirQualityReadingModel>, AirQualityReadingModelValidator>();
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
 
         services
             .AddScoped<IReadingProcessingStrategy, MotionReadingProcessingStrategy>()
