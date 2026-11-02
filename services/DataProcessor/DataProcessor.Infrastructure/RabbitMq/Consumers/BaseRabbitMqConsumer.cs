@@ -299,6 +299,7 @@ internal abstract class BaseRabbitMqConsumer(
         }
         finally
         {
+            await Task.Yield();
             await channel.DisposeAsync();
         }
     }
