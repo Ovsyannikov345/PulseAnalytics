@@ -1,5 +1,8 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Correlation;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Metrics.Enums;
+using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -10,6 +13,9 @@ namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
 internal abstract class BaseRabbitMqConsumer(
     IRabbitMqConnectionProvider connectionProvider,
+    TimeProvider timeProvider,
+    IMetricsService metrics,
+    ITracingService tracing,
     ILogger logger)
     : BackgroundService
 {
@@ -20,6 +26,11 @@ internal abstract class BaseRabbitMqConsumer(
     protected ILogger Logger => logger;
 
     protected abstract string QueueName { get; }
+
+    /// <summary>
+    /// Message type used in metrics and spans.
+    /// </summary>
+    protected abstract string MessageType { get; }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -178,6 +189,13 @@ internal abstract class BaseRabbitMqConsumer(
             Logger.FailedToRestoreCorrelationId(message.BasicProperties.CorrelationId);
         }
 
+        using var activity = tracing.StartMessageProcessing(
+            MessageType,
+            message.BasicProperties.MessageId,
+            CorrelationContext.CorrelationId);
+
+        var startedAt = timeProvider.GetTimestamp();
+
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(serviceStoppingToken, message.CancellationToken);
         var ct = cts.Token;
 
@@ -198,12 +216,18 @@ internal abstract class BaseRabbitMqConsumer(
                     message.BasicProperties.Type,
                     processingResult.ErrorMessage);
 
+                activity.MarkFailed(processingResult.ErrorMessage);
+
+                metrics.RecordMessageProcessed(MessageType, timeProvider.GetElapsedTime(startedAt), ConsumeOutcome.Rejected);
+
                 await NackSafelyAsync(channel, message, requeue: false);
 
                 return;
             }
 
             Logger.MessageProcessed(message.BasicProperties.MessageId, message.BasicProperties.Type);
+
+            metrics.RecordMessageProcessed(MessageType, timeProvider.GetElapsedTime(startedAt), ConsumeOutcome.Acked);
 
             await AckSafelyAsync(channel, message);
         }
@@ -215,11 +239,19 @@ internal abstract class BaseRabbitMqConsumer(
 
             Logger.MessageProcessingFailed(message.BasicProperties.MessageId, message.BasicProperties.Type, reason);
 
+            activity.MarkFailed(reason);
+
+            metrics.RecordMessageProcessed(MessageType, timeProvider.GetElapsedTime(startedAt), ConsumeOutcome.Requeued);
+
             await NackSafelyAsync(channel, message, requeue: true);
         }
         catch (Exception ex)
         {
             Logger.MessageProcessingFailed(message.BasicProperties.MessageId, message.BasicProperties.Type, ex);
+
+            activity.MarkFailed(ex);
+
+            metrics.RecordMessageProcessed(MessageType, timeProvider.GetElapsedTime(startedAt), ConsumeOutcome.Rejected);
 
             await NackSafelyAsync(channel, message, requeue: false);
         }

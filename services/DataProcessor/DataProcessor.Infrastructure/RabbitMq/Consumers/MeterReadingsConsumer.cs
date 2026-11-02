@@ -3,6 +3,8 @@ using Ausiannikau.Utilities.Results;
 using DataIngestor.Contracts.Events;
 using DataProcessor.Application.MeterReadings;
 using DataProcessor.Application.MeterReadings.Models;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,10 +16,15 @@ namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 internal abstract class MeterReadingsConsumer<TEvent>(
     IRabbitMqConnectionProvider connectionProvider,
     IServiceScopeFactory scopeFactory,
+    TimeProvider timeProvider,
+    IMetricsService metrics,
+    ITracingService tracing,
     ILogger logger)
-    : BaseRabbitMqConsumer(connectionProvider, logger)
+    : BaseRabbitMqConsumer(connectionProvider, timeProvider, metrics, tracing, logger)
     where TEvent : MeterReadingEvent
 {
+    protected override string MessageType => typeof(TEvent).Name;
+
     protected abstract string RoutingKey { get; }
 
     protected override async Task<Result> SetupQueueAsync(IChannel channel, CancellationToken ct)
@@ -78,14 +85,14 @@ internal abstract class MeterReadingsConsumer<TEvent>(
             var readingEvent = JsonSerializer.Deserialize<TEvent>(body.Span, JsonSerializerOptions.Web);
 
             return readingEvent is null
-                ? Result<TEvent>.Fail($"Message body is not a {typeof(TEvent).Name}")
+                ? Result<TEvent>.Fail($"Message body is not a {MessageType}")
                 : Result<TEvent>.Succeed(readingEvent);
         }
         catch (JsonException ex)
         {
-            Logger.FailedToParseMessage(typeof(TEvent).Name, ex);
+            Logger.FailedToParseMessage(MessageType, ex);
 
-            return Result<TEvent>.Fail($"Message body is not a valid {typeof(TEvent).Name}");
+            return Result<TEvent>.Fail($"Message body is not a valid {MessageType}");
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using DataProcessor.Api.Configuration;
+using DataProcessor.Application.Telemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -8,8 +9,6 @@ namespace DataProcessor.Api.Observability;
 
 public static class ObservabilityExtensions
 {
-    private const string ServiceName = "data-processor";
-
     private const int MetricExportIntervalInMilliseconds = 15_000;
 
     private const string RuntimeMeterName = "System.Runtime";
@@ -34,8 +33,9 @@ public static class ObservabilityExtensions
 
         services
             .AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(ServiceName, serviceVersion: serviceVersion))
+            .ConfigureResource(resource => resource.AddService(ProcessorTelemetry.ServiceName, serviceVersion: serviceVersion))
             .WithMetrics(metrics => metrics
+                .AddMeter(ProcessorTelemetry.ScopeName)
                 .AddMeter(RuntimeMeterName)
                 .AddMeter(NpgsqlTelemetryName)
                 .AddAspNetCoreInstrumentation()
@@ -45,6 +45,7 @@ public static class ObservabilityExtensions
                     readerOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = MetricExportIntervalInMilliseconds;
                 }))
             .WithTracing(tracing => tracing
+                .AddSource(ProcessorTelemetry.ScopeName)
                 .AddSource(RabbitMqSubscriberSourceName)
                 .AddSource(NpgsqlTelemetryName)
                 .AddAspNetCoreInstrumentation()
