@@ -12,7 +12,9 @@
   "version": 1,
   "templating": { "list": [] },
   "annotations": { "list": [] },
-  "links": [],
+  "links": [
+    { "type": "dashboards", "title": "Pulse Analytics", "tags": ["pulse-analytics"], "asDropdown": true, "includeVars": false, "keepTime": true }
+  ],
   "panels": [
     {
       "type": "row",

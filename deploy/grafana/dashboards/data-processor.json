@@ -1,0 +1,400 @@
+{
+  "uid": "data-processor",
+  "title": "Data Processor",
+  "description": "Consuming meter readings from RabbitMQ, storing them in PostgreSQL and runtime health of the data-processor service.",
+  "tags": ["pulse-analytics", "data-processor"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "schemaVersion": 41,
+  "version": 1,
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "links": [
+    { "type": "dashboards", "title": "Pulse Analytics", "tags": ["pulse-analytics"], "asDropdown": true, "includeVars": false, "keepTime": true }
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Processing",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Acked messages",
+      "description": "Share of consumed messages in the selected range that were processed and acked (stored or already stored).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.9 },
+              { "color": "green", "value": 0.99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_processor_message_processing_duration_seconds_count{job=\"data-processor\", app_outcome=\"acked\"}[$__range])) / sum(increase(data_processor_message_processing_duration_seconds_count{job=\"data-processor\"}[$__range]))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Readings stored",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_processor_readings_processed_total{job=\"data-processor\", app_outcome=\"stored\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Duplicate readings skipped",
+      "description": "Redelivered messages whose reading was already stored; they are acked without a new row.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_processor_readings_processed_total{job=\"data-processor\", app_outcome=\"duplicate\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Invalid readings rejected",
+      "description": "Readings that failed validation; their messages are nacked without requeue.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "orange" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(data_processor_readings_processed_total{job=\"data-processor\", app_outcome=\"invalid\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages per minute by outcome",
+      "description": "acked = processed (stored or duplicate); rejected = nacked without requeue (unparsable, unknown location, invalid, failed); requeued = nacked back to the queue because processing was cancelled.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "acked" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "rejected" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "requeued" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(data_processor_message_processing_duration_seconds_count{job=\"data-processor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Message processing duration",
+      "description": "From delivery to the ack/nack decision: parsing, validation, duplicate check and insert.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(data_processor_message_processing_duration_seconds_bucket{job=\"data-processor\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(data_processor_message_processing_duration_seconds_bucket{job=\"data-processor\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages per minute by message type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_message_type) (rate(data_processor_message_processing_duration_seconds_count{job=\"data-processor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_message_type}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Readings",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Stored readings per minute by reading type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_reading_type) (rate(data_processor_readings_processed_total{job=\"data-processor\", app_outcome=\"stored\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_reading_type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Stored readings per minute by location",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_reading_location) (rate(data_processor_readings_processed_total{job=\"data-processor\", app_outcome=\"stored\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_reading_location}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Readings not stored per minute",
+      "description": "duplicate = already stored (redelivery); invalid = failed validation.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_reading_type, app_outcome) (rate(data_processor_readings_processed_total{job=\"data-processor\", app_outcome!=\"stored\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_reading_type}} {{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Database",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Database command duration",
+      "description": "Npgsql command execution time (duplicate checks, inserts, migrations at startup).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(db_client_operation_duration_seconds_bucket{job=\"data-processor\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(db_client_operation_duration_seconds_bucket{job=\"data-processor\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Database commands per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "failed.*" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{job=\"data-processor\"}[$__rate_interval])) * 60",
+          "legendFormat": "executed"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (error_type) (rate(db_client_operation_duration_seconds_count{job=\"data-processor\", error_type!=\"\"}[$__rate_interval])) * 60",
+          "legendFormat": "failed: {{error_type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Connection pool and executing commands",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (db_client_connection_state) (db_client_connection_count{job=\"data-processor\"})", "legendFormat": "{{db_client_connection_state}} connections" },
+        { "refId": "B", "expr": "sum(db_client_operation_npgsql_executing{job=\"data-processor\"})", "legendFormat": "executing commands" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "RabbitMQ queues",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages waiting per queue",
+      "description": "ready = waiting for a consumer; unacked = delivered to the processor and not yet acked or nacked.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_ready{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "legendFormat": "{{queue}} ready"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_unacked{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "legendFormat": "{{queue}} unacked"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumers per queue",
+      "description": "0 means the processor is not consuming the queue (down, or waiting to restart its consumer).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_consumers{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "legendFormat": "{{queue}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Runtime",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cpu_mode) (rate(dotnet_process_cpu_time_seconds_total{job=\"data-processor\"}[$__rate_interval])) / scalar(max(dotnet_process_cpu_count{job=\"data-processor\"}))",
+          "legendFormat": "{{cpu_mode}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_process_memory_working_set_bytes{job=\"data-processor\"})", "legendFormat": "working set" },
+        { "refId": "B", "expr": "sum(dotnet_gc_last_collection_heap_size_bytes{job=\"data-processor\"})", "legendFormat": "GC heap" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GC collections per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (gc_heap_generation) (rate(dotnet_gc_collections_total{job=\"data-processor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{gc_heap_generation}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Thread pool and exceptions",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_thread_pool_thread_count_total{job=\"data-processor\"})", "legendFormat": "thread pool threads" },
+        { "refId": "B", "expr": "sum(dotnet_thread_pool_queue_length_total{job=\"data-processor\"})", "legendFormat": "thread pool queue" },
+        { "refId": "C", "expr": "sum(rate(dotnet_exceptions_total{job=\"data-processor\"}[$__rate_interval])) * 60", "legendFormat": "exceptions / min" }
+      ]
+    }
+  ]
+}
