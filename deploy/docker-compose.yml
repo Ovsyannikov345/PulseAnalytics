@@ -135,6 +135,29 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  data-processor:
+    image: ilyaovsyannikov/pulse-analytics-data-processor:${DATA_PROCESSOR_TAG:-latest}
+    environment:
+      RabbitMq__Host: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER:?Set RABBITMQ_USER in deploy/.env}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in deploy/.env}
+      Database__ConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB:-pulse_analytics};Username=${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      Seq__ServerUrl: http://seq:5341
+      Seq__ApiKey: ${SEQ_API_KEY:-}
+      OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
+    ports:
+      - "${DATA_PROCESSOR_PORT:-5102}:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      seq:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   rabbitmq-data:
   seq-data:
