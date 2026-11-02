@@ -311,7 +311,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (app_message_type, app_outcome) (rate(data_ingestor_messages_published_total{job=\"data-ingestor\", app_outcome!=\"confirmed\"}[$__rate_interval])) * 60",
+          "expr": "sum by (app_message_type, app_outcome) (rate(data_ingestor_messages_published_total{job=\"data-ingestor\", app_outcome!=\"confirmed\"}[$__rate_interval])) * 60 or label_replace(sum by (app_message_type) (rate(data_ingestor_messages_published_total{job=\"data-ingestor\"}[$__rate_interval])) * 0, \"app_outcome\", \"none\", \"\", \"\")",
           "legendFormat": "{{app_message_type}} {{app_outcome}}"
         }
       ]

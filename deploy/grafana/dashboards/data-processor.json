@@ -220,7 +220,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (app_reading_type, app_outcome) (rate(data_processor_readings_processed_total{job=\"data-processor\", app_outcome!=\"stored\"}[$__rate_interval])) * 60",
+          "expr": "sum by (app_reading_type, app_outcome) (rate(data_processor_readings_processed_total{job=\"data-processor\", app_outcome!=\"stored\"}[$__rate_interval])) * 60 or label_replace(sum by (app_reading_type) (rate(data_processor_readings_processed_total{job=\"data-processor\"}[$__rate_interval])) * 0, \"app_outcome\", \"none\", \"\", \"\")",
           "legendFormat": "{{app_reading_type}} {{app_outcome}}"
         }
       ]
@@ -273,8 +273,8 @@
         },
         {
           "refId": "B",
-          "expr": "sum by (error_type) (rate(db_client_operation_duration_seconds_count{job=\"data-processor\", error_type!=\"\"}[$__rate_interval])) * 60",
-          "legendFormat": "failed: {{error_type}}"
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{job=\"data-processor\", error_type!=\"\"}[$__rate_interval])) * 60 or sum(rate(db_client_operation_duration_seconds_count{job=\"data-processor\"}[$__rate_interval])) * 0",
+          "legendFormat": "failed"
         }
       ]
     },
