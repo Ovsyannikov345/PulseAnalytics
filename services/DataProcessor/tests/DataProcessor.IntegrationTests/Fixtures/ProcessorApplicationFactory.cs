@@ -40,7 +40,7 @@ public sealed class ProcessorApplicationFactory(
     {
         return new Dictionary<string, string?>
         {
-            ["Logging:LogLevel:Default"] = "Warning",
+            ["Serilog:MinimumLevel:Default"] = "Warning",
 
             ["RabbitMq:Host"] = rabbitMq.Host,
             ["RabbitMq:Port"] = rabbitMq.Port.ToString(CultureInfo.InvariantCulture),
