@@ -77,6 +77,8 @@ public sealed class ProcessingPipelineTests(RabbitMqContainerFixture rabbitMq, P
     [InlineData("null")]
     [InlineData("""{"location":"Garage","receivedAt":"2026-11-01T12:00:00+00:00","motionDetected":true}""")]
     [InlineData("""{"messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Attic","receivedAt":"2026-11-01T12:00:00+00:00","motionDetected":true}""")]
+    [InlineData("""{"messageId":"00000000-0000-0000-0000-000000000000","location":"Garage","receivedAt":"2026-11-01T12:00:00+00:00","motionDetected":true}""")]
+    [InlineData("""{"messageId":"0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21","location":"Garage","receivedAt":"2099-01-01T12:00:00+00:00","motionDetected":true}""")]
     public async Task Host_InvalidMessage_DropsItAndKeepsConsuming(string body)
     {
         // Arrange
