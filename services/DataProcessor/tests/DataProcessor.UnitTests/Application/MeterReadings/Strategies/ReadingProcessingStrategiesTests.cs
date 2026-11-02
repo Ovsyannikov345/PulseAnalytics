@@ -1,6 +1,8 @@
 ﻿using DataProcessor.Application.Interfaces.Database;
 using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.MeterReadings.Strategies;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Metrics.Enums;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Domain.Entities.MeterReadings;
 using DataProcessor.Domain.Entities.MeterReadings.Payloads;
@@ -26,6 +28,7 @@ public sealed class ReadingProcessingStrategiesTests
     private readonly IValidator<MotionReadingModel> _motionValidator = A.Fake<IValidator<MotionReadingModel>>();
     private readonly IValidator<EnergyReadingModel> _energyValidator = A.Fake<IValidator<EnergyReadingModel>>();
     private readonly IValidator<AirQualityReadingModel> _airQualityValidator = A.Fake<IValidator<AirQualityReadingModel>>();
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
     private readonly FakeLogCollector _logCollector = new();
 
     public ReadingProcessingStrategiesTests()
@@ -210,6 +213,82 @@ public sealed class ReadingProcessingStrategiesTests
             $"Rejected invalid Energy reading {DeduplicationKey} for location Office. 'Energy' must be a finite number.");
     }
 
+    [Theory]
+    [InlineData(StrategyKind.Motion, MeterType.Motion, MeterLocation.Garage)]
+    [InlineData(StrategyKind.Energy, MeterType.Energy, MeterLocation.Office)]
+    [InlineData(StrategyKind.AirQuality, MeterType.AirQuality, MeterLocation.Kitchen)]
+    public async Task ProcessAsync_NewReading_RecordsStoredReadingWithItsTypeAndLocation(
+        StrategyKind kind,
+        MeterType expectedType,
+        MeterLocation expectedLocation)
+    {
+        // Act
+        await CreateSut(kind).ProcessAsync(CreateModel(kind), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_metrics).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReading(expectedType, expectedLocation, ReadingOutcome.Stored))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_SavingChangesThrows_RecordsNothing()
+    {
+        // Arrange
+        A.CallTo(() => _dbContext.SaveChangesAsync(A<CancellationToken>._))
+            .ThrowsAsync(new InvalidOperationException("Database is unavailable"));
+
+        // Act
+        var act = () => CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.ShouldThrowAsync<InvalidOperationException>();
+        A.CallTo(_metrics).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ReadingWithStoredDeduplicationKey_RecordsDuplicateReading()
+    {
+        // Arrange
+        StoredReadingsAre(CreateStoredReading(DeduplicationKey));
+
+        // Act
+        await CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_metrics).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReading(MeterType.Energy, MeterLocation.Office, ReadingOutcome.Duplicate))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InvalidReading_RecordsInvalidReading()
+    {
+        // Arrange
+        ValidationReturns(new ValidationResult(
+        [
+            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+        ]));
+
+        // Act
+        await CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_metrics).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordReading(MeterType.Energy, MeterLocation.Office, ReadingOutcome.Invalid))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ModelOfOtherReadingType_RecordsNothing()
+    {
+        // Act
+        await CreateSut(StrategyKind.Motion).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_metrics).MustNotHaveHappened();
+    }
+
     private static MeterReadingModel CreateModel(StrategyKind kind)
     {
         return kind switch
@@ -259,14 +338,17 @@ public sealed class ReadingProcessingStrategiesTests
             StrategyKind.Motion => new MotionReadingProcessingStrategy(
                 _dbContext,
                 _motionValidator,
+                _metrics,
                 new FakeLogger<MotionReadingProcessingStrategy>(_logCollector)),
             StrategyKind.Energy => new EnergyReadingProcessingStrategy(
                 _dbContext,
                 _energyValidator,
+                _metrics,
                 new FakeLogger<EnergyReadingProcessingStrategy>(_logCollector)),
             _ => new AirQualityReadingProcessingStrategy(
                 _dbContext,
                 _airQualityValidator,
+                _metrics,
                 new FakeLogger<AirQualityReadingProcessingStrategy>(_logCollector))
         };
     }

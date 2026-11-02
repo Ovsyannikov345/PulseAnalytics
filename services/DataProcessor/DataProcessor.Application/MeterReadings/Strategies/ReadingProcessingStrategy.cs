@@ -1,6 +1,8 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Interfaces.Database;
 using DataProcessor.Application.MeterReadings.Models;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Metrics.Enums;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Domain.Entities.MeterReadings;
 using DataProcessor.Domain.Entities.MeterReadings.Payloads;
@@ -16,7 +18,11 @@ internal interface IReadingProcessingStrategy
     public Task<Result> ProcessAsync(MeterReadingModel model, CancellationToken ct);
 }
 
-internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext dbContext, ILogger logger) : IReadingProcessingStrategy
+internal abstract class ReadingProcessingStrategy<TModel>(
+    IApplicationDbContext dbContext,
+    IMetricsService metrics,
+    ILogger logger)
+    : IReadingProcessingStrategy
     where TModel : MeterReadingModel
 {
     protected abstract MeterType MeterType { get; }
@@ -36,6 +42,8 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         {
             logger.InvalidReadingRejected(MeterType, model.Location, model.DeduplicationKey, validationResult.ErrorMessage);
 
+            metrics.RecordReading(MeterType, model.Location, ReadingOutcome.Invalid);
+
             return validationResult;
         }
 
@@ -44,6 +52,8 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         if (isDuplicate)
         {
             logger.DuplicateReadingSkipped(model.DeduplicationKey, model.Location);
+
+            metrics.RecordReading(MeterType, model.Location, ReadingOutcome.Duplicate);
 
             return Result.Succeed();
         }
@@ -60,6 +70,8 @@ internal abstract class ReadingProcessingStrategy<TModel>(IApplicationDbContext 
         await dbContext.SaveChangesAsync(ct);
 
         logger.ReadingStored(MeterType, model.Location, model.DeduplicationKey);
+
+        metrics.RecordReading(MeterType, model.Location, ReadingOutcome.Stored);
 
         return Result.Succeed();
     }

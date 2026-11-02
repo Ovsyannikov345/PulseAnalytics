@@ -2,6 +2,9 @@
 using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.MeterReadings;
 using DataProcessor.Application.MeterReadings.Models;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Metrics.Enums;
+using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
@@ -36,6 +39,8 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
     private readonly IServiceScope _scope = A.Fake<IServiceScope>();
     private readonly IReadingsProcessingService _processingService = A.Fake<IReadingsProcessingService>();
     private readonly FakeLogCollector _logCollector = new();
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
+    private readonly ITracingService _tracing = A.Fake<ITracingService>();
     private BaseRabbitMqConsumer? _sut;
 
     public MeterReadingsConsumerTests()
@@ -53,6 +58,10 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
 
         A.CallTo(() => _processingService.ProcessAsync(A<MeterReadingModel>._, A<CancellationToken>._))
             .Returns(Result.Succeed());
+
+        // Spans are covered by BaseRabbitMqConsumerTests; here processing runs as if no listener sampled it.
+        A.CallTo(() => _tracing.StartMessageProcessing(A<string>._, A<string?>._, A<Guid>._))
+            .Returns(null);
     }
 
     public enum ReadingType
@@ -287,6 +296,27 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
         _channel.CallsToBasicAckAsync().MustNotHaveHappened();
     }
 
+    [Theory]
+    [InlineData(ReadingType.Motion, "MotionReadingReceived")]
+    [InlineData(ReadingType.Energy, "EnergyReadingReceived")]
+    [InlineData(ReadingType.AirQuality, "AirQualityReadingReceived")]
+    public async Task MessageDelivered_AnyReadingType_TracesAndMeasuresItUnderItsContractEventName(
+        ReadingType readingType,
+        string expectedMessageType)
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync(readingType);
+
+        // Act
+        await DeliverAsync(consumer, CreateBody(readingType));
+
+        // Assert
+        A.CallTo(() => _tracing.StartMessageProcessing(expectedMessageType, RabbitMqDeliveries.MessageId, A<Guid>._))
+            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordMessageProcessed(expectedMessageType, A<TimeSpan>._, ConsumeOutcome.Acked))
+            .MustHaveHappenedOnceExactly();
+    }
+
     // Bodies as the ingestor serializes the contract events: camelCase JSON.
     private static string CreateBody(ReadingType readingType)
     {
@@ -348,14 +378,23 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
             ReadingType.Motion => new MotionReadingsConsumer(
                 _connectionProvider,
                 _scopeFactory,
+                TimeProvider.System,
+                _metrics,
+                _tracing,
                 new FakeLogger<MotionReadingsConsumer>(_logCollector)),
             ReadingType.Energy => new EnergyReadingsConsumer(
                 _connectionProvider,
                 _scopeFactory,
+                TimeProvider.System,
+                _metrics,
+                _tracing,
                 new FakeLogger<EnergyReadingsConsumer>(_logCollector)),
             _ => new AirQualityReadingsConsumer(
                 _connectionProvider,
                 _scopeFactory,
+                TimeProvider.System,
+                _metrics,
+                _tracing,
                 new FakeLogger<AirQualityReadingsConsumer>(_logCollector))
         };
 

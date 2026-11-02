@@ -1,5 +1,9 @@
-﻿using Ausiannikau.Utilities.Results;
+﻿using System.Diagnostics;
+using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Correlation;
+using DataProcessor.Application.Telemetry.Metrics;
+using DataProcessor.Application.Telemetry.Metrics.Enums;
+using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
 using DataProcessor.UnitTests.TestDoubles;
@@ -7,6 +11,7 @@ using DataProcessor.UnitTests.Utilities;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
+using Microsoft.Extensions.Time.Testing;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Shouldly;
@@ -30,10 +35,17 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
     private readonly Func<ReceivedMessage, CancellationToken, Task<Result>> _processMessage =
         A.Fake<Func<ReceivedMessage, CancellationToken, Task<Result>>>();
     private readonly FakeLogger<DelegatingRabbitMqConsumer> _logger = new();
+    private readonly FakeTimeProvider _timeProvider = new();
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
+    private readonly ITracingService _tracing = A.Fake<ITracingService>();
+    private readonly RecordingActivitySource _messageActivities = new();
     private readonly DelegatingRabbitMqConsumer _sut;
 
     public BaseRabbitMqConsumerTests()
     {
+        A.CallTo(() => _tracing.StartMessageProcessing(A<string>._, A<string?>._, A<Guid>._))
+            .ReturnsLazily(() => _messageActivities.Start());
+
         A.CallTo(() => _connectionProvider.GetConnectionAsync(A<CancellationToken>._))
             .Returns(Result<IConnection>.Succeed(_connection));
 
@@ -49,7 +61,21 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
         A.CallTo(() => _processMessage(A<ReceivedMessage>._, A<CancellationToken>._))
             .Returns(Result.Succeed());
 
-        _sut = new DelegatingRabbitMqConsumer(_connectionProvider, _setupQueue, _processMessage, _logger);
+        _sut = new DelegatingRabbitMqConsumer(
+            _connectionProvider,
+            _setupQueue,
+            _processMessage,
+            _timeProvider,
+            _metrics,
+            _tracing,
+            _logger);
+    }
+
+    public enum ProcessingBehavior
+    {
+        Succeeds,
+        ReturnsFailure,
+        Throws
     }
 
     // Stops the consumer even when a test failed before stopping it, so its background task
@@ -59,6 +85,7 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
         await _sut.StopAsync(CancellationToken.None);
 
         _sut.Dispose();
+        _messageActivities.Dispose();
     }
 
     [Fact]
@@ -627,6 +654,132 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
         // Assert
         processingCorrelationIds.Count.ShouldBe(2);
         processingCorrelationIds[1].ShouldNotBe(processingCorrelationIds[0]);
+    }
+
+    [Theory]
+    [InlineData(ProcessingBehavior.Succeeds, ConsumeOutcome.Acked)]
+    [InlineData(ProcessingBehavior.ReturnsFailure, ConsumeOutcome.Rejected)]
+    [InlineData(ProcessingBehavior.Throws, ConsumeOutcome.Rejected)]
+    public async Task MessageDelivered_ProcessingFinished_RecordsProcessingDurationWithConsumerMessageTypeAndOutcome(
+        ProcessingBehavior behavior,
+        ConsumeOutcome expectedOutcome)
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync();
+        ProcessingBehaves(behavior, TimeSpan.FromMilliseconds(250));
+
+        // Act
+        await consumer.DeliverAsync(DeliveryTag, RabbitMqDeliveries.Properties(), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordMessageProcessed(A<string>._, A<TimeSpan>._, A<ConsumeOutcome>._))
+            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordMessageProcessed(
+                DelegatingRabbitMqConsumer.TestMessageType,
+                TimeSpan.FromMilliseconds(250),
+                expectedOutcome))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task MessageDelivered_DeliveryCancelledWhileProcessing_RecordsRequeuedOutcomeAndMarksSpanAsError()
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync();
+        using var deliveryCts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        A.CallTo(() => _processMessage(A<ReceivedMessage>._, A<CancellationToken>._))
+            .ReturnsLazily(async (ReceivedMessage _, CancellationToken token) =>
+            {
+                await deliveryCts.CancelAsync();
+
+                await Task.Delay(Timeout.Infinite, token);
+
+                return Result.Succeed();
+            });
+
+        // Act
+        await consumer.DeliverAsync(DeliveryTag, RabbitMqDeliveries.Properties(), deliveryCts.Token);
+
+        // Assert
+        A.CallTo(() => _metrics.RecordMessageProcessed(
+                DelegatingRabbitMqConsumer.TestMessageType,
+                A<TimeSpan>._,
+                ConsumeOutcome.Requeued))
+            .MustHaveHappenedOnceExactly();
+        var activity = _messageActivities.StoppedActivities.ShouldHaveSingleItem();
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        activity.StatusDescription.ShouldBe("Message processing cancelled");
+    }
+
+    [Fact]
+    public async Task MessageDelivered_AnyMessage_ProcessesItInsideSpanStartedForMessage()
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync();
+        var correlationId = Guid.CreateVersion7();
+        Activity? processingActivity = null;
+        A.CallTo(() => _processMessage(A<ReceivedMessage>._, A<CancellationToken>._))
+            .Invokes(() => processingActivity = Activity.Current)
+            .Returns(Result.Succeed());
+
+        // Act
+        await consumer.DeliverAsync(
+            DeliveryTag,
+            RabbitMqDeliveries.Properties(correlationId.ToString()),
+            TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(() => _tracing.StartMessageProcessing(
+                DelegatingRabbitMqConsumer.TestMessageType,
+                RabbitMqDeliveries.MessageId,
+                correlationId))
+            .MustHaveHappenedOnceExactly();
+        var activity = _messageActivities.StoppedActivities.ShouldHaveSingleItem();
+        activity.Status.ShouldBe(ActivityStatusCode.Unset);
+        processingActivity.ShouldBeSameAs(activity);
+    }
+
+    [Theory]
+    [InlineData(ProcessingBehavior.ReturnsFailure)]
+    [InlineData(ProcessingBehavior.Throws)]
+    public async Task MessageDelivered_ProcessingFails_MarksMessageSpanAsError(ProcessingBehavior behavior)
+    {
+        // Arrange
+        var consumer = await StartConsumingAsync();
+        ProcessingBehaves(behavior, TimeSpan.Zero);
+
+        // Act
+        await consumer.DeliverAsync(DeliveryTag, RabbitMqDeliveries.Properties(), TestContext.Current.CancellationToken);
+
+        // Assert
+        var activity = _messageActivities.StoppedActivities.ShouldHaveSingleItem();
+        activity.Status.ShouldBe(ActivityStatusCode.Error);
+        if (behavior == ProcessingBehavior.ReturnsFailure)
+        {
+            activity.StatusDescription.ShouldBe("Reading has no location");
+        }
+        else
+        {
+            activity.StatusDescription.ShouldBe("Unexpected failure");
+            activity.Events.ShouldContain(activityEvent => activityEvent.Name == "exception");
+            activity.GetTagItem("error.type").ShouldBe(typeof(InvalidOperationException).FullName);
+        }
+    }
+
+    private void ProcessingBehaves(ProcessingBehavior behavior, TimeSpan duration)
+    {
+        A.CallTo(() => _processMessage(A<ReceivedMessage>._, A<CancellationToken>._))
+            .ReturnsLazily(() =>
+            {
+                _timeProvider.Advance(duration);
+
+                return behavior switch
+                {
+                    ProcessingBehavior.Succeeds => Task.FromResult(Result.Succeed()),
+                    ProcessingBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Reading has no location")),
+                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+                };
+            });
     }
 
     private async Task<IAsyncBasicConsumer> StartConsumingAsync()
