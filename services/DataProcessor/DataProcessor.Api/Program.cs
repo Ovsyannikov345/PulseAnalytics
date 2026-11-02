@@ -1,23 +1,46 @@
-﻿using DataProcessor.Application;
+﻿using DataProcessor.Api;
+using DataProcessor.Api.Observability;
+using DataProcessor.Application;
 using DataProcessor.Infrastructure;
 using DataProcessor.Infrastructure.Database;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-var configuration = builder.Configuration;
-
-builder.Services
-    .AddInfrastructureServices(configuration)
-    .AddApplicationServices();
-
-var app = builder.Build();
-
-await app.Services.MigrateDatabaseAsync(app.Lifetime.ApplicationStopping);
-
-app.MapGet("/ping", () =>
+try
 {
-    return "pong";
-})
-.WithName("Ping");
+    var builder = WebApplication.CreateBuilder(args);
 
-await app.RunAsync();
+    var configuration = builder.Configuration;
+
+    builder.Services
+        .AddSerilogLogging(configuration)
+        .AddObservability(configuration)
+        .AddInfrastructureServices(configuration)
+        .AddApplicationServices();
+
+    var app = builder.Build();
+
+    app.UseSerilogRequestLogging();
+
+    await app.Services.MigrateDatabaseAsync(app.Lifetime.ApplicationStopping);
+
+    app.MapGet("/ping", () =>
+    {
+        return "pong";
+    })
+    .WithName("Ping");
+
+    await app.RunAsync();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Data processor terminated unexpectedly");
+    Environment.ExitCode = 1;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
