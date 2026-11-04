@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Dockerfile" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ApiGateway.UnitTests/ApiGateway.UnitTests.csproj" />
+  </Folder>
+  <Project Path="ApiGateway.Api/ApiGateway.Api.csproj" />
+  <Project Path="ApiGateway.BusinessLogic/ApiGateway.BusinessLogic.csproj" />
+  <Project Path="ApiGateway.DataAccess/ApiGateway.DataAccess.csproj" />
+</Solution>
