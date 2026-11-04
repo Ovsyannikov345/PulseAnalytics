@@ -8,10 +8,12 @@ namespace ApiGateway.UnitTests.Architecture;
 // so these checks catch Api code that reaches past BusinessLogic into DataAccess.
 public sealed class LayerDependencyTests
 {
-    private static readonly string[] ApiReferences = typeof(HealthCheckConstants).Assembly
-        .GetReferencedAssemblies()
-        .Select(reference => reference.Name!)
-        .ToArray();
+    private static readonly string[] ApiReferences =
+    [
+        .. typeof(HealthCheckConstants).Assembly
+            .GetReferencedAssemblies()
+            .Select(reference => reference.Name!)
+    ];
 
     [Fact]
     public void ApiAssembly_References_BusinessLogic()
