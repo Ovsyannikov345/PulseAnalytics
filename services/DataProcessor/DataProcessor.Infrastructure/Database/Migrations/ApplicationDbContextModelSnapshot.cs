@@ -22,7 +22,7 @@ namespace DataProcessor.Infrastructure.Database.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("DataProcessor.Domain.Entities.MeterReading", b =>
+            modelBuilder.Entity("DataProcessor.Domain.Entities.MeterReadings.MeterReading", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
