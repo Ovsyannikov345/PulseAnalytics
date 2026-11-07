@@ -12,18 +12,13 @@ namespace ApiGateway.UnitTests.Utilities;
 /// The gateway's real GraphQL schema and request pipeline (<c>AddGraphQLApi</c>) over a fake readings service,
 /// without HTTP or a database.
 /// </summary>
-internal sealed class GraphQLTestServer : IAsyncDisposable
+internal sealed class GraphQLTestServer(IMeterReadingsService meterReadingsService) : IAsyncDisposable
 {
-    private readonly ServiceProvider _serviceProvider;
-
-    public GraphQLTestServer(IMeterReadingsService meterReadingsService)
-    {
-        _serviceProvider = new ServiceCollection()
-            .AddLogging()
-            .AddSingleton(meterReadingsService)
-            .AddGraphQLApi()
-            .BuildServiceProvider();
-    }
+    private readonly ServiceProvider _serviceProvider = new ServiceCollection()
+        .AddLogging()
+        .AddSingleton(meterReadingsService)
+        .AddGraphQLApi()
+        .BuildServiceProvider();
 
     public async Task<IRequestExecutor> GetExecutorAsync()
     {

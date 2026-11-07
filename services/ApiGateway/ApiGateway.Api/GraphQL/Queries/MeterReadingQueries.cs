@@ -15,7 +15,7 @@ using HotChocolate.Types.Pagination;
 namespace ApiGateway.Api.GraphQL.Queries;
 
 [ExtendObjectType(OperationType.Query)]
-internal sealed class MeterReadingQueries
+internal static class MeterReadingQueries
 {
     [UsePaging(
         ConnectionName = "MeterReading",
@@ -24,7 +24,7 @@ internal sealed class MeterReadingQueries
         DefaultPageSize = PagingLimits.DefaultPageSize,
         MaxPageSize = PagingLimits.MaxPageSize)]
     [GraphQLDescription("Stored readings, newest first.")]
-    public async Task<Connection<MeterReading>> GetReadingsAsync(
+    public static async Task<Connection<MeterReading>> GetReadingsAsync(
         ReadingFilterInput? filter,
         int? first,
         string? after,
@@ -47,7 +47,7 @@ internal sealed class MeterReadingQueries
     }
 
     [GraphQLDescription("The newest reading of every meter (type and location), ordered by type and location.")]
-    public async Task<IReadOnlyList<MeterReading>> GetLatestReadingsAsync(
+    public static async Task<IReadOnlyList<MeterReading>> GetLatestReadingsAsync(
         LatestReadingsFilterInput? filter,
         IMeterReadingsService meterReadingsService,
         CancellationToken ct)
@@ -64,7 +64,7 @@ internal sealed class MeterReadingQueries
     }
 
     [GraphQLDescription("The number of readings per group. An empty `groupBy` returns the total count.")]
-    public async Task<IReadOnlyList<ReadingCount>> GetReadingCountsAsync(
+    public static async Task<IReadOnlyList<ReadingCount>> GetReadingCountsAsync(
         ReadingFilterInput? filter,
         IReadOnlyList<ReadingGrouping> groupBy,
         IMeterReadingsService meterReadingsService,

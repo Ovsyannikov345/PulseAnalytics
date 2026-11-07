@@ -99,7 +99,8 @@ public sealed class MeterReadingsServiceTests
 
         // Assert
         pages.Count.ShouldBe(3);
-        pages.SelectMany(p => p.Items).Select(i => i.Item.Id).ShouldBe([.. new[] { 6, 5, 4, 3, 2, 1 }.Select(IdEndingWith)]);
+        pages.SelectMany(p => p.Items).Select(i => i.Item.Id)
+            .ShouldBe([IdEndingWith(6), IdEndingWith(5), IdEndingWith(4), IdEndingWith(3), IdEndingWith(2), IdEndingWith(1)]);
         pages.Skip(1).ShouldAllBe(p => p.HasPreviousPage);
     }
 

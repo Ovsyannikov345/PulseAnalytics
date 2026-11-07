@@ -79,7 +79,7 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
         var request = new GetReadingCountsRequest { GroupBy = groupBy };
         var readings = _dbContext.Query<MeterReading>();
 
-        IQueryable<ReadingCountModel> counts = groupBy.Length == 2
+        var counts = groupBy.Length == 2
             ? readings.GroupBy(r => new { r.Type, r.Location })
                 .Select(g => new ReadingCountModel { Type = g.Key.Type, Location = g.Key.Location, Count = g.Count() })
             : groupBy[0] == ReadingGrouping.Type

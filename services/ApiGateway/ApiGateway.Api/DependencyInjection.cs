@@ -18,7 +18,7 @@ public static class DependencyInjection
         services
             .AddGraphQLServer()
             .AddQueryType()
-            .AddTypeExtension<MeterReadingQueries>()
+            .AddTypeExtension(typeof(MeterReadingQueries))
             .AddType<MeterReadingInterfaceType>()
             .AddType<MotionReadingType>()
             .AddType<EnergyReadingType>()
@@ -26,7 +26,7 @@ public static class DependencyInjection
             .AddType<ReadingCountType>()
             .AddType<ReadingFilterInputType>()
             .AddType<LatestReadingsFilterInputType>()
-            // The schema has its own service container; the filter needs application services (environment, logging).
+            // The schema has its own service container; the filter needs application services (logging).
             .AddErrorFilter(schemaServices =>
                 ActivatorUtilities.CreateInstance<GraphQLErrorFilter>(schemaServices.GetRootServiceProvider()))
             .AddMaxExecutionDepthRule(MaxExecutionDepth, skipIntrospectionFields: true)
