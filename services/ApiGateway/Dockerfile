@@ -5,6 +5,7 @@ WORKDIR /src
 COPY Directory.Build.props ./
 COPY ApiGateway.Api/ApiGateway.Api.csproj ApiGateway.Api/
 COPY ApiGateway.BusinessLogic/ApiGateway.BusinessLogic.csproj ApiGateway.BusinessLogic/
+COPY ApiGateway.Common/ApiGateway.Common.csproj ApiGateway.Common/
 COPY ApiGateway.DataAccess/ApiGateway.DataAccess.csproj ApiGateway.DataAccess/
 
 RUN dotnet restore ApiGateway.Api/ApiGateway.Api.csproj

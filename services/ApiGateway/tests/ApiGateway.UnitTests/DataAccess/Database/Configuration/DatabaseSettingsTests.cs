@@ -37,4 +37,66 @@ public sealed class DatabaseSettingsTests
         // Assert
         results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(DatabaseSettings.ConnectionString)]);
     }
+
+    [Fact]
+    public void CommandTimeoutSeconds_NotConfigured_IsTenSeconds()
+    {
+        // Assert
+        ValidSettings.CommandTimeoutSeconds.ShouldBe(10);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(600)]
+    public void Validate_CommandTimeoutInRange_Passes(int commandTimeoutSeconds)
+    {
+        // Act
+        var results = DataAnnotationsValidator.Validate(ValidSettings with { CommandTimeoutSeconds = commandTimeoutSeconds });
+
+        // Assert
+        results.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(601)]
+    public void Validate_CommandTimeoutOutOfRange_Fails(int commandTimeoutSeconds)
+    {
+        // Act
+        var results = DataAnnotationsValidator.Validate(ValidSettings with { CommandTimeoutSeconds = commandTimeoutSeconds });
+
+        // Assert
+        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(DatabaseSettings.CommandTimeoutSeconds)]);
+    }
+
+    [Fact]
+    public void ConnectTimeoutSeconds_NotConfigured_IsThreeSeconds()
+    {
+        // Assert
+        ValidSettings.ConnectTimeoutSeconds.ShouldBe(3);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(60)]
+    public void Validate_ConnectTimeoutInRange_Passes(int connectTimeoutSeconds)
+    {
+        // Act
+        var results = DataAnnotationsValidator.Validate(ValidSettings with { ConnectTimeoutSeconds = connectTimeoutSeconds });
+
+        // Assert
+        results.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(61)]
+    public void Validate_ConnectTimeoutOutOfRange_Fails(int connectTimeoutSeconds)
+    {
+        // Act
+        var results = DataAnnotationsValidator.Validate(ValidSettings with { ConnectTimeoutSeconds = connectTimeoutSeconds });
+
+        // Assert
+        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(DatabaseSettings.ConnectTimeoutSeconds)]);
+    }
 }

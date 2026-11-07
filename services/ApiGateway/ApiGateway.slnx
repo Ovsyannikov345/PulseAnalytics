@@ -11,5 +11,6 @@
   </Folder>
   <Project Path="ApiGateway.Api/ApiGateway.Api.csproj" />
   <Project Path="ApiGateway.BusinessLogic/ApiGateway.BusinessLogic.csproj" />
+  <Project Path="ApiGateway.Common/ApiGateway.Common.csproj" />
   <Project Path="ApiGateway.DataAccess/ApiGateway.DataAccess.csproj" />
 </Solution>

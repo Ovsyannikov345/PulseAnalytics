@@ -1,4 +1,4 @@
-﻿namespace ApiGateway.DataAccess.Constants.Enums;
+﻿namespace ApiGateway.Common.Constants.Enums;
 
 public enum MeterType
 {
