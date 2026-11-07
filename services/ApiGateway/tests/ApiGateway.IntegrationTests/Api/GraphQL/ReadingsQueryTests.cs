@@ -92,20 +92,13 @@ public sealed class ReadingsQueryTests(PostgreSqlContainerFixture postgreSql) : 
         // Act
         var response = await CreateClient().ExecuteAsync(
             """
-            query ($filter: ReadingFilterInput) {
-              readings(filter: $filter) { nodes { id } }
+            query ($from: DateTime!, $to: DateTime!) {
+              readings(filter: { types: [ENERGY, AIR_QUALITY], locations: [KITCHEN, BEDROOM], from: $from, to: $to }) {
+                nodes { id }
+              }
             }
             """,
-            new Dictionary<string, object?>
-            {
-                ["filter"] = new
-                {
-                    types = new[] { "ENERGY", "AIR_QUALITY" },
-                    locations = new[] { "KITCHEN", "BEDROOM" },
-                    from,
-                    to
-                }
-            });
+            new Dictionary<string, object?> { ["from"] = from, ["to"] = to });
 
         // Assert
         response.Errors.ShouldBeEmpty();
