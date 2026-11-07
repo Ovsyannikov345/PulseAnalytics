@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -94,6 +95,18 @@ public sealed class ReadOnlyApplicationDbContextTests : IAsyncDisposable
     {
         // Assert
         _sut.Database.GetCommandTimeout().ShouldBe(10);
+    }
+
+    [Fact]
+    public void Database_ConnectionString_HasConnectTimeoutFromSettingsAndKeepsConfiguredValues()
+    {
+        // Act
+        var connectionString = new NpgsqlConnectionStringBuilder(_sut.Database.GetConnectionString());
+
+        // Assert
+        connectionString.Timeout.ShouldBe(3);
+        connectionString.Host.ShouldBe("localhost");
+        connectionString.Database.ShouldBe("unused");
     }
 
     [Fact]

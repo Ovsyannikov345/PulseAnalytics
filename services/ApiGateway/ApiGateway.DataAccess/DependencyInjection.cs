@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace ApiGateway.DataAccess;
 
@@ -22,9 +23,14 @@ public static class DependencyInjection
         {
             var databaseSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
 
+            var connectionString = new NpgsqlConnectionStringBuilder(databaseSettings.ConnectionString)
+            {
+                Timeout = databaseSettings.ConnectTimeoutSeconds
+            };
+
             options
                 .UseNpgsql(
-                    databaseSettings.ConnectionString,
+                    connectionString.ConnectionString,
                     npgsql => npgsql.CommandTimeout(databaseSettings.CommandTimeoutSeconds))
                 .UseSnakeCaseNamingConvention()
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);

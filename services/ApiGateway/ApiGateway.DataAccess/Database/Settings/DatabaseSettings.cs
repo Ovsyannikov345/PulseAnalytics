@@ -11,4 +11,7 @@ internal sealed record DatabaseSettings
 
     [Range(1, 600)]
     public int CommandTimeoutSeconds { get; init; } = 10;
+
+    [Range(1, 60)]
+    public int ConnectTimeoutSeconds { get; init; } = 3;
 }
