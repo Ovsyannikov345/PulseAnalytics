@@ -1,4 +1,4 @@
-﻿using ApiGateway.DataAccess.Constants.Enums;
+﻿using ApiGateway.Common.Constants.Enums;
 
 namespace ApiGateway.DataAccess.Entities;
 

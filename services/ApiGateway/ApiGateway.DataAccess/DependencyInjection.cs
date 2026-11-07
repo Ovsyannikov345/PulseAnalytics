@@ -23,7 +23,9 @@ public static class DependencyInjection
             var databaseSettings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
 
             options
-                .UseNpgsql(databaseSettings.ConnectionString)
+                .UseNpgsql(
+                    databaseSettings.ConnectionString,
+                    npgsql => npgsql.CommandTimeout(databaseSettings.CommandTimeoutSeconds))
                 .UseSnakeCaseNamingConvention()
                 .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
         });
