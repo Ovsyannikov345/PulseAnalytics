@@ -19,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="..\..\ApiGateway.Api\Schema\schema.graphql" Link="Schema\schema.graphql" CopyToOutputDirectory="PreserveNewest" />
+		<None Include="..\..\ApiGateway.Api\GraphQL\schema.graphql" Link="Schema\schema.graphql" CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 
 	<ItemGroup>

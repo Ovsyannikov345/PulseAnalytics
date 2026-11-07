@@ -1,11 +1,20 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Models;
+﻿using ApiGateway.Common.Constants.Enums;
 using HotChocolate.Types;
 
-namespace ApiGateway.Api.GraphQL.Types;
+namespace ApiGateway.Api.GraphQL.Readings;
 
-internal sealed class ReadingCountType : ObjectType<ReadingCountModel>
+internal sealed record ReadingCount
 {
-    protected override void Configure(IObjectTypeDescriptor<ReadingCountModel> descriptor)
+    public MeterType? Type { get; init; }
+
+    public MeterLocation? Location { get; init; }
+
+    public required int Count { get; init; }
+}
+
+internal sealed class ReadingCountType : ObjectType<ReadingCount>
+{
+    protected override void Configure(IObjectTypeDescriptor<ReadingCount> descriptor)
     {
         descriptor
             .Name("ReadingCount")

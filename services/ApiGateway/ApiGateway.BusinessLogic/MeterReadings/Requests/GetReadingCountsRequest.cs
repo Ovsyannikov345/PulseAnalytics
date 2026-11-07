@@ -1,4 +1,3 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Models;
 using ApiGateway.Common.Constants.Enums;
 
 namespace ApiGateway.BusinessLogic.MeterReadings.Requests;

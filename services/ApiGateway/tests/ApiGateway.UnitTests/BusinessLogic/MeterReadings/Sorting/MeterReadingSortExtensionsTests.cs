@@ -2,6 +2,7 @@
 using ApiGateway.BusinessLogic.MeterReadings.Models;
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.BusinessLogic.MeterReadings.Sorting;
+using ApiGateway.Common.Constants.Enums;
 using ApiGateway.DataAccess;
 using ApiGateway.DataAccess.Database;
 using ApiGateway.DataAccess.Entities;

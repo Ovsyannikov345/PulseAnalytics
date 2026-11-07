@@ -6,7 +6,7 @@ using Xunit;
 
 namespace ApiGateway.UnitTests.Api.GraphQL;
 
-// ApiGateway.Api/Schema/schema.graphql is the committed public contract (the frontend can generate types from it).
+// ApiGateway.Api/GraphQL/schema.graphql is the committed public contract (the frontend can generate types from it).
 // A schema change fails this test until the file is updated on purpose: the printed schema is written next to the test
 // binaries as schema.actual.graphql, so it can be compared and copied over the committed file.
 public sealed class SchemaSnapshotTests : IAsyncDisposable
@@ -39,7 +39,7 @@ public sealed class SchemaSnapshotTests : IAsyncDisposable
             await File.WriteAllTextAsync(ActualPath, actual, ct);
         }
 
-        actual.ShouldBe(expected, $"The GraphQL schema changed. If intended, copy {ActualPath} over ApiGateway.Api/Schema/schema.graphql.");
+        actual.ShouldBe(expected, $"The GraphQL schema changed. If intended, copy {ActualPath} over ApiGateway.Api/GraphQL/schema.graphql.");
     }
 
     // The committed file may be checked out with CRLF line endings.

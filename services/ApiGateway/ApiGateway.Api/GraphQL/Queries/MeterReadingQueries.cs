@@ -1,9 +1,11 @@
 ﻿using ApiGateway.Api.GraphQL.Errors;
 using ApiGateway.Api.GraphQL.Inputs;
+using ApiGateway.Api.GraphQL.Readings;
 using ApiGateway.BusinessLogic.MeterReadings;
 using ApiGateway.BusinessLogic.MeterReadings.Models;
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.BusinessLogic.Paging;
+using ApiGateway.Common.Constants.Enums;
 using Ausiannikau.Utilities.Results;
 using HotChocolate;
 using HotChocolate.Language;
@@ -15,8 +17,6 @@ namespace ApiGateway.Api.GraphQL.Queries;
 [ExtendObjectType(OperationType.Query)]
 internal sealed class MeterReadingQueries
 {
-    // HotChocolate declares and checks the paging arguments; the service pages the query itself (keyset on
-    // ReceivedAt + Id), and the returned connection is passed through as is.
     [UsePaging(
         ConnectionName = "MeterReading",
         AllowBackwardPagination = false,
@@ -24,7 +24,7 @@ internal sealed class MeterReadingQueries
         DefaultPageSize = PagingLimits.DefaultPageSize,
         MaxPageSize = PagingLimits.MaxPageSize)]
     [GraphQLDescription("Stored readings, newest first.")]
-    public async Task<Connection<MeterReadingModel>> GetReadingsAsync(
+    public async Task<Connection<MeterReading>> GetReadingsAsync(
         ReadingFilterInput? filter,
         int? first,
         string? after,
@@ -47,7 +47,7 @@ internal sealed class MeterReadingQueries
     }
 
     [GraphQLDescription("The newest reading of every meter (type and location), ordered by type and location.")]
-    public async Task<IReadOnlyList<MeterReadingModel>> GetLatestReadingsAsync(
+    public async Task<IReadOnlyList<MeterReading>> GetLatestReadingsAsync(
         LatestReadingsFilterInput? filter,
         IMeterReadingsService meterReadingsService,
         CancellationToken ct)
@@ -60,11 +60,11 @@ internal sealed class MeterReadingQueries
 
         var result = await meterReadingsService.GetLatestReadingsAsync(request, ct);
 
-        return GetValueOrThrow(result);
+        return [.. GetValueOrThrow(result).Select(ToMeterReading)];
     }
 
     [GraphQLDescription("The number of readings per group. An empty `groupBy` returns the total count.")]
-    public async Task<IReadOnlyList<ReadingCountModel>> GetReadingCountsAsync(
+    public async Task<IReadOnlyList<ReadingCount>> GetReadingCountsAsync(
         ReadingFilterInput? filter,
         IReadOnlyList<ReadingGrouping> groupBy,
         IMeterReadingsService meterReadingsService,
@@ -81,11 +81,9 @@ internal sealed class MeterReadingQueries
 
         var result = await meterReadingsService.GetReadingCountsAsync(request, ct);
 
-        return GetValueOrThrow(result);
+        return [.. GetValueOrThrow(result).Select(ToReadingCount)];
     }
 
-    // A failed result means invalid input, so it becomes a GraphQL error with the BAD_REQUEST code
-    // and the result's message.
     private static T GetValueOrThrow<T>(Result<T> result)
     {
         if (result.TryGetSuccessValue(out var value))
@@ -99,9 +97,10 @@ internal sealed class MeterReadingQueries
             .Build());
     }
 
-    private static Connection<T> ToConnection<T>(CursorPage<T> page)
+    private static Connection<MeterReading> ToConnection(CursorPage<MeterReadingModel> page)
     {
-        IReadOnlyList<IEdge<T>> edges = [.. page.Items.Select(item => new Edge<T>(item.Item, item.Cursor))];
+        IReadOnlyList<IEdge<MeterReading>> edges =
+            [.. page.Items.Select(item => new Edge<MeterReading>(ToMeterReading(item.Item), item.Cursor))];
 
         var pageInfo = new ConnectionPageInfo(
             page.HasNextPage,
@@ -109,6 +108,47 @@ internal sealed class MeterReadingQueries
             startCursor: page.Items.Count > 0 ? page.Items[0].Cursor : null,
             endCursor: page.Items.Count > 0 ? page.Items[^1].Cursor : null);
 
-        return new Connection<T>(edges, pageInfo);
+        return new Connection<MeterReading>(edges, pageInfo);
+    }
+
+    private static MeterReading ToMeterReading(MeterReadingModel model)
+    {
+        return model switch
+        {
+            MotionReadingModel motion => new MotionReading
+            {
+                Id = motion.Id,
+                Location = motion.Location,
+                ReceivedAt = motion.ReceivedAt,
+                MotionDetected = motion.MotionDetected
+            },
+            EnergyReadingModel energy => new EnergyReading
+            {
+                Id = energy.Id,
+                Location = energy.Location,
+                ReceivedAt = energy.ReceivedAt,
+                Energy = energy.Energy
+            },
+            AirQualityReadingModel airQuality => new AirQualityReading
+            {
+                Id = airQuality.Id,
+                Location = airQuality.Location,
+                ReceivedAt = airQuality.ReceivedAt,
+                Co2 = airQuality.Co2,
+                Pm25 = airQuality.Pm25,
+                Humidity = airQuality.Humidity
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unknown reading model.")
+        };
+    }
+
+    private static ReadingCount ToReadingCount(ReadingCountModel model)
+    {
+        return new ReadingCount
+        {
+            Type = model.Type,
+            Location = model.Location,
+            Count = model.Count
+        };
     }
 }

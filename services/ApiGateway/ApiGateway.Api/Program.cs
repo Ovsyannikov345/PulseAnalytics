@@ -1,4 +1,4 @@
-using ApiGateway.Api;
+﻿using ApiGateway.Api;
 using ApiGateway.Api.HealthCheck;
 using ApiGateway.BusinessLogic;
 
@@ -13,8 +13,6 @@ builder.Services.AddHealthChecks();
 var app = builder.Build();
 
 app.MapHealthChecks(HealthCheckConstants.EndpointPath);
-
-// Also serves the Nitro IDE to browsers.
 app.MapGraphQL();
 
 await app.RunAsync();

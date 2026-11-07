@@ -1,11 +1,22 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Models;
+﻿using ApiGateway.Common.Constants.Enums;
 using HotChocolate.Types;
 
-namespace ApiGateway.Api.GraphQL.Types;
+namespace ApiGateway.Api.GraphQL.Readings;
 
-internal sealed class AirQualityReadingType : ObjectType<AirQualityReadingModel>
+internal sealed record AirQualityReading : MeterReading
 {
-    protected override void Configure(IObjectTypeDescriptor<AirQualityReadingModel> descriptor)
+    public override MeterType Type => MeterType.AirQuality;
+
+    public required int Co2 { get; init; }
+
+    public required int Pm25 { get; init; }
+
+    public required int Humidity { get; init; }
+}
+
+internal sealed class AirQualityReadingType : ObjectType<AirQualityReading>
+{
+    protected override void Configure(IObjectTypeDescriptor<AirQualityReading> descriptor)
     {
         descriptor
             .Name("AirQualityReading")

@@ -1,4 +1,4 @@
-﻿namespace ApiGateway.BusinessLogic.MeterReadings.Models;
+﻿namespace ApiGateway.Common.Constants.Enums;
 
 public enum ReadingGrouping
 {
