@@ -13,7 +13,7 @@ public static class DependencyInjection
 
     private static readonly TimeSpan ExecutionTimeout = TimeSpan.FromSeconds(15);
 
-    public static IServiceCollection AddGraphQLApi(this IServiceCollection services, IHostEnvironment environment)
+    public static IServiceCollection AddGraphQLApi(this IServiceCollection services)
     {
         services
             .AddGraphQLServer()

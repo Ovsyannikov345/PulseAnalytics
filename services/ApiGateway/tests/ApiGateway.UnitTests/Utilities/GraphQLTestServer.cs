@@ -1,11 +1,9 @@
 ﻿using System.Text.Json;
 using ApiGateway.Api;
 using ApiGateway.BusinessLogic.MeterReadings;
-using FakeItEasy;
 using HotChocolate;
 using HotChocolate.Execution;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Xunit;
 
 namespace ApiGateway.UnitTests.Utilities;
@@ -18,16 +16,12 @@ internal sealed class GraphQLTestServer : IAsyncDisposable
 {
     private readonly ServiceProvider _serviceProvider;
 
-    public GraphQLTestServer(IMeterReadingsService meterReadingsService, string environmentName = "Production")
+    public GraphQLTestServer(IMeterReadingsService meterReadingsService)
     {
-        var environment = A.Fake<IHostEnvironment>();
-        A.CallTo(() => environment.EnvironmentName).Returns(environmentName);
-
         _serviceProvider = new ServiceCollection()
             .AddLogging()
-            .AddSingleton(environment)
             .AddSingleton(meterReadingsService)
-            .AddGraphQLApi(environment)
+            .AddGraphQLApi()
             .BuildServiceProvider();
     }
 

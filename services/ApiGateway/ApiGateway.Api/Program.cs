@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddBusinessLogic(builder.Configuration)
-    .AddGraphQLApi(builder.Environment);
+    .AddGraphQLApi();
 
 builder.Services.AddHealthChecks();
 

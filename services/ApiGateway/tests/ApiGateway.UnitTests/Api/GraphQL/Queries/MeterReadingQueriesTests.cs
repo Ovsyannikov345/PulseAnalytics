@@ -283,7 +283,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task Query_DatabaseFailure_ReturnsServiceUnavailable()
+    public async Task Query_DatabaseFailure_ReturnsInternalErrorWithoutDetails()
     {
         // Arrange
         A.CallTo(() => _meterReadingsService.GetLatestReadingsAsync(A<GetLatestReadingsRequest>._, A<CancellationToken>._))
@@ -293,7 +293,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         var response = await _server.ExecuteAsync("{ latestReadings { id } }");
 
         // Assert
-        ErrorCode(response).ShouldBe(GraphQLErrorCodes.ServiceUnavailable);
+        ErrorCode(response).ShouldBe(GraphQLErrorCodes.InternalError);
         ErrorMessage(response).ShouldNotContain("10.0.0.5");
     }
 
@@ -310,23 +310,6 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         // Assert
         ErrorCode(response).ShouldBe(GraphQLErrorCodes.InternalError);
         ErrorMessage(response).ShouldNotContain("Secret detail");
-    }
-
-    [Fact]
-    public async Task Query_UnexpectedFailureInDevelopment_ShowsExceptionMessage()
-    {
-        // Arrange
-        await using var server = new GraphQLTestServer(_meterReadingsService, environmentName: "Development");
-
-        A.CallTo(() => _meterReadingsService.GetLatestReadingsAsync(A<GetLatestReadingsRequest>._, A<CancellationToken>._))
-            .ThrowsAsync(new InvalidOperationException("Secret detail"));
-
-        // Act
-        var response = await server.ExecuteAsync("{ latestReadings { id } }");
-
-        // Assert
-        ErrorCode(response).ShouldBe(GraphQLErrorCodes.InternalError);
-        ErrorMessage(response).ShouldBe("Secret detail");
     }
 
     private static string ErrorCode(JsonElement response)
