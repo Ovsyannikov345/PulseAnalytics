@@ -2,7 +2,7 @@
 
 public sealed record CursorPage<T>
 {
-    public required IReadOnlyList<CursorEdge<T>> Edges { get; init; }
+    public required IReadOnlyList<CursorPageItem<T>> Items { get; init; }
 
     public required bool HasNextPage { get; init; }
 

@@ -81,18 +81,18 @@ internal sealed class MeterReadingsService(
             .Select(r => r.ToModel())
             .ToListAsync(ct);
 
-        var edges = readings
+        var items = readings
             .Take(pageSize)
-            .Select(reading => new CursorEdge<MeterReadingModel>
+            .Select(reading => new CursorPageItem<MeterReadingModel>
             {
-                Node = reading,
+                Item = reading,
                 Cursor = new ReadingCursor(reading.ReceivedAt, reading.Id).Encode()
             })
             .ToList();
 
         return Result<CursorPage<MeterReadingModel>>.Succeed(new CursorPage<MeterReadingModel>
         {
-            Edges = edges,
+            Items = items,
             HasNextPage = readings.Count > pageSize,
             HasPreviousPage = request.Cursor is not null
         });

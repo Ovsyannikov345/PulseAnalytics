@@ -67,10 +67,10 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         A.CallTo(() => _meterReadingsService.GetAllReadingsAsync(A<GetAllReadingsRequest>._, A<CancellationToken>._))
             .Returns(Result<CursorPage<MeterReadingModel>>.Succeed(new CursorPage<MeterReadingModel>
             {
-                Edges =
+                Items =
                 [
-                    new CursorEdge<MeterReadingModel> { Node = Energy, Cursor = "cursor-1" },
-                    new CursorEdge<MeterReadingModel> { Node = Motion, Cursor = "cursor-2" }
+                    new CursorPageItem<MeterReadingModel> { Item = Energy, Cursor = "cursor-1" },
+                    new CursorPageItem<MeterReadingModel> { Item = Motion, Cursor = "cursor-2" }
                 ],
                 HasNextPage = true,
                 HasPreviousPage = false
@@ -107,6 +107,28 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         pageInfo.GetProperty("hasPreviousPage").GetBoolean().ShouldBeFalse();
         pageInfo.GetProperty("startCursor").GetString().ShouldBe("cursor-1");
         pageInfo.GetProperty("endCursor").GetString().ShouldBe("cursor-2");
+    }
+
+    [Fact]
+    public async Task Readings_ServiceReturnsEmptyPage_ReturnsNoCursors()
+    {
+        // Arrange
+        ReturnEmptyPage();
+
+        // Act
+        var response = await _server.ExecuteAsync(
+            "{ readings { edges { cursor } pageInfo { hasNextPage startCursor endCursor } } }");
+
+        // Assert
+        response.TryGetProperty("errors", out _).ShouldBeFalse();
+
+        var readings = response.GetProperty("data").GetProperty("readings");
+        readings.GetProperty("edges").GetArrayLength().ShouldBe(0);
+
+        var pageInfo = readings.GetProperty("pageInfo");
+        pageInfo.GetProperty("hasNextPage").GetBoolean().ShouldBeFalse();
+        pageInfo.GetProperty("startCursor").ValueKind.ShouldBe(JsonValueKind.Null);
+        pageInfo.GetProperty("endCursor").ValueKind.ShouldBe(JsonValueKind.Null);
     }
 
     [Fact]
@@ -322,7 +344,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         A.CallTo(() => _meterReadingsService.GetAllReadingsAsync(A<GetAllReadingsRequest>._, A<CancellationToken>._))
             .Returns(Result<CursorPage<MeterReadingModel>>.Succeed(new CursorPage<MeterReadingModel>
             {
-                Edges = [],
+                Items = [],
                 HasNextPage = false,
                 HasPreviousPage = false
             }));

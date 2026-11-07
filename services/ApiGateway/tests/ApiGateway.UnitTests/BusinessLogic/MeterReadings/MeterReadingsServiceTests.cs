@@ -49,8 +49,8 @@ public sealed class MeterReadingsServiceTests
 
         // Assert
         var page = result.Value;
-        page.Edges.Count.ShouldBe(PagingLimits.DefaultPageSize);
-        page.Edges.Select(e => e.Node.ReceivedAt).ShouldBe(Enumerable.Range(10, 50).Reverse().Select(i => Start.AddSeconds(i)));
+        page.Items.Count.ShouldBe(PagingLimits.DefaultPageSize);
+        page.Items.Select(i => i.Item.ReceivedAt).ShouldBe(Enumerable.Range(10, 50).Reverse().Select(i => Start.AddSeconds(i)));
         page.HasNextPage.ShouldBeTrue();
         page.HasPreviousPage.ShouldBeFalse();
     }
@@ -65,7 +65,7 @@ public sealed class MeterReadingsServiceTests
         var result = await _sut.GetAllReadingsAsync(new GetAllReadingsRequest { PageSize = 3 }, Ct);
 
         // Assert
-        result.Value.Edges.Count.ShouldBe(3);
+        result.Value.Items.Count.ShouldBe(3);
         result.Value.HasNextPage.ShouldBeFalse();
     }
 
@@ -93,18 +93,18 @@ public sealed class MeterReadingsServiceTests
             var result = await _sut.GetAllReadingsAsync(new GetAllReadingsRequest { PageSize = 2, Cursor = cursor }, Ct);
 
             pages.Add(result.Value);
-            cursor = result.Value.Edges[^1].Cursor;
+            cursor = result.Value.Items[^1].Cursor;
         }
         while (pages[^1].HasNextPage);
 
         // Assert
         pages.Count.ShouldBe(3);
-        pages.SelectMany(p => p.Edges).Select(e => e.Node.Id).ShouldBe([.. new[] { 6, 5, 4, 3, 2, 1 }.Select(IdEndingWith)]);
+        pages.SelectMany(p => p.Items).Select(i => i.Item.Id).ShouldBe([.. new[] { 6, 5, 4, 3, 2, 1 }.Select(IdEndingWith)]);
         pages.Skip(1).ShouldAllBe(p => p.HasPreviousPage);
     }
 
     [Fact]
-    public async Task GetAllReadingsAsync_EdgeCursor_PointsToItsReading()
+    public async Task GetAllReadingsAsync_ItemCursor_PointsToItsReading()
     {
         // Arrange
         var stored = StoredReadings.Energy(MeterLocation.Bedroom, Start);
@@ -114,7 +114,7 @@ public sealed class MeterReadingsServiceTests
         var result = await _sut.GetAllReadingsAsync(new GetAllReadingsRequest(), Ct);
 
         // Assert
-        var cursor = ReadingCursor.Decode(result.Value.Edges.ShouldHaveSingleItem().Cursor).Value;
+        var cursor = ReadingCursor.Decode(result.Value.Items.ShouldHaveSingleItem().Cursor).Value;
         cursor.ShouldBe(new ReadingCursor(stored.ReceivedAt, stored.Id));
     }
 
@@ -142,7 +142,7 @@ public sealed class MeterReadingsServiceTests
         var result = await _sut.GetAllReadingsAsync(request, Ct);
 
         // Assert
-        result.Value.Edges.Select(e => e.Node.Id).ShouldBe([kitchenEnergy.Id, officeMotion.Id], ignoreOrder: true);
+        result.Value.Items.Select(i => i.Item.Id).ShouldBe([kitchenEnergy.Id, officeMotion.Id], ignoreOrder: true);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public sealed class MeterReadingsServiceTests
         var result = await _sut.GetAllReadingsAsync(request, Ct);
 
         // Assert
-        result.Value.Edges.Select(e => e.Node.Id).ShouldBe([beforeTo.Id, atFrom.Id]);
+        result.Value.Items.Select(i => i.Item.Id).ShouldBe([beforeTo.Id, atFrom.Id]);
     }
 
     [Fact]
@@ -183,7 +183,7 @@ public sealed class MeterReadingsServiceTests
         var result = await _sut.GetAllReadingsAsync(request, Ct);
 
         // Assert
-        result.Value.Edges.ShouldHaveSingleItem().Node.Id.ShouldBe(inRange.Id);
+        result.Value.Items.ShouldHaveSingleItem().Item.Id.ShouldBe(inRange.Id);
     }
 
     [Fact]
