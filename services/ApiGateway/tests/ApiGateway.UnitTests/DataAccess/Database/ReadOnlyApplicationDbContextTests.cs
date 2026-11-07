@@ -90,6 +90,13 @@ public sealed class ReadOnlyApplicationDbContextTests : IAsyncDisposable
     }
 
     [Fact]
+    public void Database_CommandTimeout_IsTakenFromSettings()
+    {
+        // Assert
+        _sut.Database.GetCommandTimeout().ShouldBe(10);
+    }
+
+    [Fact]
     public void SaveChanges_Always_Throws()
     {
         // Act & Assert
