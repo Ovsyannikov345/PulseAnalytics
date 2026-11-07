@@ -1,4 +1,6 @@
-﻿using ApiGateway.DataAccess;
+﻿using ApiGateway.BusinessLogic.MeterReadings;
+using ApiGateway.DataAccess;
+using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -9,6 +11,10 @@ public static class DependencyInjection
     public static IServiceCollection AddBusinessLogic(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDataAccess(configuration);
+
+        services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
+
+        services.AddScoped<IMeterReadingsService, MeterReadingsService>();
 
         return services;
     }

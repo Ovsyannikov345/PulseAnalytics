@@ -1,6 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
+		<PackageReference Include="Ausiannikau.Utilities.Result" Version="1.0.10" />
+		<PackageReference Include="FluentValidation" Version="12.2.0" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ApiGateway.Common\ApiGateway.Common.csproj" />
 		<ProjectReference Include="..\ApiGateway.DataAccess\ApiGateway.DataAccess.csproj" />
 	</ItemGroup>
 
