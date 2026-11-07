@@ -1,14 +1,20 @@
+using ApiGateway.Api;
 using ApiGateway.Api.HealthCheck;
 using ApiGateway.BusinessLogic;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddBusinessLogic(builder.Configuration);
+builder.Services
+    .AddBusinessLogic(builder.Configuration)
+    .AddGraphQLApi(builder.Environment);
 
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
 app.MapHealthChecks(HealthCheckConstants.EndpointPath);
+
+// Also serves the Nitro IDE to browsers.
+app.MapGraphQL();
 
 await app.RunAsync();

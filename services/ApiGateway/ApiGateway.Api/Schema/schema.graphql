@@ -1,0 +1,188 @@
+schema {
+  query: Query
+}
+
+type Query {
+  "Stored readings, newest first."
+  readings(
+    filter: ReadingFilterInput
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+  ): MeterReadingConnection
+    @listSize(
+      assumedSize: 100
+      slicingArguments: ["first"]
+      slicingArgumentDefaultValue: 50
+      sizedFields: ["edges", "nodes"]
+      requireOneSlicingArgument: false
+    )
+    @cost(weight: "10")
+  "The newest reading of every meter (type and location), ordered by type and location."
+  latestReadings(filter: LatestReadingsFilterInput): [MeterReading!]!
+    @cost(weight: "10")
+  "The number of readings per group. An empty `groupBy` returns the total count."
+  readingCounts(filter: ReadingFilterInput, groupBy: [ReadingGrouping!]!): [ReadingCount!]!
+    @cost(weight: "10")
+}
+
+type AirQualityReading implements MeterReading {
+  "Unique id of the reading."
+  id: UUID!
+  type: MeterType!
+  location: MeterLocation!
+  "When the ingestor received the sample (UTC)."
+  receivedAt: DateTime!
+  "CO2 concentration, ppm."
+  co2: Int!
+  "PM2.5 concentration, µg/m³."
+  pm25: Int!
+  "Relative humidity, %."
+  humidity: Int!
+}
+
+type EnergyReading implements MeterReading {
+  "Unique id of the reading."
+  id: UUID!
+  type: MeterType!
+  location: MeterLocation!
+  "When the ingestor received the sample (UTC)."
+  receivedAt: DateTime!
+  "Energy consumption reported by the meter."
+  energy: Float!
+}
+
+"A connection to a list of items."
+type MeterReadingConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [MeterReadingEdge!]
+  "A flattened list of the nodes."
+  nodes: [MeterReading!]
+}
+
+"An edge in a connection."
+type MeterReadingEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: MeterReading!
+}
+
+type MotionReading implements MeterReading {
+  "Unique id of the reading."
+  id: UUID!
+  type: MeterType!
+  location: MeterLocation!
+  "When the ingestor received the sample (UTC)."
+  receivedAt: DateTime!
+  "Whether the sensor detected motion at the time of the sample."
+  motionDetected: Boolean!
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+"The number of readings in one group."
+type ReadingCount {
+  "The group's meter type; null unless grouped by TYPE."
+  type: MeterType
+  "The group's location; null unless grouped by LOCATION."
+  location: MeterLocation
+  count: Int!
+}
+
+"A single sample of one meter. The concrete type carries the measured values."
+interface MeterReading {
+  "Unique id of the reading."
+  id: UUID!
+  type: MeterType!
+  location: MeterLocation!
+  "When the ingestor received the sample (UTC)."
+  receivedAt: DateTime!
+}
+
+"Selects meters by type and location. Omitted or empty fields don't filter."
+input LatestReadingsFilterInput {
+  "Meter types to include."
+  types: [MeterType!]
+  "Locations to include."
+  locations: [MeterLocation!]
+}
+
+"Selects readings by meter and time. Omitted or empty fields don't filter."
+input ReadingFilterInput {
+  "Meter types to include."
+  types: [MeterType!]
+  "Locations to include."
+  locations: [MeterLocation!]
+  "Inclusive start of the time range."
+  from: DateTime
+  "Exclusive end of the time range; must be later than `from`."
+  to: DateTime
+}
+
+enum MeterLocation {
+  KITCHEN
+  LIVING_ROOM
+  BEDROOM
+  GARAGE
+  OFFICE
+  CORRIDOR
+}
+
+enum MeterType {
+  AIR_QUALITY
+  ENERGY
+  MOTION
+}
+
+enum ReadingGrouping {
+  LOCATION
+  TYPE
+}
+
+"The `DateTime` scalar type represents a date and time with time zone offset information."
+scalar DateTime
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/date-time.html")
+
+"The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
+scalar UUID
+  @specifiedBy(url: "https://scalars.graphql.org/chillicream/uuid.html")
+
+"The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
+directive @cost(
+  "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
+  weight: String!
+) on
+  | SCALAR
+  | OBJECT
+  | FIELD_DEFINITION
+  | ARGUMENT_DEFINITION
+  | ENUM
+  | INPUT_FIELD_DEFINITION
+
+"The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
+directive @listSize(
+  "The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field."
+  assumedSize: Int
+  "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments."
+  slicingArguments: [String!]
+  "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query."
+  slicingArgumentDefaultValue: Int
+  "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields."
+  sizedFields: [String!]
+  "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error."
+  requireOneSlicingArgument: Boolean = true
+) on FIELD_DEFINITION
