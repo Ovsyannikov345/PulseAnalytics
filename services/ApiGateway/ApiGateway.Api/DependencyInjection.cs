@@ -1,7 +1,8 @@
 ﻿using ApiGateway.Api.GraphQL.Errors;
 using ApiGateway.Api.GraphQL.Inputs;
 using ApiGateway.Api.GraphQL.Queries;
-using ApiGateway.Api.GraphQL.Readings;
+using ApiGateway.Api.GraphQL.Types.Readings;
+using ApiGateway.Api.GraphQL.Types.Statistics;
 using HotChocolate;
 using HotChocolate.Types;
 
@@ -19,13 +20,19 @@ public static class DependencyInjection
             .AddGraphQLServer()
             .AddQueryType()
             .AddTypeExtension(typeof(MeterReadingQueries))
+            .AddTypeExtension(typeof(ReadingStatisticsQueries))
             .AddType<MeterReadingInterfaceType>()
             .AddType<MotionReadingType>()
             .AddType<EnergyReadingType>()
             .AddType<AirQualityReadingType>()
             .AddType<ReadingCountType>()
+            .AddType<EnergyStatisticsType>()
+            .AddType<AirQualityStatisticsType>()
+            .AddType<MetricStatisticsType>()
+            .AddType<MotionStatisticsType>()
             .AddType<ReadingFilterInputType>()
             .AddType<LatestReadingsFilterInputType>()
+            .AddType<StatisticsFilterInputType>()
             // The schema has its own service container; the filter needs application services (logging).
             .AddErrorFilter(schemaServices =>
                 ActivatorUtilities.CreateInstance<GraphQLErrorFilter>(schemaServices.GetRootServiceProvider()))

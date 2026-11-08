@@ -429,3 +429,6 @@ FodyWeavers.xsd
 
 # Local config
 appsettings.Local.json
+
+# Written by `schema export` next to schema.graphql; only HotChocolate Fusion uses it, and the gateway doesn't
+ApiGateway.Api/GraphQL/schema-settings.json

@@ -1,7 +1,7 @@
 ﻿using ApiGateway.Common.Constants.Enums;
 using HotChocolate.Types;
 
-namespace ApiGateway.Api.GraphQL.Readings;
+namespace ApiGateway.Api.GraphQL.Types.Readings;
 
 internal abstract record MeterReading
 {
