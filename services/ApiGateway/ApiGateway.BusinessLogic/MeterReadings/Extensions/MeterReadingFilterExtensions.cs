@@ -3,7 +3,7 @@ using ApiGateway.BusinessLogic.Paging;
 using ApiGateway.Common.Constants.Enums;
 using ApiGateway.DataAccess.Entities;
 
-namespace ApiGateway.BusinessLogic.MeterReadings.Filtering;
+namespace ApiGateway.BusinessLogic.MeterReadings.Extensions;
 
 internal static class MeterReadingFilterExtensions
 {
@@ -44,6 +44,30 @@ internal static class MeterReadingFilterExtensions
                 .ThenByDescending(r => r.Id)
                 .Take(1))
             .Aggregate(Queryable.Concat);
+    }
+
+    public static IQueryable<MeterReading> ApplyFilter(this IQueryable<MeterReading> query, GetEnergyStatisticsRequest request)
+    {
+        return query
+            .Where(r => r.Type == MeterType.Energy)
+            .WhereLocationIn(request.Locations)
+            .WhereReceivedWithin(request.From, request.To);
+    }
+
+    public static IQueryable<MeterReading> ApplyFilter(this IQueryable<MeterReading> query, GetAirQualityStatisticsRequest request)
+    {
+        return query
+            .Where(r => r.Type == MeterType.AirQuality)
+            .WhereLocationIn(request.Locations)
+            .WhereReceivedWithin(request.From, request.To);
+    }
+
+    public static IQueryable<MeterReading> ApplyFilter(this IQueryable<MeterReading> query, GetMotionStatisticsRequest request)
+    {
+        return query
+            .Where(r => r.Type == MeterType.Motion)
+            .WhereLocationIn(request.Locations)
+            .WhereReceivedWithin(request.From, request.To);
     }
 
     public static IQueryable<MeterReading> ApplyCursorPagination(this IQueryable<MeterReading> query, ReadingCursor cursor)

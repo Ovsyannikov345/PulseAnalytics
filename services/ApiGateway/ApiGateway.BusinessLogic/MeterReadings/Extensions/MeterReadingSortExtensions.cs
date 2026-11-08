@@ -2,7 +2,7 @@
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.DataAccess.Entities;
 
-namespace ApiGateway.BusinessLogic.MeterReadings.Sorting;
+namespace ApiGateway.BusinessLogic.MeterReadings.Extensions;
 
 internal static class MeterReadingSortExtensions
 {
@@ -25,5 +25,26 @@ internal static class MeterReadingSortExtensions
         return query
             .OrderBy(c => c.Type)
             .ThenBy(c => c.Location);
+    }
+
+    public static IOrderedQueryable<EnergyStatisticsModel> ApplySort(this IQueryable<EnergyStatisticsModel> query, GetEnergyStatisticsRequest _)
+    {
+        return query
+            .OrderBy(s => s.Location)
+            .ThenBy(s => s.BucketStart);
+    }
+
+    public static IOrderedQueryable<AirQualityStatisticsModel> ApplySort(this IQueryable<AirQualityStatisticsModel> query, GetAirQualityStatisticsRequest _)
+    {
+        return query
+            .OrderBy(s => s.Location)
+            .ThenBy(s => s.BucketStart);
+    }
+
+    public static IOrderedQueryable<MotionStatisticsModel> ApplySort(this IQueryable<MotionStatisticsModel> query, GetMotionStatisticsRequest _)
+    {
+        return query
+            .OrderBy(s => s.Location)
+            .ThenBy(s => s.BucketStart);
     }
 }
