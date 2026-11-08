@@ -15,4 +15,4 @@ var app = builder.Build();
 app.MapHealthChecks(HealthCheckConstants.EndpointPath);
 app.MapGraphQL();
 
-await app.RunAsync();
+await app.RunWithGraphQLCommandsAsync(args);

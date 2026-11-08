@@ -52,7 +52,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
 
     public MeterReadingQueriesTests()
     {
-        _server = new GraphQLTestServer(_meterReadingsService);
+        _server = new GraphQLTestServer(_meterReadingsService, A.Fake<IReadingStatisticsService>());
     }
 
     public async ValueTask DisposeAsync()

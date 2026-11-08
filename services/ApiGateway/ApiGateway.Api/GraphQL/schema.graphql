@@ -25,6 +25,30 @@ type Query {
   "The number of readings per group. An empty `groupBy` returns the total count."
   readingCounts(filter: ReadingFilterInput, groupBy: [ReadingGrouping!]!): [ReadingCount!]!
     @cost(weight: "10")
+  "Energy consumption statistics per group, ordered by location and bucket start. Groups without readings are left out."
+  energyStatistics(
+    filter: StatisticsFilterInput!
+    "Groups to aggregate by. An empty list aggregates all matching readings into one row."
+    groupBy: [StatisticsGrouping!]!
+    "Size of the time buckets on a fixed UTC grid; required when grouping by TIME and not allowed otherwise."
+    bucket: TimeBucket
+  ): [EnergyStatistics!]! @cost(weight: "10")
+  "Air quality statistics per group, ordered by location and bucket start. Groups without readings are left out."
+  airQualityStatistics(
+    filter: StatisticsFilterInput!
+    "Groups to aggregate by. An empty list aggregates all matching readings into one row."
+    groupBy: [StatisticsGrouping!]!
+    "Size of the time buckets on a fixed UTC grid; required when grouping by TIME and not allowed otherwise."
+    bucket: TimeBucket
+  ): [AirQualityStatistics!]! @cost(weight: "10")
+  "Motion activity statistics per group, ordered by location and bucket start. Groups without readings are left out."
+  motionStatistics(
+    filter: StatisticsFilterInput!
+    "Groups to aggregate by. An empty list aggregates all matching readings into one row."
+    groupBy: [StatisticsGrouping!]!
+    "Size of the time buckets on a fixed UTC grid; required when grouping by TIME and not allowed otherwise."
+    bucket: TimeBucket
+  ): [MotionStatistics!]! @cost(weight: "10")
 }
 
 type AirQualityReading implements MeterReading {
@@ -42,6 +66,22 @@ type AirQualityReading implements MeterReading {
   humidity: Int!
 }
 
+"Air quality metrics of one group of air quality readings."
+type AirQualityStatistics {
+  "The group's location; null unless grouped by LOCATION."
+  location: MeterLocation
+  "Start of the group's time bucket (UTC); null unless grouped by TIME."
+  bucketStart: DateTime
+  "The number of readings in the group."
+  samples: Int!
+  "CO2 concentration, ppm."
+  co2: MetricStatistics!
+  "PM2.5 concentration, µg/m³."
+  pm25: MetricStatistics!
+  "Relative humidity, %."
+  humidity: MetricStatistics!
+}
+
 type EnergyReading implements MeterReading {
   "Unique id of the reading."
   id: UUID!
@@ -51,6 +91,18 @@ type EnergyReading implements MeterReading {
   receivedAt: DateTime!
   "Energy consumption reported by the meter."
   energy: Float!
+}
+
+"Energy consumption of one group of energy readings."
+type EnergyStatistics {
+  "The group's location; null unless grouped by LOCATION."
+  location: MeterLocation
+  "Start of the group's time bucket (UTC); null unless grouped by TIME."
+  bucketStart: DateTime
+  "The number of readings in the group."
+  samples: Int!
+  "Energy consumption reported by the meters."
+  energy: MetricStatistics!
 }
 
 "A connection to a list of items."
@@ -71,6 +123,16 @@ type MeterReadingEdge {
   node: MeterReading!
 }
 
+"Statistics of one measured metric in a group, in the metric's unit."
+type MetricStatistics {
+  "Average of the group's values."
+  average: Float!
+  "Lowest value in the group."
+  minimum: Float!
+  "Highest value in the group."
+  maximum: Float!
+}
+
 type MotionReading implements MeterReading {
   "Unique id of the reading."
   id: UUID!
@@ -80,6 +142,20 @@ type MotionReading implements MeterReading {
   receivedAt: DateTime!
   "Whether the sensor detected motion at the time of the sample."
   motionDetected: Boolean!
+}
+
+"Motion activity of one group of motion readings. Each reading is a sample, so activity is counted in samples, not in motion events."
+type MotionStatistics {
+  "The group's location; null unless grouped by LOCATION."
+  location: MeterLocation
+  "Start of the group's time bucket (UTC); null unless grouped by TIME."
+  bucketStart: DateTime
+  "The number of readings in the group."
+  samples: Int!
+  "The number of readings that detected motion."
+  motionSamples: Int!
+  "The share of readings that detected motion, from 0 to 1."
+  activityRatio: Float!
 }
 
 "Information about pagination in a connection."
@@ -133,6 +209,16 @@ input ReadingFilterInput {
   to: DateTime
 }
 
+"Selects the readings to aggregate. The time range is required and spans at most 31 days."
+input StatisticsFilterInput {
+  "Locations to include; omitted or empty includes all."
+  locations: [MeterLocation!]
+  "Inclusive start of the time range."
+  from: DateTime!
+  "Exclusive end of the time range; must be later than `from`."
+  to: DateTime!
+}
+
 enum MeterLocation {
   KITCHEN
   LIVING_ROOM
@@ -151,6 +237,19 @@ enum MeterType {
 enum ReadingGrouping {
   LOCATION
   TYPE
+}
+
+enum StatisticsGrouping {
+  LOCATION
+  TIME
+}
+
+enum TimeBucket {
+  MINUTE
+  FIVE_MINUTES
+  FIFTEEN_MINUTES
+  HOUR
+  DAY
 }
 
 "The `DateTime` scalar type represents a date and time with time zone offset information."

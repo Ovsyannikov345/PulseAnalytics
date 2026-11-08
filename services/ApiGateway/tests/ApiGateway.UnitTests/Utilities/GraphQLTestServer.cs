@@ -9,14 +9,18 @@ using Xunit;
 namespace ApiGateway.UnitTests.Utilities;
 
 /// <summary>
-/// The gateway's real GraphQL schema and request pipeline (<c>AddGraphQLApi</c>) over a fake readings service,
+/// The gateway's real GraphQL schema and request pipeline (<c>AddGraphQLApi</c>) over fake services,
 /// without HTTP or a database.
 /// </summary>
-internal sealed class GraphQLTestServer(IMeterReadingsService meterReadingsService) : IAsyncDisposable
+internal sealed class GraphQLTestServer(
+    IMeterReadingsService meterReadingsService,
+    IReadingStatisticsService readingStatisticsService)
+    : IAsyncDisposable
 {
     private readonly ServiceProvider _serviceProvider = new ServiceCollection()
         .AddLogging()
         .AddSingleton(meterReadingsService)
+        .AddSingleton(readingStatisticsService)
         .AddGraphQLApi()
         .BuildServiceProvider();
 

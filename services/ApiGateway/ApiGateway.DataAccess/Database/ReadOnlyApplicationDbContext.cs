@@ -1,4 +1,5 @@
-﻿using ApiGateway.DataAccess.Entities;
+﻿using ApiGateway.DataAccess.Database.Functions;
+using ApiGateway.DataAccess.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace ApiGateway.DataAccess.Database;
@@ -18,7 +19,6 @@ internal sealed class ReadOnlyApplicationDbContext(DbContextOptions<ReadOnlyAppl
         return Set<TEntity>();
     }
 
-    // The parameterless overloads delegate to these two, so every save path throws.
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         throw new InvalidOperationException(ReadOnlyMessage);
@@ -32,5 +32,10 @@ internal sealed class ReadOnlyApplicationDbContext(DbContextOptions<ReadOnlyAppl
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ReadOnlyApplicationDbContext).Assembly);
+
+        modelBuilder
+            .HasDbFunction(() => DatabaseFunctions.DateBin(default, default, default))
+            .HasName("date_bin")
+            .IsBuiltIn();
     }
 }

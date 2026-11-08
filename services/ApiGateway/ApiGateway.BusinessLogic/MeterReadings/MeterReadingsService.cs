@@ -1,8 +1,7 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Filtering;
+﻿using ApiGateway.BusinessLogic.MeterReadings.Extensions;
 using ApiGateway.BusinessLogic.MeterReadings.Mapping;
 using ApiGateway.BusinessLogic.MeterReadings.Models;
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
-using ApiGateway.BusinessLogic.MeterReadings.Sorting;
 using ApiGateway.BusinessLogic.Paging;
 using ApiGateway.BusinessLogic.Validation;
 using ApiGateway.Common.Constants.Enums;

@@ -53,6 +53,29 @@ public sealed class ErrorHandlingTests(PostgreSqlContainerFixture postgreSql) : 
         error.GetProperty("message").GetString().ShouldNotBeNullOrWhiteSpace();
     }
 
+    [Theory]
+    [InlineData("""{ energyStatistics(filter: { from: "2026-11-01T00:00:00Z", to: "2026-12-02T00:00:01Z" }, groupBy: []) { samples } }""")]
+    [InlineData("""{ energyStatistics(filter: { from: "2026-11-01T00:00:00Z", to: "2026-11-01T16:41:00Z" }, groupBy: [TIME], bucket: MINUTE) { samples } }""")]
+    [InlineData("""{ airQualityStatistics(filter: { from: "2026-11-01T00:00:00Z", to: "2026-11-01T01:00:00Z" }, groupBy: [TIME]) { samples } }""")]
+    [InlineData("""{ motionStatistics(filter: { from: "2026-11-01T00:00:00Z", to: "2026-11-01T01:00:00Z" }, groupBy: [LOCATION], bucket: HOUR) { samples } }""")]
+    public async Task Statistics_InvalidInput_ReturnsBadRequestError(string query)
+    {
+        // Arrange
+        var client = CreateClient();
+
+        // Act
+        var response = await client.ExecuteAsync(query);
+
+        // Assert
+        // The statistics fields are non-null, so the error nulls the whole data entry, but the status stays 200.
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.Data.ValueKind.ShouldBe(JsonValueKind.Null);
+
+        var error = response.Errors.ShouldHaveSingleItem();
+        error.GetProperty("extensions").GetProperty("code").GetString().ShouldBe("BAD_REQUEST");
+        error.GetProperty("message").GetString().ShouldNotBeNullOrWhiteSpace();
+    }
+
     [Fact]
     public async Task Readings_DatabaseUnreachable_ReturnsInternalErrorWithoutConnectionDetails()
     {

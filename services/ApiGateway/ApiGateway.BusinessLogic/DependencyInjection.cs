@@ -16,6 +16,8 @@ public static class DependencyInjection
 
         services.AddScoped<IMeterReadingsService, MeterReadingsService>();
 
+        services.AddScoped<IReadingStatisticsService, ReadingStatisticsService>();
+
         return services;
     }
 }

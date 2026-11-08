@@ -1,4 +1,4 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Filtering;
+﻿using ApiGateway.BusinessLogic.MeterReadings.Extensions;
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.BusinessLogic.Paging;
 using ApiGateway.Common.Constants.Enums;
@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
-namespace ApiGateway.UnitTests.BusinessLogic.MeterReadings.Filtering;
+namespace ApiGateway.UnitTests.BusinessLogic.MeterReadings.Extensions;
 
 // The service tests run these conditions in memory; here the real Npgsql provider translates them (no database needed),
 // which shows they become index-friendly SQL instead of failing translation or running on the client.
@@ -117,6 +117,69 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         // 2 types x 2 locations = 4 lookups joined by 3 UNION ALLs.
         sql.Split("UNION ALL").Length.ShouldBe(4);
         sql.Split("LIMIT ").Length.ShouldBe(5);
+    }
+
+    [Fact]
+    public void ApplyFilter_GetEnergyStatisticsRequest_TranslatesToEnergyTypeAndSqlConditions()
+    {
+        // Arrange
+        var request = new GetEnergyStatisticsRequest
+        {
+            Locations = [MeterLocation.Kitchen],
+            From = Start,
+            To = Start.AddHours(1)
+        };
+
+        // Act
+        var sql = _dbContext.Query<MeterReading>().ApplyFilter(request).ToQueryString();
+
+        // Assert
+        // A constant type keeps the (type, location, received_at) index usable.
+        sql.ShouldContain("m.type = 2");
+        sql.ShouldContain("m.location = ANY (@locations)");
+        sql.ShouldContain("m.received_at >= @fromUtc");
+        sql.ShouldContain("m.received_at < @toUtc");
+    }
+
+    [Fact]
+    public void ApplyFilter_GetAirQualityStatisticsRequest_TranslatesToAirQualityTypeAndSqlConditions()
+    {
+        // Arrange
+        var request = new GetAirQualityStatisticsRequest
+        {
+            Locations = [MeterLocation.Office],
+            From = Start,
+            To = Start.AddHours(1)
+        };
+
+        // Act
+        var sql = _dbContext.Query<MeterReading>().ApplyFilter(request).ToQueryString();
+
+        // Assert
+        sql.ShouldContain("m.type = 1");
+        sql.ShouldContain("m.location = ANY (@locations)");
+        sql.ShouldContain("m.received_at >= @fromUtc");
+        sql.ShouldContain("m.received_at < @toUtc");
+    }
+
+    [Fact]
+    public void ApplyFilter_GetMotionStatisticsRequestWithoutLocations_TranslatesToMotionTypeAndTimeRange()
+    {
+        // Arrange
+        var request = new GetMotionStatisticsRequest
+        {
+            From = Start,
+            To = Start.AddHours(1)
+        };
+
+        // Act
+        var sql = _dbContext.Query<MeterReading>().ApplyFilter(request).ToQueryString();
+
+        // Assert
+        sql.ShouldContain("m.type = 3");
+        sql.ShouldNotContain("m.location = ANY");
+        sql.ShouldContain("m.received_at >= @fromUtc");
+        sql.ShouldContain("m.received_at < @toUtc");
     }
 
     [Fact]

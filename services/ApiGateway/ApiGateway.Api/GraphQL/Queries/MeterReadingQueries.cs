@@ -1,12 +1,11 @@
 ﻿using ApiGateway.Api.GraphQL.Errors;
 using ApiGateway.Api.GraphQL.Inputs;
-using ApiGateway.Api.GraphQL.Readings;
+using ApiGateway.Api.GraphQL.Types.Readings;
 using ApiGateway.BusinessLogic.MeterReadings;
 using ApiGateway.BusinessLogic.MeterReadings.Models;
 using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.BusinessLogic.Paging;
 using ApiGateway.Common.Constants.Enums;
-using Ausiannikau.Utilities.Results;
 using HotChocolate;
 using HotChocolate.Language;
 using HotChocolate.Types;
@@ -43,7 +42,7 @@ internal static class MeterReadingQueries
 
         var result = await meterReadingsService.GetAllReadingsAsync(request, ct);
 
-        return ToConnection(GetValueOrThrow(result));
+        return ToConnection(result.GetValueOrThrow());
     }
 
     [GraphQLDescription("The newest reading of every meter (type and location), ordered by type and location.")]
@@ -60,7 +59,7 @@ internal static class MeterReadingQueries
 
         var result = await meterReadingsService.GetLatestReadingsAsync(request, ct);
 
-        return [.. GetValueOrThrow(result).Select(ToMeterReading)];
+        return [.. result.GetValueOrThrow().Select(ToMeterReading)];
     }
 
     [GraphQLDescription("The number of readings per group. An empty `groupBy` returns the total count.")]
@@ -81,20 +80,7 @@ internal static class MeterReadingQueries
 
         var result = await meterReadingsService.GetReadingCountsAsync(request, ct);
 
-        return [.. GetValueOrThrow(result).Select(ToReadingCount)];
-    }
-
-    private static T GetValueOrThrow<T>(Result<T> result)
-    {
-        if (result.TryGetSuccessValue(out var value))
-        {
-            return value;
-        }
-
-        throw new GraphQLException(ErrorBuilder.New()
-            .SetMessage(result.ErrorMessage)
-            .SetCode(GraphQLErrorCodes.BadRequest)
-            .Build());
+        return [.. result.GetValueOrThrow().Select(ToReadingCount)];
     }
 
     private static Connection<MeterReading> ToConnection(CursorPage<MeterReadingModel> page)
