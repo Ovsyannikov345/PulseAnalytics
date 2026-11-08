@@ -7,14 +7,15 @@ using Xunit;
 namespace ApiGateway.UnitTests.Api.GraphQL;
 
 // ApiGateway.Api/GraphQL/schema.graphql is the committed public contract (the frontend can generate types from it).
-// A schema change fails this test until the file is updated on purpose: the printed schema is written next to the test
-// binaries as schema.actual.graphql, so it can be compared and copied over the committed file.
+// A schema change fails this test until the file is updated on purpose with the gateway's export command.
 public sealed class SchemaSnapshotTests : IAsyncDisposable
 {
-    private static readonly string SnapshotPath = Path.Combine(AppContext.BaseDirectory, "Schema", "schema.graphql");
-    private static readonly string ActualPath = Path.Combine(AppContext.BaseDirectory, "Schema", "schema.actual.graphql");
+    // dotnet run starts the app in the project folder, so the output path is relative to ApiGateway.Api.
+    private const string ExportCommand = "dotnet run --project ApiGateway.Api -- schema export --output GraphQL/schema.graphql";
 
-    private readonly GraphQLTestServer _server = new(A.Fake<IMeterReadingsService>());
+    private static readonly string SnapshotPath = Path.Combine(AppContext.BaseDirectory, "Schema", "schema.graphql");
+
+    private readonly GraphQLTestServer _server = new(A.Fake<IMeterReadingsService>(), A.Fake<IReadingStatisticsService>());
 
     public async ValueTask DisposeAsync()
     {
@@ -34,12 +35,7 @@ public sealed class SchemaSnapshotTests : IAsyncDisposable
         var actual = Normalize(executor.Schema.ToString());
 
         // Assert
-        if (actual != expected)
-        {
-            await File.WriteAllTextAsync(ActualPath, actual, ct);
-        }
-
-        actual.ShouldBe(expected, $"The GraphQL schema changed. If intended, copy {ActualPath} over ApiGateway.Api/GraphQL/schema.graphql.");
+        actual.ShouldBe(expected, $"The GraphQL schema changed. If intended, run from services/ApiGateway: {ExportCommand}");
     }
 
     // The committed file may be checked out with CRLF line endings.
