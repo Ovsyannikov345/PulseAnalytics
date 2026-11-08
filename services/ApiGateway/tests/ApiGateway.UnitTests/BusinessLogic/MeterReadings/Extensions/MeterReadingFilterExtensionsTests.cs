@@ -69,6 +69,42 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
     }
 
     [Fact]
+    public void ApplyFilter_ExportReadingsRequestWithAllFields_TranslatesToSqlConditions()
+    {
+        // Arrange
+        var request = new ExportReadingsRequest
+        {
+            Types = [MeterType.Energy],
+            Locations = [MeterLocation.Kitchen],
+            From = Start,
+            To = Start.AddDays(1)
+        };
+
+        // Act
+        var sql = _dbContext.Query<MeterReading>().ApplyFilter(request).ToQueryString();
+
+        // Assert
+        sql.ShouldContain("m.type = ANY (@types)");
+        sql.ShouldContain("m.location = ANY (@locations)");
+        sql.ShouldContain("m.received_at >= @fromUtc");
+        sql.ShouldContain("m.received_at < @toUtc");
+    }
+
+    [Fact]
+    public void ApplyFilter_ExportReadingsRequestWithRangeOnly_FiltersOnlyByReceivedAt()
+    {
+        // Act
+        var sql = _dbContext.Query<MeterReading>()
+            .ApplyFilter(new ExportReadingsRequest { Types = [], From = Start, To = Start.AddDays(1) })
+            .ToQueryString();
+
+        // Assert
+        sql.ShouldContain("m.received_at >= @fromUtc");
+        sql.ShouldContain("m.received_at < @toUtc");
+        sql.ShouldNotContain("ANY");
+    }
+
+    [Fact]
     public void ApplyFilter_EmptyGetAllReadingsRequest_AddsNoConditions()
     {
         // Act

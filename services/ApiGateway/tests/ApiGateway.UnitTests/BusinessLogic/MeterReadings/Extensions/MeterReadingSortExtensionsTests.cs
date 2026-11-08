@@ -57,6 +57,18 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
     }
 
     [Fact]
+    public void ApplySort_ExportReadingsRequest_OrdersByReceivedAtThenIdAscending()
+    {
+        // Act
+        var sql = _dbContext.Query<MeterReading>()
+            .ApplySort(new ExportReadingsRequest { From = Start, To = Start.AddDays(1) })
+            .ToQueryString();
+
+        // Assert
+        sql.ShouldEndWith("ORDER BY m.received_at, m.id");
+    }
+
+    [Fact]
     public void ApplySort_GetLatestReadingsRequest_OrdersTheWholeUnionByTypeThenLocation()
     {
         // Arrange
