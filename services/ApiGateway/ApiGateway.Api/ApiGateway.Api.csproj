@@ -2,15 +2,17 @@
 
 	<PropertyGroup>
 		<UserSecretsId>6f0d2c4e-8a1b-4f37-9c5d-2e7b9a4d1c83</UserSecretsId>
-		<!-- Api code can't use DataAccess types: only BusinessLogic is referenced at compile time. -->
 		<DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
-		<!-- HotChocolate's global usings include GreenDonut, whose Result<T> clashes with Ausiannikau.Utilities.Results. -->
 		<HotChocolateImplicitUsings>disable</HotChocolateImplicitUsings>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="HotChocolate.AspNetCore" Version="16.7.3" />
 		<PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.7.3" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>

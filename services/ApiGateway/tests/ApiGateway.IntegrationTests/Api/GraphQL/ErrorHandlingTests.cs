@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Net;
-using System.Net.Sockets;
 using System.Text.Json;
 using ApiGateway.IntegrationTests.Fixtures;
 using ApiGateway.IntegrationTests.Utilities;
@@ -80,7 +79,7 @@ public sealed class ErrorHandlingTests(PostgreSqlContainerFixture postgreSql) : 
     public async Task Readings_DatabaseUnreachable_ReturnsInternalErrorWithoutConnectionDetails()
     {
         // Arrange
-        var port = GetUnusedPort().ToString(CultureInfo.InvariantCulture);
+        var port = TcpPorts.GetUnused().ToString(CultureInfo.InvariantCulture);
         var client = CreateClient(new Dictionary<string, string?>
         {
             ["Database:ConnectionString"] = $"Host=127.0.0.1;Port={port};Database=pulse_analytics;Username=gateway;Password=secret"
@@ -101,20 +100,6 @@ public sealed class ErrorHandlingTests(PostgreSqlContainerFixture postgreSql) : 
         response.Content.ShouldNotContain(port);
         response.Content.ShouldNotContain("secret");
         response.Content.ShouldNotContain("Npgsql", Case.Insensitive);
-    }
-
-    /// <summary>
-    /// A local port nothing listens on, so connecting to it is refused.
-    /// </summary>
-    private static int GetUnusedPort()
-    {
-        using var listener = new TcpListener(IPAddress.Loopback, 0);
-
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-
-        return port;
     }
 
     private GraphQLClient CreateClient(IReadOnlyDictionary<string, string?>? overrides = null)

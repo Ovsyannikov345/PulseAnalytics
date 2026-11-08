@@ -20,6 +20,13 @@ internal static class MeterReadingSortExtensions
             .ThenBy(r => r.Location);
     }
 
+    public static IOrderedQueryable<MeterReading> ApplySort(this IQueryable<MeterReading> query, ExportReadingsRequest _)
+    {
+        return query
+            .OrderBy(r => r.ReceivedAt)
+            .ThenBy(r => r.Id);
+    }
+
     public static IOrderedQueryable<ReadingCountModel> ApplySort(this IQueryable<ReadingCountModel> query, GetReadingCountsRequest _)
     {
         return query

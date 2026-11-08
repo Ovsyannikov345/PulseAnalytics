@@ -18,6 +18,8 @@ public static class DependencyInjection
 
         services.AddScoped<IReadingStatisticsService, ReadingStatisticsService>();
 
+        services.AddScoped<IReadingsExportService, ReadingsExportService>();
+
         return services;
     }
 }

@@ -70,6 +70,14 @@ internal static class MeterReadingFilterExtensions
             .WhereReceivedWithin(request.From, request.To);
     }
 
+    public static IQueryable<MeterReading> ApplyFilter(this IQueryable<MeterReading> query, ExportReadingsRequest request)
+    {
+        return query
+            .WhereTypeIn(request.Types)
+            .WhereLocationIn(request.Locations)
+            .WhereReceivedWithin(request.From, request.To);
+    }
+
     public static IQueryable<MeterReading> ApplyCursorPagination(this IQueryable<MeterReading> query, ReadingCursor cursor)
     {
         var receivedAt = cursor.ReceivedAt;
