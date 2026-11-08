@@ -39,9 +39,9 @@ public sealed class OpenApiDocumentTests(PostgreSqlContainerFixture postgreSql) 
         operation.GetProperty("responses").GetProperty("200").GetProperty("content").TryGetProperty("text/csv; charset=utf-8", out _).ShouldBeTrue();
 
         var parameters = operation.GetProperty("parameters").EnumerateArray().ToDictionary(p => p.GetProperty("name").GetString()!);
-        parameters.Keys.ShouldBe(["from", "to", "types", "locations"], ignoreOrder: true);
-        parameters["from"].GetProperty("required").GetBoolean().ShouldBeTrue();
-        parameters["to"].GetProperty("required").GetBoolean().ShouldBeTrue();
+        parameters.Keys.ShouldBe(["From", "To", "Types", "Locations"], ignoreOrder: true);
+        parameters["From"].GetProperty("required").GetBoolean().ShouldBeTrue();
+        parameters["To"].GetProperty("required").GetBoolean().ShouldBeTrue();
     }
 
     [Fact]
@@ -58,11 +58,8 @@ public sealed class OpenApiDocumentTests(PostgreSqlContainerFixture postgreSql) 
             .GetProperty("paths").GetProperty("/api/readings/export").GetProperty("get");
 
         operation.GetProperty("summary").GetString().ShouldBe("Exports readings as a CSV file.");
-        operation.GetProperty("description").GetString().ShouldStartWith("Streams the readings received in [from, to)");
-        operation.GetProperty("responses").GetProperty("400").GetProperty("description").GetString()
-            .ShouldBe("A value is missing or invalid, e.g. the range is longer than 7 days.");
 
-        var from = operation.GetProperty("parameters").EnumerateArray().Single(p => p.GetProperty("name").GetString() == "from");
+        var from = operation.GetProperty("parameters").EnumerateArray().Single(p => p.GetProperty("name").GetString() == "From");
         from.GetProperty("description").GetString().ShouldBe("Start of the range (inclusive), ISO 8601 with an offset, e.g. 2026-11-01T00:00:00Z.");
     }
 

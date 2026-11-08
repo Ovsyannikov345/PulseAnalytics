@@ -149,8 +149,8 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
     }
 
     [Theory]
-    [InlineData("to=2026-11-02T12:00:00Z", "'from' parameter")]
-    [InlineData("from=2026-11-01T12:00:00Z", "'to' parameter")]
+    [InlineData("to=2026-11-02T12:00:00Z", "'From' parameter")]
+    [InlineData("from=2026-11-01T12:00:00Z", "'To' parameter")]
     [InlineData("from=yesterday&to=2026-11-02T12:00:00Z", "'yesterday' is not valid")]
     [InlineData("from=2026-11-01T12:00:00Z&to=2026-11-01T12:00:00Z", "'From' must be earlier than 'To'.")]
     [InlineData("from=2026-11-01T12:00:00Z&to=2026-11-08T12:00:01Z", "'To' must be at most 7 days after 'From'.")]

@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.IO.Pipelines;
 using System.Text;
 using ApiGateway.Api.Rest.Csv;
 using ApiGateway.BusinessLogic.MeterReadings.Models;
@@ -30,6 +31,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
     private readonly TestLifetimeFeature _lifetime = new();
     private readonly ServiceProvider _services;
     private readonly DefaultHttpContext _httpContext;
+    private int _rowsRead;
 
     public ReadingsCsvResultTests()
     {
@@ -135,7 +137,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ExecuteResultAsync_ClientDisconnects_StopsWithoutLoggingOrAborting()
+    public async Task ExecuteResultAsync_ClientDisconnects_StopsWithDebugLogAndWithoutAborting()
     {
         // Arrange
         using var requestAborted = new CancellationTokenSource();
@@ -146,8 +148,33 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
 
         // Assert
         _lifetime.AbortCalled.ShouldBeFalse();
-        _logger.Collector.Count.ShouldBe(0);
+
+        var record = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Debug);
+        record.Exception.ShouldBeNull();
+        record.Message.ShouldContain((ReadingsCsvResult.RowsPerFlush + 1).ToString(CultureInfo.InvariantCulture));
+
         BodyLines().Length.ShouldBe(ReadingsCsvResult.RowsPerFlush + 1);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_FlushReportsClientGone_StopsReadingWithDebugLog()
+    {
+        // Arrange
+        var pipe = new Pipe();
+        await pipe.Reader.CompleteAsync();
+        _httpContext.Features.Set<IHttpResponseBodyFeature>(new PipeResponseBodyFeature(pipe.Writer));
+
+        // Act
+        await ExecuteAsync(CountedReadings(ReadingsCsvResult.RowsPerFlush * 3));
+
+        // Assert
+        _rowsRead.ShouldBe(ReadingsCsvResult.RowsPerFlush);
+        _lifetime.AbortCalled.ShouldBeFalse();
+
+        var record = _logger.Collector.GetSnapshot().ShouldHaveSingleItem();
+        record.Level.ShouldBe(LogLevel.Debug);
+        record.Message.ShouldContain(ReadingsCsvResult.RowsPerFlush.ToString(CultureInfo.InvariantCulture));
     }
 
     private static Guid RowId(int index)
@@ -184,6 +211,16 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
             requestAborted.Token.ThrowIfCancellationRequested();
 
             yield return Row(index);
+        }
+    }
+
+    private async IAsyncEnumerable<ExportReadingModel> CountedReadings(int count)
+    {
+        await foreach (var reading in Readings(count))
+        {
+            _rowsRead++;
+
+            yield return reading;
         }
     }
 
@@ -237,6 +274,35 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
 
         public void OnCompleted(Func<object, Task> callback, object state)
         {
+        }
+    }
+
+    /// <summary>
+    /// A response body backed by a pipe, so a test can make the flush report that the client is gone.
+    /// </summary>
+    private sealed class PipeResponseBodyFeature(PipeWriter writer) : IHttpResponseBodyFeature
+    {
+        public Stream Stream => writer.AsStream();
+
+        public PipeWriter Writer => writer;
+
+        public void DisableBuffering()
+        {
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task SendFileAsync(string path, long offset, long? count, CancellationToken cancellationToken = default)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task CompleteAsync()
+        {
+            return writer.CompleteAsync().AsTask();
         }
     }
 

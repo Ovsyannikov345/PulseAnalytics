@@ -55,6 +55,8 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
 
                     if (flushResult.IsCompleted || flushResult.IsCanceled)
                     {
+                        GetLogger(httpContext).ClientDisconnected(rowsWritten);
+
                         return;
                     }
                 }
@@ -66,20 +68,28 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
         }
         catch (Exception exception) when (exception is OperationCanceledException or IOException && ct.IsCancellationRequested)
         {
+            GetLogger(httpContext).ClientDisconnected(rowsWritten);
         }
         catch (Exception exception) when (response.HasStarted)
         {
-            var logger = httpContext.RequestServices.GetRequiredService<ILogger<ReadingsCsvResult>>();
-
-            logger.ExportAborted(exception, rowsWritten);
+            GetLogger(httpContext).ExportAborted(exception, rowsWritten);
 
             httpContext.Abort();
         }
+    }
+
+    private static ILogger<ReadingsCsvResult> GetLogger(HttpContext httpContext)
+    {
+        return httpContext.RequestServices.GetRequiredService<ILogger<ReadingsCsvResult>>();
     }
 }
 
 internal static partial class ReadingsCsvResultLogs
 {
+    [LoggerMessage(Level = LogLevel.Debug, Message = "CSV export stopped after {RowsWritten} rows, the client disconnected")]
+    public static partial void ClientDisconnected(this ILogger logger, int rowsWritten);
+
+
     [LoggerMessage(Level = LogLevel.Error, Message = "CSV export failed after {RowsWritten} rows, the response was aborted")]
     public static partial void ExportAborted(this ILogger logger, Exception exception, int rowsWritten);
 }
