@@ -1,4 +1,4 @@
-﻿namespace ApiGateway.BusinessLogic.Statistics;
+﻿namespace ApiGateway.BusinessLogic.MeterReadings.Constants;
 
 public static class StatisticsLimits
 {

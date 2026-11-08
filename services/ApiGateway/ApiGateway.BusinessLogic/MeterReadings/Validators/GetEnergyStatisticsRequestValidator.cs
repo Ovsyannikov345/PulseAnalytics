@@ -1,5 +1,5 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Requests;
-using ApiGateway.BusinessLogic.Statistics;
+﻿using ApiGateway.BusinessLogic.MeterReadings.Constants;
+using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.Common.Constants.Enums;
 using FluentValidation;
 

@@ -1,4 +1,4 @@
-﻿using ApiGateway.BusinessLogic.Statistics;
+﻿using ApiGateway.BusinessLogic.MeterReadings.Constants;
 using ApiGateway.Common.Constants.Enums;
 using HotChocolate.Types;
 
