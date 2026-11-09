@@ -163,6 +163,32 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  api-gateway:
+    image: ilyaovsyannikov/pulse-analytics-api-gateway:${API_GATEWAY_TAG:-latest}
+    environment:
+      Database__ConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB:-pulse_analytics};Username=${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
+      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      Seq__ServerUrl: http://seq:5341
+      Seq__ApiKey: ${SEQ_API_KEY:-}
+      OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
+    ports:
+      - "${API_GATEWAY_PORT:-5103}:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      data-processor:
+        condition: service_healthy
+      seq:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   rabbitmq-data:
   seq-data:

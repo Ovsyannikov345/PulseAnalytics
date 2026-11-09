@@ -32,7 +32,7 @@ public sealed class ApiGatewayApplicationFactory(
     {
         return new Dictionary<string, string?>
         {
-            ["Logging:LogLevel:Default"] = "Warning",
+            ["Serilog:MinimumLevel:Default"] = "Warning",
 
             ["Database:ConnectionString"] = postgreSql.ConnectionString
         };
