@@ -75,6 +75,31 @@ public sealed class ErrorHandlingTests(PostgreSqlContainerFixture postgreSql) : 
         error.GetProperty("message").GetString().ShouldNotBeNullOrWhiteSpace();
     }
 
+    [Theory]
+    [InlineData("""{"query":""}""", "Request must contain either a query or a document id.")]
+    [InlineData("""{"query":""", "Invalid JSON document.")]
+    [InlineData("", "Invalid JSON document.")]
+    [InlineData("""{"query":5}""", "Invalid 'query' value. Expected string or null, but got Number.")]
+    public async Task MalformedRequest_ReturnsBadRequestErrorWithParserMessage(string body, string expectedMessage)
+    {
+        // Arrange
+        var client = CreateClient();
+
+        // Act
+        var response = await client.PostRawAsync(body);
+
+        // Assert
+        // The request never reaches execution, so the status is the request error's 400, and there is no data entry.
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        response.Body.TryGetProperty("data", out _).ShouldBeFalse();
+
+        var error = response.Errors.ShouldHaveSingleItem();
+        error.GetProperty("extensions").GetProperty("code").GetString().ShouldBe("BAD_REQUEST");
+        error.GetProperty("message").GetString().ShouldBe(expectedMessage);
+
+        response.Content.ShouldNotContain("Exception");
+    }
+
     [Fact]
     public async Task Readings_DatabaseUnreachable_ReturnsInternalErrorWithoutConnectionDetails()
     {

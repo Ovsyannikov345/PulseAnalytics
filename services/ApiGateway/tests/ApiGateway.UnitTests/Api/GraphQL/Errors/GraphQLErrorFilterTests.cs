@@ -1,6 +1,8 @@
-﻿using ApiGateway.Api.GraphQL.Errors;
+﻿using System.Text.Json;
+using ApiGateway.Api.GraphQL.Errors;
 using ApiGateway.UnitTests.TestDoubles;
 using HotChocolate;
+using HotChocolate.Language;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Shouldly;
@@ -60,6 +62,33 @@ public sealed class GraphQLErrorFilterTests
         _logger.Collector.Count.ShouldBe(0);
     }
 
+    [Theory]
+    [InlineData("Request must contain either a query or a document id.", false)]
+    [InlineData("Invalid JSON document.", true)]
+    public void OnError_InvalidGraphQLRequest_ReturnsBadRequestWithOriginalMessage(string message, bool wrapsJsonError)
+    {
+        // Arrange
+        var error = InvalidRequestError(message, wrapsJsonError);
+
+        // Act
+        var result = _sut.OnError(error);
+
+        // Assert
+        result.Code.ShouldBe(GraphQLErrorCodes.BadRequest);
+        result.Message.ShouldBe(message);
+        result.Exception.ShouldBeNull();
+    }
+
+    [Fact]
+    public void OnError_InvalidGraphQLRequest_DoesNotLog()
+    {
+        // Act
+        _sut.OnError(InvalidRequestError("Invalid JSON document.", wrapsJsonError: true));
+
+        // Assert
+        _logger.Collector.Count.ShouldBe(0);
+    }
+
     [Fact]
     public void OnError_UnexpectedException_ReturnsInternalErrorWithHiddenMessage()
     {
@@ -105,6 +134,21 @@ public sealed class GraphQLErrorFilterTests
             .SetMessage("Unexpected Execution Error")
             .SetException(exception)
             .SetPath(HotChocolate.Path.Root.Append("readings"))
+            .Build();
+    }
+
+    // Shaped like the error HotChocolate builds when it can't parse the request body: its message, its own code and
+    // the parser's exception, with no path.
+    private static IError InvalidRequestError(string message, bool wrapsJsonError)
+    {
+        var exception = wrapsJsonError
+            ? new InvalidGraphQLRequestException(message, new JsonException("'}' is invalid after a property name."))
+            : new InvalidGraphQLRequestException(message);
+
+        return ErrorBuilder.New()
+            .SetMessage(message)
+            .SetCode("HC0012")
+            .SetException(exception)
             .Build();
     }
 }
