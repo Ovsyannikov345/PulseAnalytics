@@ -18,8 +18,6 @@ internal sealed class GraphQLErrorFilter(ILogger<GraphQLErrorFilter> logger) : I
             return error;
         }
 
-        // The request body couldn't be parsed (invalid JSON, empty body, no query). HotChocolate's message says what
-        // is wrong and holds no server details, so the client keeps it.
         if (exception is InvalidGraphQLRequestException)
         {
             return error
