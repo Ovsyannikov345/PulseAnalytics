@@ -1,0 +1,489 @@
+{
+  "uid": "api-gateway",
+  "title": "API Gateway",
+  "description": "GraphQL and CSV export traffic, database queries and runtime health of the api-gateway service.",
+  "tags": ["pulse-analytics", "api-gateway"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "schemaVersion": 41,
+  "version": 1,
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "links": [
+    { "type": "dashboards", "title": "Pulse Analytics", "tags": ["pulse-analytics"], "asDropdown": true, "includeVars": false, "keepTime": true }
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Requests",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Requests",
+      "description": "HTTP requests in the selected range, without the /health probes.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route!=\"/health\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Server errors",
+      "description": "Share of requests in the selected range answered with a 5xx status. GraphQL field errors keep status 200 and are not counted here (see the GraphQL row).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "(sum(increase(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route!=\"/health\", http_response_status_code=~\"5..\"}[$__range])) or vector(0)) / sum(increase(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route!=\"/health\"}[$__range]))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "GraphQL p95 latency",
+      "description": "95th percentile duration of GraphQL requests (POST /graphql) in the selected range.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 0.5 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (increase(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"/graphql/{**slug}\", http_request_method=\"POST\"}[$__range])))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Rows exported",
+      "description": "CSV rows written in the selected range, by every export (completed, cancelled or failed).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(api_gateway_export_rows_total{job=\"api-gateway\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests per minute by route",
+      "description": "/graphql/{**slug} = GraphQL (POST) and the Nitro IDE (GET); api/readings/export = the CSV export. Requests without a route (Swagger UI files, 404) have no route label. /health probes are left out.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_request_method, http_route) (rate(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route!=\"/health\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{http_request_method}} {{http_route}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Responses per minute by status code",
+      "description": "All routes except /health.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "2.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byRegexp", "options": "4.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byRegexp", "options": "5.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route!=\"/health\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{http_response_status_code}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request duration p95 by route",
+      "description": "The HTTP duration histogram ends at 10 s, so longer requests (large CSV exports) show as 10 s.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, http_request_method, http_route) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route!=\"/health\"}[5m])))",
+          "legendFormat": "{{http_request_method}} {{http_route}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Active requests and exceptions",
+      "description": "Active requests include running CSV downloads. Exceptions are those that reached the REST exception handler (answered with a 500); GraphQL handles its own errors and does not appear here.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 5 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "exceptions.*" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(http_server_active_requests{job=\"api-gateway\"})", "legendFormat": "active requests" },
+        {
+          "refId": "B",
+          "expr": "sum by (error_type) (rate(aspnetcore_diagnostics_exceptions_total{job=\"api-gateway\"}[$__rate_interval])) * 60",
+          "legendFormat": "exceptions / min: {{error_type}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "GraphQL",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "GraphQL requests per minute by status code",
+      "description": "POST /graphql. 200 = the operation ran. That includes operations whose fields failed: BAD_REQUEST (invalid arguments) and INTERNAL_ERROR (e.g. the database is down) keep 200 and are visible only in Seq (logs and traces). 400 = the request could not run: invalid JSON, a missing query, a syntax or validation error. 500 = the 15 s execution timeout.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "2.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byRegexp", "options": "4.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byRegexp", "options": "5.." }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_response_status_code) (rate(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route=\"/graphql/{**slug}\", http_request_method=\"POST\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{http_response_status_code}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GraphQL request duration",
+      "description": "Whole requests: one request can hold several root fields, which run in parallel.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"/graphql/{**slug}\", http_request_method=\"POST\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"/graphql/{**slug}\", http_request_method=\"POST\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"/graphql/{**slug}\", http_request_method=\"POST\"}[5m])))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "CSV export",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Exports per minute by outcome",
+      "description": "completed = every row sent; cancelled = the client disconnected; failed = a database error (before the first row it is answered with a 500, later the download is aborted); rejected = invalid query (400), nothing was read.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 23 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "completed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "cancelled" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] },
+          { "matcher": { "id": "byName", "options": "failed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "rejected" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(api_gateway_exports_total{job=\"api-gateway\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"api-gateway\", http_route=\"api/readings/export\", http_response_status_code=\"400\"}[$__rate_interval])) * 60",
+          "legendFormat": "rejected"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rows exported per minute",
+      "description": "Rows written by all exports, including the rows sent before a cancelled or failed export stopped.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(api_gateway_export_rows_total{job=\"api-gateway\"}[$__rate_interval])) * 60",
+          "legendFormat": "rows"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Export duration",
+      "description": "Duration of exports answered with 200, from the first byte of the request to the last row. The HTTP duration histogram ends at 10 s, so longer exports (several days of readings) show as 10 s.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"api/readings/export\", http_response_status_code=\"200\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"api-gateway\", http_route=\"api/readings/export\", http_response_status_code=\"200\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Exports in range",
+      "description": "Exports in the selected range (every outcome) and the average rows per export. One hour of readings is about 3-4k rows, one day 80-100k, the maximum of 7 days about 726k.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name", "orientation": "horizontal" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(api_gateway_exports_total{job=\"api-gateway\"}[$__range])) or vector(0)",
+          "legendFormat": "exports",
+          "instant": true
+        },
+        {
+          "refId": "B",
+          "expr": "sum(increase(api_gateway_export_rows_total{job=\"api-gateway\"}[$__range])) / (sum(increase(api_gateway_exports_total{job=\"api-gateway\"}[$__range])) > 0)",
+          "legendFormat": "average rows per export",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Database",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Database command duration",
+      "description": "Npgsql command execution time (GraphQL queries and statistics; an export is one long-running command). Commands time out after 10 s.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(db_client_operation_duration_seconds_bucket{job=\"api-gateway\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(db_client_operation_duration_seconds_bucket{job=\"api-gateway\"}[5m])))",
+          "legendFormat": "p95"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Database commands per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 32 },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "failed.*" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{job=\"api-gateway\"}[$__rate_interval])) * 60",
+          "legendFormat": "executed"
+        },
+        {
+          "refId": "B",
+          "expr": "sum(rate(db_client_operation_duration_seconds_count{job=\"api-gateway\", error_type!=\"\"}[$__rate_interval])) * 60 or sum(rate(db_client_operation_duration_seconds_count{job=\"api-gateway\"}[$__rate_interval])) * 0",
+          "legendFormat": "failed"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Connection pool and executing commands",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum by (db_client_connection_state) (db_client_connection_count{job=\"api-gateway\"})", "legendFormat": "{{db_client_connection_state}} connections" },
+        { "refId": "B", "expr": "sum(db_client_operation_npgsql_executing{job=\"api-gateway\"})", "legendFormat": "executing commands" }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Runtime",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cpu_mode) (rate(dotnet_process_cpu_time_seconds_total{job=\"api-gateway\"}[$__rate_interval])) / scalar(max(dotnet_process_cpu_count{job=\"api-gateway\"}))",
+          "legendFormat": "{{cpu_mode}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_process_memory_working_set_bytes{job=\"api-gateway\"})", "legendFormat": "working set" },
+        { "refId": "B", "expr": "sum(dotnet_gc_last_collection_heap_size_bytes{job=\"api-gateway\"})", "legendFormat": "GC heap" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GC collections per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (gc_heap_generation) (rate(dotnet_gc_collections_total{job=\"api-gateway\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{gc_heap_generation}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Thread pool and exceptions",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_thread_pool_thread_count_total{job=\"api-gateway\"})", "legendFormat": "thread pool threads" },
+        { "refId": "B", "expr": "sum(dotnet_thread_pool_queue_length_total{job=\"api-gateway\"})", "legendFormat": "thread pool queue" },
+        { "refId": "C", "expr": "sum(rate(dotnet_exceptions_total{job=\"api-gateway\"}[$__rate_interval])) * 60", "legendFormat": "exceptions / min" }
+      ]
+    }
+  ]
+}

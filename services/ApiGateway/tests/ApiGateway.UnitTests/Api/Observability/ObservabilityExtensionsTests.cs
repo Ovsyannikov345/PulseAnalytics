@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using ApiGateway.Api.Observability;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -57,6 +58,26 @@ public sealed class ObservabilityExtensionsTests
 
         // Assert
         source.HasListeners().ShouldBe(isTraced);
+    }
+
+    [Theory]
+    [InlineData("PulseAnalytics.ApiGateway", true)]
+    [InlineData("Npgsql", true)]
+    [InlineData("System.Runtime", true)]
+    [InlineData("Microsoft.AspNetCore.Hosting", true)]
+    [InlineData("PulseAnalytics.DataProcessor", false)]
+    public void AddObservability_OtlpEndpointConfigured_ExportsServiceDatabaseRuntimeAndHttpMeters(string meterName, bool isExported)
+    {
+        // Arrange
+        using var serviceProvider = BuildServiceProvider(OtlpEndpoint);
+        serviceProvider.GetRequiredService<MeterProvider>();
+
+        // Act
+        using var meter = new Meter(meterName);
+        var instrument = meter.CreateCounter<long>("test.instrument");
+
+        // Assert
+        instrument.Enabled.ShouldBe(isExported);
     }
 
     [Theory]

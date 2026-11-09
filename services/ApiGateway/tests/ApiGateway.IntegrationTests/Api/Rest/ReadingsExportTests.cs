@@ -1,9 +1,12 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics.Metrics;
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using ApiGateway.Common.Constants.Enums;
 using ApiGateway.IntegrationTests.Fixtures;
 using ApiGateway.IntegrationTests.Utilities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.Metrics.Testing;
 using Shouldly;
 using Xunit;
 
@@ -15,6 +18,8 @@ namespace ApiGateway.IntegrationTests.Api.Rest;
 public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) : IAsyncLifetime
 {
     private const string Header = "id,type,location,received_at,motion_detected,energy,co2,pm25,humidity";
+
+    private const string MeterName = "PulseAnalytics.ApiGateway";
 
     private static readonly DateTimeOffset From = new(2026, 11, 1, 12, 0, 0, TimeSpan.Zero);
 
@@ -204,6 +209,89 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
         content.ShouldNotContain("Npgsql", Case.Insensitive);
     }
 
+    [Fact]
+    public async Task Export_SeededRange_CountsCompletedExportAndItsRows()
+    {
+        // Arrange
+        await SeedAsync(
+            SeedReadings.Energy(MeterLocation.Kitchen, From),
+            SeedReadings.Motion(MeterLocation.Garage, From.AddSeconds(1)),
+            SeedReadings.AirQuality(MeterLocation.Office, From.AddSeconds(2)),
+            SeedReadings.Energy(MeterLocation.Kitchen, From.AddHours(2)));
+
+        var factory = CreateFactory();
+        var client = factory.CreateClient();
+        var meterFactory = factory.Services.GetRequiredService<IMeterFactory>();
+
+        // The Grafana dashboard queries these names, so they are spelled out here instead of taken from the code.
+        using var exports = new MetricCollector<long>(meterFactory, MeterName, "api_gateway.exports");
+        using var rows = new MetricCollector<long>(meterFactory, MeterName, "api_gateway.export.rows");
+
+        // Act
+        using var response = await ExportAsync($"from={Format(From)}&to={Format(From.AddHours(1))}", client);
+        await response.Content.ReadAsStringAsync(Ct);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // The export records its metrics after its last flush, so they can arrive just after the response body.
+        (await ObserveUntilAsync(exports, totals => totals.GetValueOrDefault("completed") == 1))
+            .ShouldBe(new Dictionary<string, long> { ["completed"] = 1, ["cancelled"] = 0, ["failed"] = 0 });
+
+        (await ObserveUntilAsync(rows, totals => totals.GetValueOrDefault("completed") == 3))
+            .ShouldBe(new Dictionary<string, long> { ["completed"] = 3, ["cancelled"] = 0, ["failed"] = 0 });
+    }
+
+    [Fact]
+    public void Startup_NoExportYet_ReportsEveryExportOutcomeAtZero()
+    {
+        // Arrange
+        var factory = CreateFactory();
+        factory.CreateClient().Dispose();
+
+        var meterFactory = factory.Services.GetRequiredService<IMeterFactory>();
+        using var exports = new MetricCollector<long>(meterFactory, MeterName, "api_gateway.exports");
+        using var rows = new MetricCollector<long>(meterFactory, MeterName, "api_gateway.export.rows");
+
+        // Act
+        var exportTotals = Observe(exports);
+        var rowTotals = Observe(rows);
+
+        // Assert
+        // The instruments are created at startup, so every outcome's series exists before its first export,
+        // which lets Prometheus' rate() and increase() count that export.
+        var zeroPerOutcome = new Dictionary<string, long> { ["completed"] = 0, ["cancelled"] = 0, ["failed"] = 0 };
+        exportTotals.ShouldBe(zeroPerOutcome);
+        rowTotals.ShouldBe(zeroPerOutcome);
+    }
+
+    // Reads the gateway's observable counters once: the current total per export outcome.
+    private static Dictionary<string, long> Observe(MetricCollector<long> collector)
+    {
+        collector.Clear();
+        collector.RecordObservableInstruments();
+
+        return collector
+            .GetMeasurementSnapshot()
+            .ToDictionary(measurement => (string)measurement.Tags["app.outcome"]!, measurement => measurement.Value);
+    }
+
+    private static async Task<Dictionary<string, long>> ObserveUntilAsync(
+        MetricCollector<long> collector,
+        Func<Dictionary<string, long>, bool> condition)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        var totals = Observe(collector);
+
+        while (!condition(totals) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50, Ct);
+            totals = Observe(collector);
+        }
+
+        return totals;
+    }
+
     private static Guid Id(int value)
     {
         return Guid.Parse($"00000000-0000-0000-0000-{value:D12}");
@@ -248,17 +336,22 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
         }
     }
 
-    private async Task<HttpResponseMessage> ExportAsync(string query)
+    private async Task<HttpResponseMessage> ExportAsync(string query, HttpClient? client = null)
     {
-        return await CreateClient().GetAsync(new Uri($"/api/readings/export?{query}", UriKind.Relative), Ct);
+        return await (client ?? CreateClient()).GetAsync(new Uri($"/api/readings/export?{query}", UriKind.Relative), Ct);
     }
 
     private HttpClient CreateClient(IReadOnlyDictionary<string, string?>? overrides = null)
     {
+        return CreateFactory(overrides).CreateClient();
+    }
+
+    private ApiGatewayApplicationFactory CreateFactory(IReadOnlyDictionary<string, string?>? overrides = null)
+    {
         var factory = new ApiGatewayApplicationFactory(postgreSql, overrides);
         _factories.Add(factory);
 
-        return factory.CreateClient();
+        return factory;
     }
 
     private async Task SeedAsync(params SeedReading[] readings)

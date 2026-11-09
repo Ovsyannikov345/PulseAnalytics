@@ -1,7 +1,8 @@
-using ApiGateway.Api;
+﻿using ApiGateway.Api;
 using ApiGateway.Api.HealthCheck;
 using ApiGateway.Api.Observability;
 using ApiGateway.BusinessLogic;
+using ApiGateway.BusinessLogic.Telemetry.Metrics;
 using Serilog;
 using Serilog.Events;
 
@@ -26,6 +27,9 @@ try
     builder.Services.AddHealthChecks();
 
     var app = builder.Build();
+
+    // Creates the custom instruments at startup.
+    _ = app.Services.GetRequiredService<IMetricsService>();
 
     app.UseSerilogRequestLogging(options =>
     {
