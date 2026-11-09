@@ -1,24 +1,63 @@
-﻿using ApiGateway.Api;
+using ApiGateway.Api;
 using ApiGateway.Api.HealthCheck;
+using ApiGateway.Api.Observability;
 using ApiGateway.BusinessLogic;
+using Serilog;
+using Serilog.Events;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services
-    .AddBusinessLogic(builder.Configuration)
-    .AddGraphQLApi()
-    .AddRestApi();
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHealthChecks();
+    var configuration = builder.Configuration;
 
-var app = builder.Build();
+    builder.Services
+        .AddSerilogLogging(configuration)
+        .AddObservability(configuration)
+        .AddBusinessLogic(configuration)
+        .AddGraphQLApi()
+        .AddRestApi()
+        .AddCrossOriginRequests(configuration);
 
-app.UseExceptionHandler();
+    builder.Services.AddHealthChecks();
 
-app.MapHealthChecks(HealthCheckConstants.EndpointPath);
-app.MapGraphQL();
-app.MapControllers();
+    var app = builder.Build();
 
-app.UseOpenApiDocumentation();
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.GetLevel = (context, _, exception) =>
+        {
+            if (exception is not null || context.Response.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                return LogEventLevel.Error;
+            }
 
-await app.RunWithGraphQLCommandsAsync(args);
+            return context.IsHealthCheckRequest() ? LogEventLevel.Verbose : LogEventLevel.Information;
+        };
+    });
+
+    app.UseExceptionHandler();
+
+    app.UseCors();
+
+    app.MapHealthChecks(HealthCheckConstants.EndpointPath);
+    app.MapGraphQL();
+    app.MapControllers();
+
+    app.UseOpenApiDocumentation();
+
+    await app.RunWithGraphQLCommandsAsync(args);
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "API gateway terminated unexpectedly");
+    Environment.ExitCode = 1;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}

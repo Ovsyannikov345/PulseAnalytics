@@ -11,7 +11,13 @@
 	<ItemGroup>
 		<PackageReference Include="HotChocolate.AspNetCore" Version="16.7.3" />
 		<PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.7.3" />
+		<PackageReference Include="HotChocolate.Diagnostics" Version="16.7.3" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.3.1" />
 	</ItemGroup>
 
