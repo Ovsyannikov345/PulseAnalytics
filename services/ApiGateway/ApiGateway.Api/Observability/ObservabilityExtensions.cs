@@ -34,6 +34,7 @@ public static class ObservabilityExtensions
             .AddOpenTelemetry()
             .ConfigureResource(resource => resource.AddService(ApiGatewayTelemetry.ServiceName, serviceVersion: serviceVersion))
             .WithMetrics(metrics => metrics
+                .AddMeter(ApiGatewayTelemetry.ScopeName)
                 .AddMeter(RuntimeMeterName)
                 .AddMeter(NpgsqlTelemetryName)
                 .AddAspNetCoreInstrumentation()

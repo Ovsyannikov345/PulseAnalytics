@@ -1,4 +1,5 @@
 ﻿using ApiGateway.BusinessLogic.MeterReadings;
+using ApiGateway.BusinessLogic.Telemetry.Metrics;
 using ApiGateway.DataAccess;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
@@ -14,11 +15,12 @@ public static class DependencyInjection
 
         services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly, includeInternalTypes: true);
 
-        services.AddScoped<IMeterReadingsService, MeterReadingsService>();
+        services.AddSingleton<IMetricsService, MetricsService>();
 
-        services.AddScoped<IReadingStatisticsService, ReadingStatisticsService>();
-
-        services.AddScoped<IReadingsExportService, ReadingsExportService>();
+        services
+            .AddScoped<IMeterReadingsService, MeterReadingsService>()
+            .AddScoped<IReadingStatisticsService, ReadingStatisticsService>()
+            .AddScoped<IReadingsExportService, ReadingsExportService>();
 
         return services;
     }

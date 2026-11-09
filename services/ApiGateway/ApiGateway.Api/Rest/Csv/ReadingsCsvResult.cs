@@ -1,4 +1,6 @@
 ﻿using ApiGateway.BusinessLogic.MeterReadings.Models;
+using ApiGateway.BusinessLogic.Telemetry.Metrics;
+using ApiGateway.BusinessLogic.Telemetry.Metrics.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 
@@ -26,6 +28,7 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
         var response = httpContext.Response;
         var ct = httpContext.RequestAborted;
         var rowsWritten = 0;
+        var outcome = ExportOutcome.Failed;
 
         await using var enumerator = readings.GetAsyncEnumerator(ct);
 
@@ -55,6 +58,7 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
 
                     if (flushResult.IsCompleted || flushResult.IsCanceled)
                     {
+                        outcome = ExportOutcome.Cancelled;
                         GetLogger(httpContext).ClientDisconnected(rowsWritten);
 
                         return;
@@ -65,9 +69,12 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
             }
 
             await writer.FlushAsync(ct);
+
+            outcome = ExportOutcome.Completed;
         }
         catch (Exception exception) when (exception is OperationCanceledException or IOException && ct.IsCancellationRequested)
         {
+            outcome = ExportOutcome.Cancelled;
             GetLogger(httpContext).ClientDisconnected(rowsWritten);
         }
         catch (Exception exception) when (response.HasStarted)
@@ -76,11 +83,20 @@ internal sealed class ReadingsCsvResult(IAsyncEnumerable<ExportReadingModel> rea
 
             httpContext.Abort();
         }
+        finally
+        {
+            GetMetrics(httpContext).RecordExport(rowsWritten, outcome);
+        }
     }
 
     private static ILogger<ReadingsCsvResult> GetLogger(HttpContext httpContext)
     {
         return httpContext.RequestServices.GetRequiredService<ILogger<ReadingsCsvResult>>();
+    }
+
+    private static IMetricsService GetMetrics(HttpContext httpContext)
+    {
+        return httpContext.RequestServices.GetRequiredService<IMetricsService>();
     }
 }
 
