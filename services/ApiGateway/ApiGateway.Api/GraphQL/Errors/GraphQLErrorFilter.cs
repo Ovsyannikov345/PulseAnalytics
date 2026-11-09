@@ -1,6 +1,7 @@
 ﻿using System.Data.Common;
 using HotChocolate;
 using HotChocolate.Execution;
+using HotChocolate.Language;
 
 namespace ApiGateway.Api.GraphQL.Errors;
 
@@ -15,6 +16,15 @@ internal sealed class GraphQLErrorFilter(ILogger<GraphQLErrorFilter> logger) : I
         if (exception is null or GraphQLException or OperationCanceledException)
         {
             return error;
+        }
+
+        // The request body couldn't be parsed (invalid JSON, empty body, no query). HotChocolate's message says what
+        // is wrong and holds no server details, so the client keeps it.
+        if (exception is InvalidGraphQLRequestException)
+        {
+            return error
+                .WithCode(GraphQLErrorCodes.BadRequest)
+                .WithException(null);
         }
 
         logger.ResolverFailed(exception, GraphQLErrorCodes.InternalError, error.Path?.ToString());
