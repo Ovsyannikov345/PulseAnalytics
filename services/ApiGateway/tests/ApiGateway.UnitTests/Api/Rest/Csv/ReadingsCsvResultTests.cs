@@ -3,8 +3,11 @@ using System.IO.Pipelines;
 using System.Text;
 using ApiGateway.Api.Rest.Csv;
 using ApiGateway.BusinessLogic.MeterReadings.Models;
+using ApiGateway.BusinessLogic.Telemetry.Metrics;
+using ApiGateway.BusinessLogic.Telemetry.Metrics.Enums;
 using ApiGateway.Common.Constants.Enums;
 using ApiGateway.UnitTests.TestDoubles;
+using FakeItEasy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +30,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
     private static readonly DateTimeOffset Start = new(2026, 11, 4, 12, 0, 0, TimeSpan.Zero);
 
     private readonly FakeLogger<ReadingsCsvResult> _logger = new();
+    private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
     private readonly MemoryStream _body = new();
     private readonly TestLifetimeFeature _lifetime = new();
     private readonly ServiceProvider _services;
@@ -37,6 +41,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
     {
         _services = new ServiceCollection()
             .AddSingleton<ILogger<ReadingsCsvResult>>(_logger)
+            .AddSingleton(_metrics)
             .BuildServiceProvider();
 
         _httpContext = new DefaultHttpContext { RequestServices = _services };
@@ -177,6 +182,82 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
         record.Message.ShouldContain(ReadingsCsvResult.RowsPerFlush.ToString(CultureInfo.InvariantCulture));
     }
 
+    [Fact]
+    public async Task ExecuteResultAsync_AllRowsWritten_RecordsCompletedExportWithRowCount()
+    {
+        // Arrange
+        const int rowCount = ReadingsCsvResult.RowsPerFlush + 1;
+
+        // Act
+        await ExecuteAsync(Readings(rowCount));
+
+        // Assert
+        ShouldHaveRecordedExport(rowCount, ExportOutcome.Completed);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_NoReadings_RecordsCompletedExportWithoutRows()
+    {
+        // Act
+        await ExecuteAsync(Readings(0));
+
+        // Assert
+        ShouldHaveRecordedExport(0, ExportOutcome.Completed);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_FirstReadFails_RecordsFailedExportWithoutRows()
+    {
+        // Act
+        await Should.ThrowAsync<TestDbException>(() => ExecuteAsync(Readings(0, thenThrow: new TestDbException("Failed to connect"))));
+
+        // Assert
+        ShouldHaveRecordedExport(0, ExportOutcome.Failed);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_ReadFailsAfterResponseStarted_RecordsFailedExportWithRowsWritten()
+    {
+        // Arrange
+        const int rowCount = ReadingsCsvResult.RowsPerFlush + 100;
+
+        // Act
+        await ExecuteAsync(Readings(rowCount, thenThrow: new TestDbException("Connection reset")));
+
+        // Assert
+        ShouldHaveRecordedExport(rowCount, ExportOutcome.Failed);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_ClientDisconnects_RecordsCancelledExportWithRowsWritten()
+    {
+        // Arrange
+        const int cancelAfter = ReadingsCsvResult.RowsPerFlush + 1;
+        using var requestAborted = new CancellationTokenSource();
+        _lifetime.RequestAborted = requestAborted.Token;
+
+        // Act
+        await ExecuteAsync(Readings(ReadingsCsvResult.RowsPerFlush * 3, cancelAfter, requestAborted));
+
+        // Assert
+        ShouldHaveRecordedExport(cancelAfter, ExportOutcome.Cancelled);
+    }
+
+    [Fact]
+    public async Task ExecuteResultAsync_FlushReportsClientGone_RecordsCancelledExportWithRowsWritten()
+    {
+        // Arrange
+        var pipe = new Pipe();
+        await pipe.Reader.CompleteAsync();
+        _httpContext.Features.Set<IHttpResponseBodyFeature>(new PipeResponseBodyFeature(pipe.Writer));
+
+        // Act
+        await ExecuteAsync(Readings(ReadingsCsvResult.RowsPerFlush * 3));
+
+        // Assert
+        ShouldHaveRecordedExport(ReadingsCsvResult.RowsPerFlush, ExportOutcome.Cancelled);
+    }
+
     private static Guid RowId(int index)
     {
         return new Guid(index, 0, 0, [0, 0, 0, 0, 0, 0, 0, 1]);
@@ -241,6 +322,12 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
         var sut = new ReadingsCsvResult(readings, FileName);
 
         await sut.ExecuteResultAsync(new ActionContext(_httpContext, new RouteData(), new ActionDescriptor()));
+    }
+
+    private void ShouldHaveRecordedExport(long rowsWritten, ExportOutcome outcome)
+    {
+        A.CallTo(_metrics).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _metrics.RecordExport(rowsWritten, outcome)).MustHaveHappenedOnceExactly();
     }
 
     private string[] BodyLines()
