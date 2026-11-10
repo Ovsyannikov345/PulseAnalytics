@@ -69,17 +69,19 @@ public sealed class IngestionPipelineTests(RabbitMqContainerFixture rabbitMq) : 
     }
 
     [Fact]
-    public async Task Ping_HostIsRunning_ReturnsPong()
+    public async Task Health_HostIsRunning_ReturnsHealthy()
     {
         // Arrange
+        var ct = TestContext.Current.CancellationToken;
         await using var factory = new IngestorApplicationFactory(rabbitMq, _weakApp);
         using var client = factory.CreateClient();
 
         // Act
-        var response = await client.GetStringAsync(new Uri("/ping", UriKind.Relative), TestContext.Current.CancellationToken);
+        using var response = await client.GetAsync(new Uri("/health", UriKind.Relative), ct);
 
         // Assert
-        response.ShouldBe("pong");
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync(ct)).ShouldBe("Healthy");
     }
 
     public void Dispose()

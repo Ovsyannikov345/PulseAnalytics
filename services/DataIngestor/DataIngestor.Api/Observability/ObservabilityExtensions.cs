@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using DataIngestor.Api.Configuration;
+using DataIngestor.Api.HealthCheck;
 using DataIngestor.Application.Telemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -50,7 +51,7 @@ public static class ObservabilityExtensions
             .WithTracing(tracing => tracing
                 .AddSource(IngestorTelemetry.ScopeName)
                 .AddSource(RabbitMqPublisherSourceName)
-                .AddAspNetCoreInstrumentation()
+                .AddAspNetCoreInstrumentation(options => options.Filter = context => !context.IsHealthCheckRequest())
                 .AddHttpClientInstrumentation(options =>
                     options.FilterHttpRequestMessage = _ => IsPartOfTrace(Activity.Current))
                 .AddOtlpExporter(exporterOptions => exporterOptions.Endpoint = otlpEndpoint));
