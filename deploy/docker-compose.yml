@@ -125,6 +125,11 @@ services:
       OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
     ports:
       - "${DATA_INGESTOR_PORT:-5101}:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
     depends_on:
       weakapp:
         condition: service_healthy
