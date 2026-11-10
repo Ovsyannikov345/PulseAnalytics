@@ -1,9 +1,11 @@
 ﻿using DataIngestor.Api;
+using DataIngestor.Api.HealthCheck;
 using DataIngestor.Api.Observability;
 using DataIngestor.Application;
 using DataIngestor.Background;
 using DataIngestor.Infrastructure;
 using Serilog;
+using Serilog.Events;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -23,20 +25,29 @@ try
         .AddBackgroundServices(configuration)
         .AddApiServices();
 
+    builder.Services.AddHealthChecks();
+
     var app = builder.Build();
 
-    app.UseSerilogRequestLogging();
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.GetLevel = (context, _, exception) =>
+        {
+            if (exception is not null || context.Response.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                return LogEventLevel.Error;
+            }
+
+            return context.IsHealthCheckRequest() ? LogEventLevel.Verbose : LogEventLevel.Information;
+        };
+    });
 
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
     }
 
-    app.MapGet("/ping", () =>
-    {
-        return "pong";
-    })
-    .WithName("Ping");
+    app.MapHealthChecks(HealthCheckConstants.EndpointPath);
 
     await app.RunAsync();
 }
