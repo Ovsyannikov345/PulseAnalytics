@@ -173,7 +173,6 @@ services:
     image: ilyaovsyannikov/pulse-analytics-api-gateway:${API_GATEWAY_TAG:-latest}
     environment:
       Database__ConnectionString: Host=postgres;Port=5432;Database=${POSTGRES_DB:-pulse_analytics};Username=${POSTGRES_USER:?Set POSTGRES_USER in deploy/.env};Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in deploy/.env}
-      Cors__AllowedOrigins__0: ${FRONTEND_ORIGIN:-http://localhost:5173}
       Seq__ServerUrl: http://seq:5341
       Seq__ApiKey: ${SEQ_API_KEY:-}
       OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
@@ -193,6 +192,22 @@ services:
         condition: service_started
       otel-collector:
         condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    image: ilyaovsyannikov/pulse-analytics-frontend:${FRONTEND_TAG:-latest}
+    environment:
+      API_GATEWAY_URL: http://api-gateway:8080
+    ports:
+      - "${FRONTEND_PORT:-5100}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      api-gateway:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
