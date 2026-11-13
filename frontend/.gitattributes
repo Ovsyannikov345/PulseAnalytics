@@ -1,0 +1,2 @@
+# Keep LF in the working tree on Windows too (core.autocrlf), so Prettier's check matches CI.
+* text=auto eol=lf
