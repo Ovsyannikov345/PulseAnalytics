@@ -3,7 +3,7 @@ interface BrandMarkProps {
 }
 
 /** The PulseAnalytics logo: a pulse line on a rounded square. Decorative, so hidden from screen readers. */
-export function BrandMark({ size }: BrandMarkProps) {
+export function BrandMark({ size }: Readonly<BrandMarkProps>) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 28 28">
       <rect width="28" height="28" rx="7" fill="var(--color-primary)" />
