@@ -6,12 +6,14 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - frontend/**
+      - services/ApiGateway/ApiGateway.Api/GraphQL/schema.graphql
       - .github/workflows/frontend.yml
       - .github/workflows/_docker-image.yml
   push:
     branches: [main]
     paths:
       - frontend/**
+      - services/ApiGateway/ApiGateway.Api/GraphQL/schema.graphql
       - .github/workflows/frontend.yml
       - .github/workflows/_docker-image.yml
 
@@ -43,6 +45,17 @@ jobs:
 
       - name: Install
         run: npm ci --ignore-scripts
+
+      # The generated code is committed: regenerating it from the gateway's schema must change nothing.
+      - name: Check generated GraphQL code
+        run: |
+          npm run codegen
+          if [ -n "$(git status --porcelain -- src/graphql/generated)" ]; then
+            git status --short -- src/graphql/generated
+            git diff -- src/graphql/generated
+            echo "::error::src/graphql/generated is out of date: run 'npm run codegen' and commit the result."
+            exit 1
+          fi
 
       - name: Lint
         run: npm run lint
