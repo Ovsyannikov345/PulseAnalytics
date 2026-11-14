@@ -1,0 +1,78 @@
+/* Design tokens, taken from the mockups (PulseAnalytics Dashboard Mockups, reviewed 2026-11-12). */
+:root {
+  /* Text */
+  --color-text: #0b0b0b;
+  --color-text-secondary: #52514e;
+  --color-text-muted: #6b6a65;
+  --color-text-inverse: #ffffff;
+
+  /* Surfaces */
+  --color-page: #f6f6f3;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #fbfbf9;
+  --color-surface-muted: #f0efec;
+  --color-skeleton: #ecebe6;
+
+  /* Lines */
+  --color-border: #e4e3dd;
+  --color-border-strong: #c3c2b7;
+  --color-divider: #f0efec;
+  --color-gridline: #e1e0d9;
+
+  /* Brand and actions */
+  --color-primary: #1c5cab;
+  --color-primary-hover: #104281;
+  --color-primary-soft: #eef4fc;
+  --color-focus: #2a78d6;
+
+  /* Charts */
+  --color-chart: #2a78d6;
+  --color-chart-light: #86b6ef;
+  --color-chart-band: #cde2fb;
+  --color-motion: #6250d6;
+
+  /* Feedback */
+  --color-warning-bg: #fff4d6;
+  --color-warning-icon: #fab219;
+  --color-warning-text: #6b4500;
+  --color-error: #d03b3b;
+  --color-error-text: #b12f2f;
+  --color-error-bg: #fbe9e9;
+
+  /* Type */
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-size-xs: 0.6875rem; /* 11px */
+  --font-size-sm: 0.75rem; /* 12px */
+  --font-size-md: 0.8125rem; /* 13px */
+  --font-size-base: 0.875rem; /* 14px */
+  --font-size-lg: 0.9375rem; /* 15px */
+  --font-size-xl: 1rem; /* 16px */
+  --font-size-2xl: 1.125rem; /* 18px */
+  --font-size-3xl: 1.5rem; /* 24px */
+  --font-size-4xl: 1.75rem; /* 28px */
+  --font-size-5xl: 1.875rem; /* 30px */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-heading: 650;
+  --font-weight-bold: 700;
+  --letter-spacing-tight: -0.02em;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Layout */
+  --content-max-width: 1376px;
+  --page-gutter: 32px;
+  --touch-target: 44px;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --page-gutter: 16px;
+  }
+}
