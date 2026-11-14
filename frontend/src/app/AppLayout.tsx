@@ -6,7 +6,6 @@ import { formatUtcOffset, getUtcOffsetMinutes } from '../domain/utcOffset';
 import styles from './AppLayout.module.css';
 
 const navItems = [
-  // `end`: "/" would otherwise match every page.
   { to: '/', label: 'Overview', end: true },
   { to: '/analytics', label: 'Analytics', end: false },
   { to: '/readings', label: 'Readings', end: false },

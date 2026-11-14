@@ -12,6 +12,7 @@ import { routes } from './app/routes';
 const router = createBrowserRouter(routes);
 
 const rootElement = document.getElementById('root');
+
 if (!rootElement) {
   throw new Error('The #root element is missing from index.html.');
 }
