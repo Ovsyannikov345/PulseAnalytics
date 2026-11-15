@@ -1,0 +1,53 @@
+.refetchDimmer {
+  position: relative;
+}
+
+/* The track clips the moving bar; the region itself doesn't clip, so chart tooltips can overflow it. */
+.progress {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 1;
+  height: 3px;
+  overflow: hidden;
+}
+
+.progress::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-progress);
+  animation: slide 1.2s ease-in-out infinite;
+}
+
+.content {
+  transition: opacity 150ms ease-out;
+}
+
+.refetchDimmer[aria-busy='true'] > .content {
+  opacity: 0.45;
+}
+
+@keyframes slide {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress::before {
+    animation: none;
+  }
+
+  .content {
+    transition: none;
+  }
+}
