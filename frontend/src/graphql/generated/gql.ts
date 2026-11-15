@@ -25,6 +25,7 @@ type Documents = {
   'query OverviewIngestionCoverage($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n  }\n}': typeof types.OverviewIngestionCoverageDocument;
   'query OverviewLatestReadings {\n  latestReadings {\n    location\n    receivedAt\n    ... on EnergyReading {\n      energy\n    }\n    ... on AirQualityReading {\n      co2\n      pm25\n      humidity\n    }\n    ... on MotionReading {\n      motionDetected\n    }\n  }\n}': typeof types.OverviewLatestReadingsDocument;
   'query OverviewSampleCount($from: DateTime!, $to: DateTime!) {\n  readingCounts(filter: {from: $from, to: $to}, groupBy: []) {\n    count\n  }\n}': typeof types.OverviewSampleCountDocument;
+  'query ReadingsMatchCounts($filter: ReadingFilterInput!) {\n  readingCounts(filter: $filter, groupBy: [TYPE]) {\n    type\n    count\n  }\n}': typeof types.ReadingsMatchCountsDocument;
 };
 const documents: Documents = {
   'query AnalyticsAirQuality($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  airQualityStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n    co2 {\n      average\n      minimum\n      maximum\n    }\n    pm25 {\n      average\n      minimum\n      maximum\n    }\n    humidity {\n      average\n      minimum\n      maximum\n    }\n  }\n}':
@@ -49,6 +50,8 @@ const documents: Documents = {
     types.OverviewLatestReadingsDocument,
   'query OverviewSampleCount($from: DateTime!, $to: DateTime!) {\n  readingCounts(filter: {from: $from, to: $to}, groupBy: []) {\n    count\n  }\n}':
     types.OverviewSampleCountDocument,
+  'query ReadingsMatchCounts($filter: ReadingFilterInput!) {\n  readingCounts(filter: $filter, groupBy: [TYPE]) {\n    type\n    count\n  }\n}':
+    types.ReadingsMatchCountsDocument,
 };
 
 /**
@@ -131,6 +134,12 @@ export function graphql(
 export function graphql(
   source: 'query OverviewSampleCount($from: DateTime!, $to: DateTime!) {\n  readingCounts(filter: {from: $from, to: $to}, groupBy: []) {\n    count\n  }\n}',
 ): (typeof documents)['query OverviewSampleCount($from: DateTime!, $to: DateTime!) {\n  readingCounts(filter: {from: $from, to: $to}, groupBy: []) {\n    count\n  }\n}'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: 'query ReadingsMatchCounts($filter: ReadingFilterInput!) {\n  readingCounts(filter: $filter, groupBy: [TYPE]) {\n    type\n    count\n  }\n}',
+): (typeof documents)['query ReadingsMatchCounts($filter: ReadingFilterInput!) {\n  readingCounts(filter: $filter, groupBy: [TYPE]) {\n    type\n    count\n  }\n}'];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

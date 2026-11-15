@@ -1,10 +1,17 @@
+import { useQuery } from '@apollo/client/react';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { PageHeader } from '../../components/PageHeader';
+import { getQueryErrorKind } from '../../graphql/errors';
+import { ReadingsMatchCountsDocument } from '../../graphql/generated/graphql';
+import { useWidgetQuery } from '../../graphql/useWidgetQuery';
+import { MatchCounts } from './MatchCounts';
+import { toMatchCounts } from './readingCounts';
 import {
   defaultReadingsFilter,
   parseReadingsFilter,
+  readingFilterInput,
   toSearchParams,
   type ReadingsFilter,
 } from './readingsFilter';
@@ -21,10 +28,26 @@ export function ReadingsPage() {
     () => parseReadingsFilter(searchParams, openedAt),
     [searchParams, openedAt],
   );
+  const variables = { filter: readingFilterInput(filter) };
+
+  const countsResult = useQuery(ReadingsMatchCountsDocument, { variables });
+  const counts = useWidgetQuery(countsResult, (data) =>
+    toMatchCounts(data.readingCounts, filter.types),
+  );
+
+  const results = [countsResult];
+  const invalidInput = results.some(
+    (result) => result.error !== undefined && getQueryErrorKind(result.error) === 'invalidInput',
+  );
 
   function applyFilter(next: ReadingsFilter) {
     const params = toSearchParams(next);
-    // The same filter again doesn't add a history entry.
+    if (params.toString() === search) {
+      // The same filter again loads it again: readings stored meanwhile show up. No history entry.
+      for (const result of results) {
+        result.refetch().catch(() => undefined);
+      }
+    }
     setSearchParams(params, { replace: params.toString() === search });
   }
 
@@ -44,9 +67,12 @@ export function ReadingsPage() {
         // it applies the filter that is already applied.
         key={`${search}#${String(resets)}`}
         filter={filter}
+        invalidInput={invalidInput}
         onApply={applyFilter}
         onReset={reset}
-      />
+      >
+        <MatchCounts counts={counts} />
+      </ReadingsFilterForm>
     </>
   );
 }

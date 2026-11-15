@@ -40,6 +40,14 @@
   margin-left: auto;
 }
 
+.alert {
+  padding: 12px 14px;
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  background: var(--color-error-bg);
+  color: var(--color-error-dark);
+}
+
 @media (max-width: 640px) {
   .card {
     padding: 16px;

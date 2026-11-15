@@ -1,4 +1,4 @@
-import { useId, useState, type SubmitEvent } from 'react';
+import { useId, useState, type ReactNode, type SubmitEvent } from 'react';
 
 import { Button } from '../../components/Button';
 import { Field, FieldError } from '../../components/Field';
@@ -13,6 +13,7 @@ import {
   meterTypes,
 } from '../../domain/meters';
 import type { MeterType } from '../../graphql/generated/enums';
+import { INVALID_FILTER_MESSAGE } from '../../graphql/errors';
 import { MeterTypeIcon } from './MeterTypeIcon';
 import {
   readDraft,
@@ -32,15 +33,21 @@ const typeOptions: readonly ToggleChipOption<MeterType>[] = meterTypes.map((type
 interface ReadingsFilterFormProps {
   /** The applied filter; the form starts from it. Remount the form (`key`) to refill it. */
   filter: ReadingsFilter;
+  /** The gateway rejected the filter (a fallback: the form checks it first). */
+  invalidInput: boolean;
   onApply: (filter: ReadingsFilter) => void;
   onReset: () => void;
+  /** Shown below the form, such as the match counts. */
+  children?: ReactNode;
 }
 
 /** Meter types, location and time range, applied together; checked before anything is sent. */
 export function ReadingsFilterForm({
   filter,
+  invalidInput,
   onApply,
   onReset,
+  children,
 }: Readonly<ReadingsFilterFormProps>) {
   const typesLabelId = useId();
   const typesErrorId = useId();
@@ -131,6 +138,12 @@ export function ReadingsFilterForm({
           </Button>
         </div>
       </form>
+      {invalidInput ? (
+        <p role="alert" className={styles.alert}>
+          {INVALID_FILTER_MESSAGE}
+        </p>
+      ) : null}
+      {children}
     </section>
   );
 }
