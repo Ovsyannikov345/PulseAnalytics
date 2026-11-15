@@ -14,7 +14,7 @@ import { meterLocationLabel, meterLocations } from '../../domain/meters';
 import { bucketLengthMs, timeBucketLabel } from '../../domain/timeBuckets';
 import type { MeterLocation, TimeBucket } from '../../graphql/generated/enums';
 import type { WidgetQuery } from '../../graphql/widgetQuery';
-import { chartAxis, describeRange } from './chartAxis';
+import { chartAxis, describeGaps, describeRange } from './chartAxis';
 import styles from './EnergyCard.module.css';
 import type { EnergyPoint, EnergySeries, EnergyStats } from './energySeries';
 import { locationColor } from './locationColors';
@@ -112,11 +112,6 @@ function Chart({ series, view }: Readonly<{ series: EnergySeries; view: EnergyVi
     legend.push({ label: 'No samples', swatch: 'gap' });
   }
 
-  const gaps =
-    gapCount > 0
-      ? ` No samples in ${String(gapCount)} ${gapCount === 1 ? 'period' : 'periods'}.`
-      : '';
-
   return (
     <>
       <ChartLegend items={legend} />
@@ -132,7 +127,7 @@ function Chart({ series, view }: Readonly<{ series: EnergySeries; view: EnergyVi
             rows={point.combined && (byLocation ? locationRows(point) : statsRows(point.combined))}
           />
         )}
-        label={`Average energy of ${linesSubject(location, view)} per ${timeBucketLabel(bucket)} ${describeRange(range)}.${gaps}`}
+        label={`Average energy of ${linesSubject(location, view)} per ${timeBucketLabel(bucket)} ${describeRange(range)}.${describeGaps(gapCount)}`}
         height={ENERGY_CHART_HEIGHT}
       />
     </>

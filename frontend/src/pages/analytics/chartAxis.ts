@@ -20,3 +20,11 @@ export function chartAxis(range: TimeRange, bucket: TimeBucket) {
 export function describeRange(range: TimeRange): string {
   return `from ${formatDateTime(range.from)} to ${formatDateTime(range.to)}`;
 }
+
+/** " No samples in 2 periods." after a chart's description, or nothing without gaps. */
+export function describeGaps(gapCount: number): string {
+  if (gapCount === 0) {
+    return '';
+  }
+  return ` No samples in ${String(gapCount)} ${gapCount === 1 ? 'period' : 'periods'}.`;
+}

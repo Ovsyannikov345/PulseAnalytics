@@ -1,7 +1,7 @@
 import type { MockLink } from '@apollo/client/testing';
 
 import type { MeterLocation, TimeBucket } from '../graphql/generated/enums';
-import { AnalyticsEnergyDocument } from '../graphql/generated/graphql';
+import { AnalyticsAirQualityDocument, AnalyticsEnergyDocument } from '../graphql/generated/graphql';
 
 export interface StatisticsVariables {
   from: string;
@@ -31,6 +31,27 @@ export function energyMock(
           bucketStart,
           samples,
           energy: metric(average, average - 100, average + 100),
+        })),
+      },
+    },
+  };
+}
+
+export function airQualityMock(
+  variables: BucketedVariables,
+  rows: { bucketStart: string; co2: number; pm25: number; humidity: number; samples?: number }[],
+): MockLink.MockedResponse {
+  return {
+    request: { query: AnalyticsAirQualityDocument, variables },
+    result: {
+      data: {
+        airQualityStatistics: rows.map(({ bucketStart, co2, pm25, humidity, samples = 360 }) => ({
+          __typename: 'AirQualityStatistics',
+          bucketStart,
+          samples,
+          co2: metric(co2, co2 - 200, co2 + 200),
+          pm25: metric(pm25, 0, pm25 * 2),
+          humidity: metric(humidity, humidity - 10, humidity + 10),
         })),
       },
     },

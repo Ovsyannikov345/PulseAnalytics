@@ -10,6 +10,24 @@ export type MeterLocation =
 
 export type TimeBucket = 'DAY' | 'FIFTEEN_MINUTES' | 'FIVE_MINUTES' | 'HOUR' | 'MINUTE';
 
+export type AnalyticsAirQualityQueryVariables = Exact<{
+  from: string;
+  to: string;
+  locations: Array<MeterLocation> | MeterLocation;
+  bucket: TimeBucket;
+}>;
+
+export type AnalyticsAirQualityQuery = {
+  airQualityStatistics: Array<{
+    __typename: 'AirQualityStatistics';
+    bucketStart: string | null;
+    samples: number;
+    co2: { __typename: 'MetricStatistics'; average: number; minimum: number; maximum: number };
+    pm25: { __typename: 'MetricStatistics'; average: number; minimum: number; maximum: number };
+    humidity: { __typename: 'MetricStatistics'; average: number; minimum: number; maximum: number };
+  }>;
+};
+
 export type AnalyticsEnergyQueryVariables = Exact<{
   from: string;
   to: string;
@@ -102,6 +120,144 @@ export type OverviewSampleCountQuery = {
   readingCounts: Array<{ __typename: 'ReadingCount'; count: number }>;
 };
 
+export const AnalyticsAirQualityDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'AnalyticsAirQuality' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'MeterLocation' } },
+              },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'TimeBucket' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'airQualityStatistics' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'from' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'to' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'locations' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+                    },
+                  ],
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'groupBy' },
+                value: { kind: 'ListValue', values: [{ kind: 'EnumValue', value: 'TIME' }] },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'bucket' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'bucketStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'samples' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'co2' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'minimum' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maximum' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'pm25' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'minimum' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maximum' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'humidity' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'minimum' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maximum' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AnalyticsAirQualityQuery, AnalyticsAirQualityQueryVariables>;
 export const AnalyticsEnergyDocument = {
   kind: 'Document',
   definitions: [

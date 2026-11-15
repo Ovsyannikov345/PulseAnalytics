@@ -5,9 +5,14 @@ import { useLocation, useSearchParams } from 'react-router';
 import { PageHeader } from '../../components/PageHeader';
 import { PageError } from '../../components/states/PageError';
 import { getQueryErrorKind } from '../../graphql/errors';
-import { AnalyticsEnergyDocument } from '../../graphql/generated/graphql';
+import {
+  AnalyticsAirQualityDocument,
+  AnalyticsEnergyDocument,
+} from '../../graphql/generated/graphql';
 import { useWidgetQuery } from '../../graphql/useWidgetQuery';
 import type { WidgetQuery } from '../../graphql/widgetQuery';
+import { AirQualitySection } from './AirQualitySection';
+import { toAirQualitySeries } from './airQualitySeries';
 import {
   effectiveBucket,
   parseAnalyticsFilter,
@@ -41,8 +46,15 @@ export function AnalyticsPage() {
     toEnergySeries(data.energyStatistics, range, bucket, location),
   );
 
-  const results = [energyResult];
-  const queries = [energy];
+  const airQualityResult = useQuery(AnalyticsAirQualityDocument, {
+    variables: { ...variables, bucket },
+  });
+  const airQuality = useWidgetQuery(airQualityResult, (data) =>
+    toAirQualitySeries(data.airQualityStatistics, range, bucket, location),
+  );
+
+  const results = [energyResult, airQualityResult];
+  const queries = [energy, airQuality];
   const invalidInput = results.some(
     (result) => result.error !== undefined && getQueryErrorKind(result.error) === 'invalidInput',
   );
@@ -82,6 +94,7 @@ export function AnalyticsPage() {
       ) : (
         <div className={styles.widgets}>
           <EnergyCard energy={energy} location={location} bucket={bucket} />
+          <AirQualitySection airQuality={airQuality} location={location} />
         </div>
       )}
     </>

@@ -1,0 +1,30 @@
+query AnalyticsAirQuality(
+  $from: DateTime!
+  $to: DateTime!
+  $locations: [MeterLocation!]!
+  $bucket: TimeBucket!
+) {
+  airQualityStatistics(
+    filter: { from: $from, to: $to, locations: $locations }
+    groupBy: [TIME]
+    bucket: $bucket
+  ) {
+    bucketStart
+    samples
+    co2 {
+      average
+      minimum
+      maximum
+    }
+    pm25 {
+      average
+      minimum
+      maximum
+    }
+    humidity {
+      average
+      minimum
+      maximum
+    }
+  }
+}

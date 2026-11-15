@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { INVALID_FILTER_MESSAGE } from '../../graphql/errors';
-import { energyMock, rejected, type BucketedVariables } from '../../test/analyticsMocks';
+import {
+  airQualityMock,
+  energyMock,
+  rejected,
+  type BucketedVariables,
+} from '../../test/analyticsMocks';
 import { failing } from '../../test/overviewMocks';
 import { renderRoute } from '../../test/renderRoute';
 
@@ -30,13 +35,21 @@ const energy = energyMock(lastDay, [
   { location: 'OFFICE', bucketStart: '2026-11-15T11:00:00Z', average: 200 },
 ]);
 
-type Operation = 'energy';
+const airQuality = airQualityMock(lastDay, [
+  { bucketStart: '2026-11-15T11:00:00Z', co2: 672, pm25: 19, humidity: 45 },
+]);
+
+type Operation = 'energy' | 'airQuality';
 
 function renderAnalytics(
   path = '/analytics',
   responses: Partial<Record<Operation, MockLink.MockedResponse[]>> = {},
 ) {
-  const mocks: Record<Operation, MockLink.MockedResponse[]> = { energy: [energy], ...responses };
+  const mocks: Record<Operation, MockLink.MockedResponse[]> = {
+    energy: [energy],
+    airQuality: [airQuality],
+    ...responses,
+  };
   return renderRoute(path, { mocks: Object.values(mocks).flat() });
 }
 
@@ -91,7 +104,8 @@ describe('AnalyticsPage', () => {
 
       await user.click(rangeButton('7 d'));
 
-      expect(await screen.findByRole('status')).toHaveTextContent('Updating…');
+      const card = screen.getByRole('region', { name: 'Energy' });
+      expect(await within(card).findByRole('status')).toHaveTextContent('Updating…');
       // Still the 24-hour series, on the grid it was loaded for.
       expect(
         screen.getByRole('img', { name: /per 15 minutes from 14 Nov 14:30 to 15 Nov 14:30\./ }),
@@ -115,14 +129,51 @@ describe('AnalyticsPage', () => {
       expect(
         await screen.findByRole('img', { name: /per 1 hour from 8 Nov 14:30 to 15 Nov 14:30\./ }),
       ).toBeInTheDocument();
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(
+        within(screen.getByRole('region', { name: 'Energy' })).queryByRole('status'),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('air quality', () => {
+    it('loads the last 24 hours of all locations in 15-minute buckets', async () => {
+      renderAnalytics();
+
+      const section = screen.getByRole('region', { name: 'Air quality, all selected locations' });
+      expect(section).toHaveAttribute('aria-busy', 'true');
+      expect(await screen.findByRole('region', { name: 'CO₂' })).toHaveTextContent('avg 672 ppm');
+    });
+
+    it('asks for the selected location only', async () => {
+      renderAnalytics('/analytics?location=OFFICE', {
+        energy: [energyMock({ ...lastDay, locations: ['OFFICE'] }, [])],
+        airQuality: [
+          airQualityMock({ ...lastDay, locations: ['OFFICE'] }, [
+            { bucketStart: '2026-11-15T11:00:00Z', co2: 900, pm25: 40, humidity: 30 },
+          ]),
+        ],
+      });
+
+      expect(await screen.findByRole('region', { name: 'CO₂' })).toHaveTextContent('avg 900 ppm');
+      expect(screen.getByRole('heading', { level: 2, name: 'Air quality, Office' })).toBeVisible();
+    });
+
+    it('fails on its own while the energy chart works', async () => {
+      renderAnalytics('/analytics', { airQuality: [failing(airQuality)] });
+
+      expect(await screen.findByText("These charts couldn't be loaded.")).toBeInTheDocument();
+      expect(await screen.findByRole('img', { name: /^Average energy/ })).toBeInTheDocument();
+      expect(screen.queryByText("Couldn't load the dashboard")).not.toBeInTheDocument();
     });
   });
 
   describe('errors', () => {
     it('shows the page error when every widget failed, and retries them all', async () => {
       const user = userEvent.setup();
-      renderAnalytics('/analytics', { energy: [failing(energy), energy] });
+      renderAnalytics('/analytics', {
+        energy: [failing(energy), energy],
+        airQuality: [failing(airQuality), airQuality],
+      });
 
       const alert = await screen.findByRole('alert');
       expect(alert).toHaveTextContent("Couldn't load the dashboard");
@@ -131,14 +182,18 @@ describe('AnalyticsPage', () => {
       await user.click(within(alert).getByRole('button', { name: 'Retry' }));
 
       expect(await screen.findByRole('img', { name: /^Average energy/ })).toBeInTheDocument();
+      expect(await screen.findByRole('region', { name: 'CO₂' })).toBeInTheDocument();
     });
 
     it('shows a rejected filter at the filters instead of the page error', async () => {
-      renderAnalytics('/analytics', { energy: [rejected(energy)] });
+      renderAnalytics('/analytics', {
+        energy: [rejected(energy)],
+        airQuality: [rejected(airQuality)],
+      });
 
       expect(await screen.findByRole('alert')).toHaveTextContent(INVALID_FILTER_MESSAGE);
       expect(screen.queryByText("Couldn't load the dashboard")).not.toBeInTheDocument();
-      expect(screen.getByText("This chart couldn't be loaded.")).toBeInTheDocument();
+      expect(await screen.findByText("This chart couldn't be loaded.")).toBeInTheDocument();
     });
   });
 });
