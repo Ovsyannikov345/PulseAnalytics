@@ -26,8 +26,7 @@ export function SegmentedControl<TValue extends string>({
   className,
 }: Readonly<SegmentedControlProps<TValue>>) {
   return (
-    <div
-      role="group"
+    <fieldset
       aria-labelledby={labelledBy}
       aria-label={label}
       className={cx(styles.group, className)}
@@ -45,6 +44,6 @@ export function SegmentedControl<TValue extends string>({
           {option.label}
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }

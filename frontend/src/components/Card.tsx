@@ -46,7 +46,7 @@ export function Card({
         {refreshing || actions ? (
           <div className={styles.aside}>
             {refreshing ? (
-              <span role="status" className={styles.updating}>
+              <output className={styles.updating}>
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12">
                   <path
                     d="M10.5 6A4.5 4.5 0 1 1 6 1.5"
@@ -56,7 +56,7 @@ export function Card({
                   />
                 </svg>
                 Updating…
-              </span>
+              </output>
             ) : null}
             {actions}
           </div>
