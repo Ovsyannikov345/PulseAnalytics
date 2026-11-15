@@ -9,8 +9,7 @@ export default defineConfig({
   build: {
     rolldownOptions: {
       output: {
-        // Libraries in chunks of their own: they change less often than the app, so browsers keep them
-        // cached across releases, and no chunk passes Vite's 500 kB warning.
+        // Libraries change less often than the app, so they get their own long-cached chunks.
         codeSplitting: {
           groups: [
             {
@@ -21,7 +20,7 @@ export default defineConfig({
               name: 'apollo',
               test: /[\\/]node_modules[\\/](@apollo|@wry|graphql|optimism|rxjs|tslib|@graphql-typed-document-node)[\\/]/,
             },
-            // The rest, mostly Recharts and its d3 and Redux dependencies; earlier groups win ties.
+            // Catch-all last: on equal priority the earlier group wins.
             { name: 'vendor', test: /[\\/]node_modules[\\/]/ },
           ],
         },

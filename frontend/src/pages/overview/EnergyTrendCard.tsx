@@ -23,7 +23,6 @@ function formatValue(value: number): string {
   return formatNumber(value);
 }
 
-/** The tooltip of one bucket: average, range and samples, or that it had none. */
 export function EnergyTooltip({ point }: Readonly<{ point: EnergyTrendPoint }>) {
   return (
     <>
@@ -99,7 +98,6 @@ function Chart({ points, range }: Readonly<{ points: EnergyTrendPoint[]; range: 
 
 interface EnergyTrendCardProps {
   trend: WidgetQuery<EnergyTrendPoint[]>;
-  /** The last 24 hours. */
   range: TimeRange;
 }
 

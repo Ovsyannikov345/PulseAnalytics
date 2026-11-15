@@ -7,7 +7,6 @@ import type { TimeRange } from '../../domain/timeRanges';
 
 type TrendRow = OverviewEnergyTrendQuery['energyStatistics'][number];
 
-/** The energy chart: the last 24 hours in 15-minute averages of all locations. */
 export const ENERGY_TREND_BUCKET: TimeBucket = 'FIFTEEN_MINUTES';
 
 export interface EnergyBucket {
@@ -17,7 +16,6 @@ export interface EnergyBucket {
   samples: number;
 }
 
-/** One bucket of the energy chart: `value` is the average; both are `null` without samples. */
 export interface EnergyTrendPoint {
   time: number;
   value: number | null;
@@ -45,7 +43,6 @@ export function toEnergyTrend(
   );
 }
 
-/** The chart's text alternative: the range of the averages and how many spans have no samples. */
 export function describeEnergyTrend(points: readonly EnergyTrendPoint[]): string {
   const averages = points.flatMap((point) => (point.value === null ? [] : [point.value]));
   const gapCount = gapRuns(points, bucketLengthMs(ENERGY_TREND_BUCKET)).length;

@@ -6,13 +6,11 @@ import { cx } from './cx';
 interface CardProps {
   title: string;
   description?: string;
-  /** While the content loads for the first time (skeletons). */
   busy?: boolean;
   children: ReactNode;
   className?: string;
 }
 
-/** A widget's frame: a titled region (`h2`) with an optional description. */
 export function Card({
   title,
   description,

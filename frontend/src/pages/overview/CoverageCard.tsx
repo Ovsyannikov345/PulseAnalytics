@@ -19,10 +19,8 @@ import {
   overallShare,
 } from './ingestionCoverage';
 
-/** Full hours starting at 00:00, 06:00, 12:00 and 18:00 local time get a label under their bar. */
 const AXIS_LABEL_HOURS = 6;
 
-/** "14:00–15:00" */
 function hourSpan({ span }: CoverageHour): string {
   return `${formatHourMinute(span.from)}–${formatHourMinute(span.to)}`;
 }

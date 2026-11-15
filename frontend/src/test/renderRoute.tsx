@@ -8,7 +8,6 @@ import { routes } from '../app/routes';
 import { createCache } from '../graphql/cache';
 
 interface RenderRouteOptions {
-  /** The GraphQL responses; without them every query fails quietly. */
   mocks?: readonly MockLink.MockedResponse[];
 }
 

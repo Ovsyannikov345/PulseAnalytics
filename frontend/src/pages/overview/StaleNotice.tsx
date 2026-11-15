@@ -6,7 +6,6 @@ interface StaleNoticeProps {
   now: Date;
 }
 
-/** Shown once for the page when the newest samples are old: a poll returns all meters or none. */
 export function StaleNotice({ latestReceivedAt, now }: Readonly<StaleNoticeProps>) {
   return (
     <div role="status" className={styles.notice}>

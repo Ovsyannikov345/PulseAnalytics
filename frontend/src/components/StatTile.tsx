@@ -13,7 +13,6 @@ type StatTileProps = StatTileState & {
   className?: string;
 };
 
-/** One key figure: a label, the value with an optional unit, and a caption below. */
 export function StatTile(props: Readonly<StatTileProps>) {
   const { label, className } = props;
 

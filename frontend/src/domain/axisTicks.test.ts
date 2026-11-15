@@ -10,7 +10,6 @@ function labels(ticks: Date[]): string[] {
 describe('localHourTicks', () => {
   it('starts at the first full local hour and steps on the local clock', () => {
     vi.stubEnv('TZ', 'Europe/Moscow');
-    // 14:30 the day before until 14:30 in Moscow.
     const range = { from: new Date('2026-11-14T11:30:00Z'), to: new Date('2026-11-15T11:30:00Z') };
 
     expect(labels(localHourTicks(range, 4))).toEqual([
@@ -49,7 +48,6 @@ describe('localHourTicks', () => {
     const ticks = localHourTicks(range, 4);
 
     expect(labels(ticks)).toEqual(['25 Oct 00:00', '25 Oct 04:00', '25 Oct 08:00']);
-    // The step over the change is 5 hours long.
     expect((ticks[1]?.getTime() ?? 0) - (ticks[0]?.getTime() ?? 0)).toBe(5 * 3_600_000);
   });
 

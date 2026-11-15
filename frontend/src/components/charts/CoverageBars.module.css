@@ -46,7 +46,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Centred on the bar's left edge: the label names the moment the bar starts. */
+/* Centred on the bar's left edge, where its hour starts. */
 .axisLabel {
   justify-self: start;
   white-space: nowrap;

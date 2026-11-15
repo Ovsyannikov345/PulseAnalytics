@@ -9,7 +9,7 @@ type ReadyTile = Extract<StatTileState, { status: 'ready' }>;
 
 const NO_READINGS: ReadyTile = { status: 'ready', value: '—', caption: 'No readings yet' };
 
-/** Tiles from the latest readings: their own widget's error (with Retry) is in the Locations section. */
+/** The latest readings' error and Retry are shown once, in the Locations section. */
 function latestTile(
   latest: WidgetQuery<LatestValues>,
   toTile: (values: LatestValues) => ReadyTile,
@@ -83,9 +83,7 @@ function samplesTile(sampleCount: WidgetQuery<number>, expectedSamples: number):
 
 interface SummaryTilesProps {
   latest: WidgetQuery<LatestValues>;
-  /** Stored samples in the last 24 hours. */
   sampleCount: WidgetQuery<number>;
-  /** The samples the last 24 hours would hold if every poll succeeded. */
   expectedSamples: number;
 }
 

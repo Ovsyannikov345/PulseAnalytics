@@ -4,14 +4,12 @@ import { meterLocations } from '../../domain/meters';
 
 export type LatestReading = OverviewLatestReadingsQuery['latestReadings'][number];
 
-/** One air quality reading's values: CO₂ in ppm, PM2.5 in µg/m³, relative humidity in %. */
 export interface AirQualityValues {
   co2: number;
   pm25: number;
   humidity: number;
 }
 
-/** One location's newest values; `null` where its meter has no reading yet. */
 export interface LocationValues {
   location: MeterLocation;
   energy: number | null;
@@ -19,19 +17,12 @@ export interface LocationValues {
   motionDetected: boolean | null;
 }
 
-/** What the Overview shows from the newest reading of every meter. */
 export interface LatestValues {
-  /** Sum over the locations' energy meters. */
   energyTotal: number | null;
-  /** Averages over the locations' air quality meters. */
   averageAirQuality: AirQualityValues | null;
-  /** Locations whose motion sensor detected motion, in location order. */
   motionLocations: MeterLocation[];
-  /** Locations with a motion sensor reading. */
   motionSensorCount: number;
-  /** Every location in the gateway's order. */
   locations: LocationValues[];
-  /** When the newest of the readings was received; `null` without readings. */
   latestReceivedAt: Date | null;
 }
 
@@ -63,7 +54,7 @@ export function summarizeLatest(readings: readonly LatestReading[]): LatestValue
   let latestReceivedAtMs: number | null = null;
 
   for (const reading of readings) {
-    // A location this app doesn't know yet (the schema grew): skipped rather than shown wrong.
+    // A location added to the schema after this build.
     const values = locations.get(reading.location);
     if (!values) {
       continue;

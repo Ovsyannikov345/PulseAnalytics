@@ -57,7 +57,6 @@ function Content({ latest, trend }: Readonly<LocationsSectionProps>) {
   }
 }
 
-/** A card per location with its latest values and energy trend. */
 export function LocationsSection({ latest, trend }: Readonly<LocationsSectionProps>) {
   const headingId = useId();
 

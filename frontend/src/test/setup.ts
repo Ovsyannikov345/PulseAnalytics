@@ -3,12 +3,10 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
-/** The width every observed element reports: jsdom lays nothing out, so all sizes would be 0. */
 const OBSERVED_WIDTH = 800;
 
-// jsdom has no ResizeObserver, which Recharts' ResponsiveContainer needs to size charts. This one
-// reports a fixed size once, so charts render at 800 px wide. Assigned rather than stubbed with
-// `vi.stubGlobal`, because `unstubGlobals` would remove it before each test.
+// jsdom has no ResizeObserver and lays nothing out, so Recharts would size charts to 0: report a fixed
+// width. Assigned rather than stubbed, because `unstubGlobals` would remove a stub before each test.
 globalThis.ResizeObserver = class {
   private readonly callback: ResizeObserverCallback;
 

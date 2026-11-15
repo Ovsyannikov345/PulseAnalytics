@@ -16,26 +16,17 @@ import styles from './TimeSeriesChart.module.css';
 const axisTick = { fill: 'var(--color-text-muted)', fontSize: 11 };
 
 interface TimeSeriesChartProps<TPoint extends TimeSeriesPoint> {
-  /** One point per bucket, oldest first; `null` values are gaps. */
   points: readonly TPoint[];
   bucketLengthMs: number;
-  /** The x range in epoch ms: from the first bucket's start to the end of the time range. */
   domain: [number, number];
-  /** The x ticks in epoch ms. */
   ticks: readonly number[];
   formatTick: (time: number) => string;
   formatValue: (value: number) => string;
-  /** The tooltip's content for the hovered bucket, gaps included. */
   renderTooltip: (point: TPoint) => ReactNode;
-  /** Describes the chart for screen readers. */
   label: string;
   height?: number;
 }
 
-/**
- * A line over time buckets. The line breaks at buckets without samples, which are shaded as
- * "No samples". The chart is one image for screen readers, so its `label` sums it up.
- */
 export function TimeSeriesChart<TPoint extends TimeSeriesPoint>({
   points,
   bucketLengthMs,

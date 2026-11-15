@@ -14,11 +14,10 @@ import {
 } from '../../test/overviewMocks';
 import { renderRoute } from '../../test/renderRoute';
 
-// 14:30:00 in Moscow (UTC+03:00).
+// 14:30:00 in Moscow.
 const now = new Date('2026-11-15T11:30:00Z');
 const fresh = '2026-11-15T11:29:47Z';
 
-// The windows ending now, as the page sends them.
 const lastDay = { from: '2026-11-14T14:30:00.000+03:00', to: '2026-11-15T14:30:00.000+03:00' };
 const lastTwoHours = { from: '2026-11-15T12:30:00.000+03:00', to: '2026-11-15T14:30:00.000+03:00' };
 
@@ -30,7 +29,7 @@ function isoAt(epochMs: number): string {
 
 const latest = latestReadingsMock(latestReadings(fresh));
 
-// 79,836 of the 103,680 samples that 18 meters give in 24 h at one poll per 15 s.
+// 77 % of the 103,680 expected samples.
 const sampleCount = sampleCountMock(lastDay, 79_836);
 
 const sparklines = energySparklinesMock(lastTwoHours, [
@@ -66,7 +65,6 @@ const coverage = ingestionCoverageMock(
 
 type Operation = 'latest' | 'sampleCount' | 'sparklines' | 'energyTrend' | 'coverage';
 
-/** Renders the Overview; each operation answers successfully unless a test passes its own responses. */
 function renderOverview(responses: Partial<Record<Operation, MockLink.MockedResponse[]>> = {}) {
   const mocks: Record<Operation, MockLink.MockedResponse[]> = {
     latest: [latest],
@@ -86,13 +84,11 @@ function found<T>(element: T | null, description: string): T {
   return element;
 }
 
-/** The summary tile with this label (the label's parent). */
 function tile(label: string) {
   const summary = screen.getByRole('region', { name: 'Summary' });
   return found(within(summary).getByText(label).parentElement, `The "${label}" tile`);
 }
 
-/** The location card whose link has this name. */
 function card(location: string) {
   return found(
     screen.getByRole('link', { name: location }).closest('article'),
@@ -338,7 +334,6 @@ describe('OverviewPage', () => {
       expect(coverageCard).toHaveTextContent(
         "05:00–06:00 is lowest at 41 %: most polls failed or their samples weren't stored.",
       );
-      // Full hours on the 6-hour clock are labelled.
       expect(coverageCard).toHaveTextContent('100 %50 %0 %18:0000:0006:0012:00');
     });
 

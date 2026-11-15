@@ -5,7 +5,6 @@ const config: CodegenConfig = {
   schema: '../services/ApiGateway/ApiGateway.Api/GraphQL/schema.graphql',
   documents: ['src/**/*.graphql'],
   generates: {
-    // Typed documents and result types of the operations in the pages' .graphql files.
     'src/graphql/generated/': {
       preset: 'client',
       presetConfig: {
@@ -17,7 +16,6 @@ const config: CodegenConfig = {
           UUID: 'string',
         },
         defaultScalarType: 'unknown',
-        // Nullable fields are `T | null`, as the gateway returns them; nullable inputs may be left out.
         avoidOptionals: {
           field: true,
           inputValue: false,

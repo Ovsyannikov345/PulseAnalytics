@@ -55,7 +55,6 @@ describe('toWidgetQuery', () => {
     query.retry();
 
     expect(refetch).toHaveBeenCalledOnce();
-    // The rejection is handled: no unhandled rejection fails the test run.
     await Promise.resolve();
   });
 });

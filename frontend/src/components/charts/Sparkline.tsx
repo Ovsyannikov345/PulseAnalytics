@@ -3,14 +3,12 @@ import { sparklinePath } from './sparklinePath';
 
 interface SparklineProps {
   values: readonly (number | null)[];
-  /** The value at the top; cards that are compared share one. */
   max: number;
   label: string;
   width?: number;
   height?: number;
 }
 
-/** A small trend line without axes. */
 export function Sparkline({
   values,
   max,

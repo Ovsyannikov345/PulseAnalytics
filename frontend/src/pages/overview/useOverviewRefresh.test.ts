@@ -16,7 +16,6 @@ function after(milliseconds: number): Date {
   return new Date(start.getTime() + milliseconds);
 }
 
-/** Advances fake time and lets the refresh's promise chain settle inside `act`. */
 async function advance(milliseconds: number) {
   await act(() => vi.advanceTimersByTimeAsync(milliseconds));
 }

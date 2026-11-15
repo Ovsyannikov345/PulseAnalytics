@@ -19,7 +19,6 @@ export const mockupSamples: Record<MeterLocation, LocationSample> = {
   CORRIDOR: { energy: 77.25, co2: 398, pm25: 6, humidity: 29, motionDetected: false },
 };
 
-/** The newest reading of all 18 meters, as `latestReadings` returns them (by type, then location). */
 export function latestReadings(
   receivedAt: string,
   samples: Partial<Record<MeterLocation, Partial<LocationSample>>> = {},

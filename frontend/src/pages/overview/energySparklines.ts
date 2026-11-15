@@ -6,14 +6,12 @@ import type { TimeRange } from '../../domain/timeRanges';
 
 type SparklineRow = OverviewEnergySparklinesQuery['energyStatistics'][number];
 
-/** The location cards' trend: the last 2 hours in 5-minute averages. */
 export const SPARKLINE_RANGE_MS = 2 * 60 * 60 * 1000;
 export const SPARKLINE_BUCKET: TimeBucket = 'FIVE_MINUTES';
 
 export interface EnergySparklines {
-  /** Per location, the average energy of every bucket in the range; `null` where it had no samples. */
   values: ReadonlyMap<MeterLocation, (number | null)[]>;
-  /** The highest value of all locations, so the cards share one scale and can be compared. */
+  /** Shared by all cards, so they can be compared. */
   max: number;
 }
 

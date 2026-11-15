@@ -30,17 +30,13 @@ import { StaleNotice } from './StaleNotice';
 import { SummaryTiles } from './SummaryTiles';
 import { REFRESH_INTERVAL_MS, useOverviewRefresh } from './useOverviewRefresh';
 
-/**
- * The time ranges move with every refresh, so a cached result would never be read again and a page
- * left open would pile them up; the readings' entities would pile up in the normalized cache too.
- */
+// The windows move with every refresh, so cached results would never be read again and would pile up.
 const fetchPolicy = 'no-cache';
 
 function rangeVariables(range: TimeRange) {
   return { from: toIsoWithOffset(range.from), to: toIsoWithOffset(range.to) };
 }
 
-/** The retries of the failed queries. */
 function failedRetries(queries: readonly WidgetQuery<unknown>[]): (() => void)[] {
   return queries.flatMap((query) => (query.status === 'error' ? [query.retry] : []));
 }
@@ -75,7 +71,6 @@ export function OverviewPage() {
   const latest = mapWidgetQuery(toWidgetQuery(latestResult), (data) =>
     summarizeLatest(data.latestReadings),
   );
-  // An empty `groupBy` returns one row with the total.
   const sampleCount = mapWidgetQuery(
     toWidgetQuery(sampleCountResult),
     (data) => data.readingCounts[0]?.count ?? 0,
@@ -110,7 +105,6 @@ export function OverviewPage() {
         ) : null}
       </PageHeader>
 
-      {/* Every query failed: the gateway is unreachable. The refreshes go on, so the page recovers. */}
       {retries.length === queries.length ? (
         <PageError
           description={`The API gateway didn't answer. The page tries again every ${String(REFRESH_INTERVAL_MS / 1000)} s.`}

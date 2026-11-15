@@ -5,7 +5,6 @@ import styles from './PageHeader.module.css';
 interface PageHeaderProps {
   title: string;
   description: string;
-  /** Shown below the description, e.g. when the data was received. */
   children?: ReactNode;
 }
 

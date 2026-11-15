@@ -24,7 +24,6 @@ interface MetricProps {
   label: string;
   value: number | null;
   unit: string;
-  /** The value that fills the bar. */
   scaleMax: number;
 }
 
@@ -54,7 +53,6 @@ function Trend({
     return <Skeleton width="132px" height="36px" />;
   }
 
-  // The trend's error is shown once above the cards; its place stays empty.
   if (trend.status === 'error' || !values) {
     return <span className={styles.trendPlaceholder} />;
   }
@@ -76,7 +74,6 @@ interface LocationCardProps {
   trend: WidgetQuery<EnergySparklines>;
 }
 
-/** One location's latest values; the whole card links to the location's analytics. */
 export function LocationCard({ values, trend }: Readonly<LocationCardProps>) {
   const warnings = [
     values.airQuality && isCo2High(values.airQuality.co2)
@@ -134,7 +131,6 @@ export function LocationCard({ values, trend }: Readonly<LocationCardProps>) {
   );
 }
 
-/** Keeps a card's shape while the latest readings load. */
 export function LocationCardSkeleton() {
   return (
     <div className={styles.card}>

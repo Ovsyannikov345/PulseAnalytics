@@ -10,8 +10,6 @@ import {
 } from '../graphql/generated/graphql';
 import type { LatestReading } from '../pages/overview/latestValues';
 
-/** The Overview's mocked GraphQL responses, by operation. Variables must match exactly. */
-
 export function latestReadingsMock(readings: LatestReading[]): MockLink.MockedResponse {
   return {
     request: { query: OverviewLatestReadingsDocument },
@@ -100,7 +98,6 @@ export function ingestionCoverageMock(
   };
 }
 
-/** The same request failing with a network error. */
 export function failing(mock: MockLink.MockedResponse): MockLink.MockedResponse {
   return { request: mock.request, error: new Error('Failed to fetch') };
 }

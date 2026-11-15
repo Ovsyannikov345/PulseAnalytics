@@ -1,15 +1,9 @@
-/** Space kept around the line so the 2 px stroke and its round ends aren't clipped. */
 const PADDING = 2;
 
 function round(value: number): string {
   return value.toFixed(1);
 }
 
-/**
- * The SVG path of a sparkline: values from 0 (bottom) to `max` (top), evenly spaced across the width.
- * A `null` breaks the line, so gaps stay gaps; an isolated value is drawn as a dot. Values outside
- * 0…`max` are clamped.
- */
 export function sparklinePath(
   values: readonly (number | null)[],
   max: number,

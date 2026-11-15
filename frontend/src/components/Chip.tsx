@@ -4,12 +4,10 @@ import styles from './Chip.module.css';
 import { cx } from './cx';
 
 interface ChipProps {
-  /** `motion`: an active state; `neutral`: an inactive one; `warning`: a value over its threshold. */
   variant: 'motion' | 'neutral' | 'warning';
   children: ReactNode;
 }
 
-/** A short status label. The text carries the meaning; colour and icon only support it. */
 export function Chip({ variant, children }: Readonly<ChipProps>) {
   return (
     <span className={cx(styles.chip, styles[variant])}>

@@ -27,7 +27,6 @@ export function formatPercent(ratio: number, fractionDigits = 0): string {
   return `${formatNumber(ratio * 100, fractionDigits)} %`;
 }
 
-/** Whole minutes elapsed: "4 min", "1 h 5 min", "3 h"; partial minutes are dropped. */
 export function formatElapsed(milliseconds: number): string {
   const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
 
@@ -75,10 +74,7 @@ export function formatBucketStart(start: Date, bucket: TimeBucket): string {
     : formatHourMinute(start);
 }
 
-/**
- * A bucket's time span for tooltips: "15 Nov 08:45–09:00", or for a DAY bucket its UTC date ("15 Nov").
- * The date is part of it because a chart of the last 24 hours holds the same hour twice.
- */
+/** With the date: a 24 h chart holds the same hour twice. */
 export function formatBucketRange(start: Date, bucket: TimeBucket): string {
   if (bucket === 'DAY') {
     return formatBucketStart(start, bucket);

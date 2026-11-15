@@ -13,7 +13,6 @@ import {
 } from '../../test/overviewMocks';
 import { renderRoute } from '../../test/renderRoute';
 
-/** Stands in for the page's refresh clock, so a test can move `now` (the clock has its own tests). */
 const clock = vi.hoisted(() => {
   let current = new Date('2026-11-15T11:30:00Z');
   const listeners = new Set<() => void>();
@@ -45,7 +44,6 @@ const refreshed = new Date('2026-11-15T11:30:30Z');
 
 const HOUR_MS = 3_600_000;
 
-/** The responses of the queries whose time windows end at `end` (exact variables: OverviewPage.test). */
 function windowMocks(end: Date, sampleCount = 79_836): MockLink.MockedResponse[] {
   const before = (hours: number) => toIsoWithOffset(new Date(end.getTime() - hours * HOUR_MS));
   const to = toIsoWithOffset(end);
@@ -68,7 +66,6 @@ describe('OverviewPage refresh', () => {
       mocks: [
         latestReadingsMock(latestReadings('2026-11-15T11:29:47Z')),
         ...windowMocks(opened),
-        // The next window's count answers late, to see what shows meanwhile.
         ...windowMocks(refreshed, 79_900).map((mock) => ({ ...mock, delay: 200 })),
       ],
     });
@@ -78,7 +75,6 @@ describe('OverviewPage refresh', () => {
       clock.set(refreshed);
     });
 
-    // No skeleton and no busy state while the next window loads.
     expect(screen.getByText('79,836')).toBeInTheDocument();
     expect(screen.getByText('Samples, last 24 h').parentElement).toHaveAttribute(
       'aria-busy',

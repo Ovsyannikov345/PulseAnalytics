@@ -1,10 +1,6 @@
 import type { TimeRange } from './timeRanges';
 
-/**
- * Ticks for a time axis on full local hours, `stepHours` apart: from the first full hour at or after
- * `from` to the last one before `to`. Steps are taken on the local clock, so the labels stay regular
- * (00:00, 04:00, 08:00) across a daylight saving change, where one step is an hour longer or shorter.
- */
+/** Steps on the local clock, so labels stay on the same hours across a DST change. */
 export function localHourTicks(range: TimeRange, stepHours: number): Date[] {
   const tick = new Date(range.from);
   if (tick.getMinutes() !== 0 || tick.getSeconds() !== 0 || tick.getMilliseconds() !== 0) {
