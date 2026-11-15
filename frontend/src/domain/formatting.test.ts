@@ -78,6 +78,11 @@ describe('date and time formatting', () => {
       expect(formatHourMinute(earlyMorning)).toBe('00:05');
     });
 
+    it('formats the local date when it is already the next day in UTC terms', () => {
+      // 9 Nov 21:05 UTC is 10 Nov 00:05 in Moscow.
+      expect(formatDateTime(new Date('2026-11-09T21:05:09Z'))).toBe('10 Nov 00:05');
+    });
+
     it('formats the local date and time', () => {
       expect(formatDayMonth(instant)).toBe('10 Nov');
       expect(formatDateTime(instant)).toBe('10 Nov 14:30');

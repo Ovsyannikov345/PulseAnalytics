@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { memo, useId } from 'react';
 
 import { Card } from '../../components/Card';
 import { ChartLegend, type LegendItem } from '../../components/charts/ChartLegend';
@@ -37,15 +37,15 @@ function formatAxisValue(value: number): string {
   return formatNumber(value);
 }
 
-interface MetricCardProps {
+interface MetricChartProps {
   metric: AirQualityMetric;
   series: AirQualitySeries;
-  refreshing: boolean;
 }
 
-function MetricCard({ metric, series, refreshing }: Readonly<MetricCardProps>) {
+// Memoized: the page re-renders on every query's progress, and only a new series changes the chart.
+const MetricChart = memo(function MetricChart({ metric, series }: Readonly<MetricChartProps>) {
   const { label, unit, fractionDigits } = metricDefinitions[metric];
-  const { points, average } = series.metrics[metric];
+  const { points } = series.metrics[metric];
   const { range, bucket } = series;
   const format = (value: number) => `${formatNumber(value, fractionDigits)} ${unit}`;
 
@@ -62,18 +62,7 @@ function MetricCard({ metric, series, refreshing }: Readonly<MetricCardProps>) {
   }
 
   return (
-    <Card
-      title={label}
-      headingLevel={3}
-      refreshing={refreshing}
-      actions={
-        average === null ? null : (
-          <span className={styles.average}>
-            avg <strong>{formatNumber(average, fractionDigits)}</strong> {unit}
-          </span>
-        )
-      }
-    >
+    <>
       <ChartLegend items={legend} />
       <TimeSeriesChart<MetricPoint>
         points={points}
@@ -109,6 +98,34 @@ function MetricCard({ metric, series, refreshing }: Readonly<MetricCardProps>) {
         label={`${label}, ${unit}: average with a minimum to maximum band per ${timeBucketLabel(bucket)} ${describeRange(range)}.${describeGaps(gapCount)}`}
         height={CHART_HEIGHT}
       />
+    </>
+  );
+});
+
+interface MetricCardProps {
+  metric: AirQualityMetric;
+  series: AirQualitySeries;
+  refreshing: boolean;
+}
+
+function MetricCard({ metric, series, refreshing }: Readonly<MetricCardProps>) {
+  const { label, unit, fractionDigits } = metricDefinitions[metric];
+  const { average } = series.metrics[metric];
+
+  return (
+    <Card
+      title={label}
+      headingLevel={3}
+      refreshing={refreshing}
+      actions={
+        average === null ? null : (
+          <span className={styles.average}>
+            avg <strong>{formatNumber(average, fractionDigits)}</strong> {unit}
+          </span>
+        )
+      }
+    >
+      <MetricChart metric={metric} series={series} />
     </Card>
   );
 }

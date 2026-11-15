@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import { Card } from '../../components/Card';
 import { ChartLegend, type LegendItem } from '../../components/charts/ChartLegend';
 import { Heatmap, type HeatmapRow } from '../../components/charts/Heatmap';
@@ -32,7 +34,8 @@ function overall(row: ActivityRow): string {
   return `${meterLocationLabel(row.location)} ${row.overallRatio === null ? 'no samples' : formatPercent(row.overallRatio)}`;
 }
 
-function Activity({ activity }: Readonly<{ activity: MotionActivity }>) {
+// Memoized: the page re-renders on every query's progress, and only new activity changes the heatmap.
+const Activity = memo(function Activity({ activity }: Readonly<{ activity: MotionActivity }>) {
   const { range, bucket, rows } = activity;
 
   if (rows.every((row) => row.overallRatio === null)) {
@@ -75,7 +78,7 @@ function Activity({ activity }: Readonly<{ activity: MotionActivity }>) {
       <ChartLegend items={legend} />
     </>
   );
-}
+});
 
 interface MotionActivityCardProps {
   activity: WidgetQuery<MotionActivity>;

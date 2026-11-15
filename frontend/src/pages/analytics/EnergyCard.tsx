@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import { Card } from '../../components/Card';
 import { ChartLegend, type LegendItem } from '../../components/charts/ChartLegend';
@@ -69,7 +69,11 @@ function locationRows(point: EnergyPoint): ChartTooltipRow[] {
   });
 }
 
-function Chart({ series, view }: Readonly<{ series: EnergySeries; view: EnergyView }>) {
+// Memoized: the page re-renders on every query's progress, and only a new series or view changes the chart.
+const Chart = memo(function Chart({
+  series,
+  view,
+}: Readonly<{ series: EnergySeries; view: EnergyView }>) {
   const { points, range, bucket, location } = series;
   const combined = points.map((point) => ({
     time: point.time,
@@ -132,7 +136,7 @@ function Chart({ series, view }: Readonly<{ series: EnergySeries; view: EnergyVi
       />
     </>
   );
-}
+});
 
 interface EnergyCardProps {
   energy: WidgetQuery<EnergySeries>;
