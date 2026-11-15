@@ -1,0 +1,9 @@
+query OverviewEnergySparklines($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {
+  energyStatistics(filter: { from: $from, to: $to }, groupBy: [LOCATION, TIME], bucket: $bucket) {
+    location
+    bucketStart
+    energy {
+      average
+    }
+  }
+}
