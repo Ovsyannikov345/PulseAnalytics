@@ -6,12 +6,18 @@ import {
   formatDateTime,
   formatDayMonth,
   formatDayStartHint,
+  formatDays,
   formatElapsed,
   formatHourMinute,
   formatNumber,
   formatPercent,
+  formatRangeLimit,
   formatTime,
+  toDateTimeLocalValue,
 } from './formatting';
+
+const HOUR_MS = 3_600_000;
+const DAY_MS = 24 * HOUR_MS;
 
 describe('formatNumber', () => {
   it.each([
@@ -141,5 +147,44 @@ describe('formatBucketRange', () => {
     ['2026-11-15T00:00:00Z', 'DAY', '15 Nov'],
   ] as const)('formats a bucket starting %s (%s) as %s', (start, bucket, expected) => {
     expect(formatBucketRange(new Date(start), bucket)).toBe(expected);
+  });
+});
+
+describe('formatRangeLimit', () => {
+  it.each([
+    [1000 * 60_000, '16 h'],
+    [47 * HOUR_MS + 59 * 60_000, '47 h'],
+    [48 * HOUR_MS, '2 d'],
+    [5000 * 60_000, '3 d'],
+    [15_000 * 60_000, '10 d'],
+  ])('formats %d ms as %s', (milliseconds, expected) => {
+    expect(formatRangeLimit(milliseconds)).toBe(expected);
+  });
+});
+
+describe('formatDays', () => {
+  it.each([
+    [DAY_MS, '1 day'],
+    [40 * DAY_MS, '40 days'],
+    [31 * DAY_MS + 60_000, '31.1 days'],
+    [12 * HOUR_MS, '0.5 days'],
+  ])('formats %d ms as %s', (milliseconds, expected) => {
+    expect(formatDays(milliseconds)).toBe(expected);
+  });
+});
+
+describe('toDateTimeLocalValue', () => {
+  it('gives the local date and time to the minute, with leading zeros', () => {
+    vi.stubEnv('TZ', 'Europe/Moscow');
+
+    expect(toDateTimeLocalValue(new Date('2026-01-04T06:05:59Z'))).toBe('2026-01-04T09:05');
+  });
+
+  it('reads back as the same local minute', () => {
+    vi.stubEnv('TZ', 'America/New_York');
+    const value = toDateTimeLocalValue(new Date('2026-11-10T02:00:00Z'));
+
+    expect(value).toBe('2026-11-09T21:00');
+    expect(new Date(value).toISOString()).toBe('2026-11-10T02:00:00.000Z');
   });
 });

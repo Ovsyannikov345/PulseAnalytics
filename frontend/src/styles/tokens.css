@@ -41,6 +41,8 @@
   --color-error: #d03b3b;
   --color-error-text: #b12f2f;
   --color-error-bg: #fbe9e9;
+  --color-error-border: #efb8b8;
+  --color-error-dark: #7a1f1f;
   --color-progress: #2a78d6;
 
   /* Type */

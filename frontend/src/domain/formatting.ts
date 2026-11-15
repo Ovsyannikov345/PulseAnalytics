@@ -5,6 +5,10 @@ const LOCALE = 'en-GB';
 
 const MINUTES_PER_DAY = 24 * 60;
 
+const HOUR_MS = 60 * 60 * 1000;
+
+const DAY_MS = 24 * HOUR_MS;
+
 const numberFormats = new Map<number, Intl.NumberFormat>();
 
 /** A number with thousands separators and a fixed number of decimals: "3,012.52". */
@@ -98,4 +102,26 @@ export function formatDayStartHint(offsetMinutes: number): string | null {
   const hours = String(Math.floor(minutesOfDay / 60)).padStart(2, '0');
   const minutes = String(minutesOfDay % 60).padStart(2, '0');
   return `Days start at ${hours}:${minutes} local time (00:00 UTC)`;
+}
+
+/** The longest range a bucket size allows, rounded down: whole hours under two days ("16 h"), else days ("3 d"). */
+export function formatRangeLimit(milliseconds: number): string {
+  const hours = Math.floor(milliseconds / HOUR_MS);
+  return hours < 48 ? `${String(hours)} h` : `${String(Math.floor(milliseconds / DAY_MS))} d`;
+}
+
+/** A range's length in days, rounded up to a tenth, so a range just over a limit never reads as the limit. */
+export function formatDays(milliseconds: number): string {
+  const days = Math.ceil((milliseconds / DAY_MS) * 10) / 10;
+  return `${formatNumber(days, Number.isInteger(days) ? 0 : 1)} ${days === 1 ? 'day' : 'days'}`;
+}
+
+function twoDigits(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+/** The local date and time as a `datetime-local` input takes it: "2026-11-14T09:05". */
+export function toDateTimeLocalValue(date: Date): string {
+  const day = `${String(date.getFullYear())}-${twoDigits(date.getMonth() + 1)}-${twoDigits(date.getDate())}`;
+  return `${day}T${twoDigits(date.getHours())}:${twoDigits(date.getMinutes())}`;
 }
