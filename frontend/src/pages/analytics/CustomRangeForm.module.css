@@ -1,0 +1,23 @@
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-divider);
+}
+
+/* Level with the inputs: below the labels' line. */
+.apply {
+  margin-top: 24px;
+}
+
+@media (max-width: 640px) {
+  .form > * {
+    flex: 1 1 100%;
+  }
+
+  .apply {
+    margin-top: 0;
+  }
+}

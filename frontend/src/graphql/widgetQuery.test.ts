@@ -12,13 +12,18 @@ describe('toWidgetQuery', () => {
   });
 
   it('is ready with the data', () => {
-    expect(toWidgetQuery(result({ data: 3 }))).toEqual({ status: 'ready', data: 3 });
+    expect(toWidgetQuery(result({ data: 3 }))).toEqual({
+      status: 'ready',
+      data: 3,
+      refreshing: false,
+    });
   });
 
   it('keeps the previous data while newer data loads', () => {
     expect(toWidgetQuery(result({ loading: true, previousData: 2 }))).toEqual({
       status: 'ready',
       data: 2,
+      refreshing: true,
     });
   });
 
@@ -26,11 +31,16 @@ describe('toWidgetQuery', () => {
     expect(toWidgetQuery(result({ data: 3, previousData: 2 }))).toEqual({
       status: 'ready',
       data: 3,
+      refreshing: false,
     });
   });
 
   it('is ready with a falsy value such as 0', () => {
-    expect(toWidgetQuery(result({ data: 0 }))).toEqual({ status: 'ready', data: 0 });
+    expect(toWidgetQuery(result({ data: 0 }))).toEqual({
+      status: 'ready',
+      data: 0,
+      refreshing: false,
+    });
   });
 
   it('shows an error even when previous data exists', () => {
@@ -60,11 +70,10 @@ describe('toWidgetQuery', () => {
 });
 
 describe('mapWidgetQuery', () => {
-  it('maps ready data', () => {
-    expect(mapWidgetQuery({ status: 'ready', data: 2 }, (value) => value * 10)).toEqual({
-      status: 'ready',
-      data: 20,
-    });
+  it('maps ready data and keeps whether it refreshes', () => {
+    expect(
+      mapWidgetQuery({ status: 'ready', data: 2, refreshing: true }, (value) => value * 10),
+    ).toEqual({ status: 'ready', data: 20, refreshing: true });
   });
 
   it.each<WidgetQuery<number>>([{ status: 'loading' }, { status: 'error', retry: vi.fn() }])(

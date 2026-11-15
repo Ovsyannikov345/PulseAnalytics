@@ -1,6 +1,7 @@
 import { Card } from '../../components/Card';
+import { ChartTooltip } from '../../components/charts/ChartTooltip';
 import { gapRuns } from '../../components/charts/gapRuns';
-import { TimeSeriesChart } from '../../components/charts/TimeSeriesChart';
+import { type ChartLine, TimeSeriesChart } from '../../components/charts/TimeSeriesChart';
 import { EmptyState } from '../../components/states/EmptyState';
 import { Skeleton } from '../../components/states/Skeleton';
 import { WidgetError } from '../../components/states/WidgetError';
@@ -25,33 +26,29 @@ function formatValue(value: number): string {
 
 export function EnergyTooltip({ point }: Readonly<{ point: EnergyTrendPoint }>) {
   return (
-    <>
-      <p className={styles.tooltipTitle}>
-        {formatBucketRange(new Date(point.time), ENERGY_TREND_BUCKET)}
-      </p>
-      {point.bucket ? (
-        <dl className={styles.tooltipRows}>
-          <div className={styles.tooltipRow}>
-            <dt>Average</dt>
-            <dd>{formatNumber(point.bucket.average, 2)}</dd>
-          </div>
-          <div className={styles.tooltipRow}>
-            <dt>Min – max</dt>
-            <dd>
-              {formatNumber(point.bucket.minimum, 2)} – {formatNumber(point.bucket.maximum, 2)}
-            </dd>
-          </div>
-          <div className={styles.tooltipRow}>
-            <dt>Samples</dt>
-            <dd>{formatNumber(point.bucket.samples)}</dd>
-          </div>
-        </dl>
-      ) : (
-        <p className={styles.tooltipEmpty}>No samples</p>
-      )}
-    </>
+    <ChartTooltip
+      title={formatBucketRange(new Date(point.time), ENERGY_TREND_BUCKET)}
+      rows={
+        point.bucket
+          ? [
+              { label: 'Average', value: formatNumber(point.bucket.average, 2) },
+              {
+                label: 'Min – max',
+                value: `${formatNumber(point.bucket.minimum, 2)} – ${formatNumber(point.bucket.maximum, 2)}`,
+              },
+              { label: 'Samples', value: formatNumber(point.bucket.samples) },
+            ]
+          : null
+      }
+    />
   );
 }
+
+const averageLine: ChartLine<EnergyTrendPoint> = {
+  key: 'average',
+  color: 'var(--color-chart)',
+  value: (point) => point.value,
+};
 
 function Chart({ points, range }: Readonly<{ points: EnergyTrendPoint[]; range: TimeRange }>) {
   if (points.every((point) => point.value === null)) {
@@ -83,6 +80,7 @@ function Chart({ points, range }: Readonly<{ points: EnergyTrendPoint[]; range: 
       </div>
       <TimeSeriesChart
         points={points}
+        lines={[averageLine]}
         bucketLengthMs={lengthMs}
         domain={[bucketStartOf(range.from, ENERGY_TREND_BUCKET).getTime(), to]}
         ticks={[...localHourTicks(range, TICK_STEP_HOURS).map((tick) => tick.getTime()), to]}

@@ -1,0 +1,17 @@
+query AnalyticsAirQualitySummary($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!) {
+  airQualityStatistics(
+    filter: { from: $from, to: $to, locations: $locations }
+    groupBy: [LOCATION]
+  ) {
+    location
+    co2 {
+      average
+    }
+    pm25 {
+      average
+    }
+    humidity {
+      average
+    }
+  }
+}

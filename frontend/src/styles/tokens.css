@@ -30,6 +30,19 @@
   --color-chart-light: #86b6ef;
   --color-chart-band: #cde2fb;
   --color-motion: #6250d6;
+  /* One per location, in gateway order (Kitchen … Corridor), from the Analytics board. */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-series-4: #eda100;
+  --color-series-5: #e87ba4;
+  --color-series-6: #008300;
+  /* Motion activity, 0–20 % … 80–100 %. */
+  --color-heat-1: #cde2fb;
+  --color-heat-2: #9ec5f4;
+  --color-heat-3: #5598e7;
+  --color-heat-4: #256abf;
+  --color-heat-5: #104281;
 
   /* Feedback */
   --color-warning-bg: #fff4d6;
@@ -41,6 +54,8 @@
   --color-error: #d03b3b;
   --color-error-text: #b12f2f;
   --color-error-bg: #fbe9e9;
+  --color-error-border: #efb8b8;
+  --color-error-dark: #7a1f1f;
   --color-progress: #2a78d6;
 
   /* Type */

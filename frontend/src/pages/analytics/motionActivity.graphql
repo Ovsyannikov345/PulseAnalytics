@@ -1,0 +1,18 @@
+query AnalyticsMotionActivity(
+  $from: DateTime!
+  $to: DateTime!
+  $locations: [MeterLocation!]!
+  $bucket: TimeBucket!
+) {
+  motionStatistics(
+    filter: { from: $from, to: $to, locations: $locations }
+    groupBy: [LOCATION, TIME]
+    bucket: $bucket
+  ) {
+    location
+    bucketStart
+    samples
+    motionSamples
+    activityRatio
+  }
+}

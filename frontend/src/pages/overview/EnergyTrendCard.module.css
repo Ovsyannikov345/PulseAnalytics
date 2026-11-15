@@ -35,35 +35,3 @@
   border-radius: 2px;
   background: var(--color-surface-muted);
 }
-
-.tooltipTitle {
-  margin-bottom: 6px;
-  font-weight: var(--font-weight-semibold);
-}
-
-.tooltipRows {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 0;
-}
-
-.tooltipRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.tooltipRow dt {
-  color: var(--color-text-secondary);
-}
-
-.tooltipRow dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-  font-weight: var(--font-weight-semibold);
-}
-
-.tooltipEmpty {
-  color: var(--color-text-secondary);
-}

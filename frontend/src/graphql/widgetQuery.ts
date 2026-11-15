@@ -1,7 +1,10 @@
+/** `refreshing`: newer data is loading while this data stays on screen. */
 export type WidgetQuery<TData> =
-  { status: 'loading' } | { status: 'error'; retry: () => void } | { status: 'ready'; data: TData };
+  | { status: 'loading' }
+  | { status: 'error'; retry: () => void }
+  | { status: 'ready'; data: TData; refreshing: boolean };
 
-interface QueryResultLike<TData> {
+export interface QueryResultLike<TData> {
   data?: TData;
   previousData?: TData;
   error?: unknown;
@@ -22,12 +25,14 @@ export function toWidgetQuery<TData>(result: QueryResultLike<TData>): WidgetQuer
 
   // Apollo clears `data` while new variables load; the previous data stays on screen meanwhile.
   const data = result.data ?? result.previousData;
-  return data === undefined ? { status: 'loading' } : { status: 'ready', data };
+  return data === undefined
+    ? { status: 'loading' }
+    : { status: 'ready', data, refreshing: result.loading };
 }
 
 export function mapWidgetQuery<TData, TResult>(
   query: WidgetQuery<TData>,
   map: (data: TData) => TResult,
 ): WidgetQuery<TResult> {
-  return query.status === 'ready' ? { status: 'ready', data: map(query.data) } : query;
+  return query.status === 'ready' ? { ...query, data: map(query.data) } : query;
 }

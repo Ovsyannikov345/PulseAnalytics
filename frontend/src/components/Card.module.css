@@ -11,8 +11,17 @@
 
 .header {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading {
+  display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .title {
@@ -23,6 +32,32 @@
 .description {
   color: var(--color-text-secondary);
   font-size: var(--font-size-md);
+}
+
+.aside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.updating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.updating svg {
+  stroke: currentcolor;
+}
+
+/* The content's own column, inside the refetch dimmer. */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 @media (max-width: 640px) {

@@ -1,0 +1,7 @@
+query AnalyticsMotionSummary($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!) {
+  motionStatistics(filter: { from: $from, to: $to, locations: $locations }, groupBy: [LOCATION]) {
+    location
+    samples
+    activityRatio
+  }
+}

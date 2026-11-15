@@ -114,3 +114,28 @@ export function clipToRange(start: Date, bucket: TimeBucket, range: TimeRange): 
   const toMs = Math.min(start.getTime() + bucketLengthMs(bucket), range.to.getTime());
   return { from: new Date(fromMs), to: new Date(Math.max(fromMs, toMs)) };
 }
+
+/** All of a bucket's rows, e.g. one per location; empty where the gateway returned none. */
+export interface BucketGroup<T> {
+  start: Date;
+  rows: T[];
+}
+
+/** As `fillBuckets`, for rows grouped by more than time: every bucket of the grid gets all its rows. */
+export function groupBuckets<T>(
+  grid: readonly Date[],
+  rows: readonly T[],
+  getBucketStart: (row: T) => string | null | undefined,
+): BucketGroup<T>[] {
+  const groups = grid.map((start) => ({ start, rows: [] as T[] }));
+  const groupsByStart = new Map(groups.map((group) => [group.start.getTime(), group]));
+
+  for (const row of rows) {
+    const start = getBucketStart(row);
+    if (start) {
+      groupsByStart.get(new Date(start).getTime())?.rows.push(row);
+    }
+  }
+
+  return groups;
+}

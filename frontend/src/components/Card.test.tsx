@@ -40,4 +40,49 @@ describe('Card', () => {
 
     expect(container.querySelector('p')).toBeNull();
   });
+
+  it('shows neither "Updating…" nor a dimmer unless it can refresh', () => {
+    render(
+      <Card title="Energy">
+        <span>Chart</span>
+      </Card>,
+    );
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('keeps the content visible while it refreshes, dimmed under "Updating…"', () => {
+    render(
+      <Card title="Energy" refreshing>
+        <span>Chart</span>
+      </Card>,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Updating…');
+    expect(screen.getByRole('progressbar', { name: 'Updating' })).toBeInTheDocument();
+    expect(screen.getByText('Chart')).toBeVisible();
+  });
+
+  it('wraps refreshable content without "Updating…" when the data is current', () => {
+    render(
+      <Card title="Energy" refreshing={false}>
+        <span>Chart</span>
+      </Card>,
+    );
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByText('Chart').closest('[aria-busy]')).toHaveAttribute('aria-busy', 'false');
+  });
+
+  it('shows actions in the header and can use a level 3 heading', () => {
+    render(
+      <Card title="CO₂" headingLevel={3} actions={<button type="button">Combined</button>}>
+        <span>Chart</span>
+      </Card>,
+    );
+
+    expect(screen.getByRole('heading', { level: 3, name: 'CO₂' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Combined' })).toBeVisible();
+  });
 });
