@@ -18,6 +18,24 @@ interface FieldProps {
   children: (control: FieldControlProps) => ReactNode;
 }
 
+interface FieldErrorProps {
+  id: string;
+  message: string;
+}
+
+/** A control's error message, below it; the control refers to it with `aria-describedby`. */
+export function FieldError({ id, message }: Readonly<FieldErrorProps>) {
+  return (
+    <span id={id} className={styles.error}>
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" className={styles.icon}>
+        <circle cx="7" cy="7" r="6" className={styles.iconCircle} />
+        <path d="M7 3.8v3.6M7 9.6v.2" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      {message}
+    </span>
+  );
+}
+
 /** A label above its control, with an optional hint and an error message below it. */
 export function Field({ label, hint, error, className, children }: Readonly<FieldProps>) {
   const id = useId();
@@ -37,21 +55,7 @@ export function Field({ label, hint, error, className, children }: Readonly<Fiel
         ...(describedBy.length > 0 ? { 'aria-describedby': describedBy.join(' ') } : {}),
         ...(error ? { 'aria-invalid': true } : {}),
       })}
-      {error ? (
-        <span id={errorId} className={styles.error}>
-          <svg
-            aria-hidden="true"
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            className={styles.icon}
-          >
-            <circle cx="7" cy="7" r="6" className={styles.iconCircle} />
-            <path d="M7 3.8v3.6M7 9.6v.2" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          {error}
-        </span>
-      ) : null}
+      {error ? <FieldError id={errorId} message={error} /> : null}
       {hint ? (
         <span id={hintId} className={styles.hint}>
           {hint}
