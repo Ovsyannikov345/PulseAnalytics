@@ -432,8 +432,11 @@ describe('ReadingsPage', () => {
       await user.click(screen.getByRole('button', { name: 'Apply' }));
 
       expect(await within(filters()).findByText('3,331')).toBeInTheDocument();
+      // The old rows are 3 too, so wait for the new page itself, not the footer.
+      await waitFor(() => {
+        expect(receivedTimes()).toEqual(['15 Nov 14:29:46', '15 Nov 14:29:45', '15 Nov 14:29:44']);
+      });
       await expectShown('Showing 3 of 3,331 readings');
-      expect(receivedTimes()[0]).toBe('15 Nov 14:29:46');
       expect(router.state.historyAction).toBe('REPLACE');
     });
 
