@@ -3,7 +3,7 @@ import { Skeleton } from './states/Skeleton';
 import styles from './StatTile.module.css';
 import { cx } from './cx';
 
-type StatTileState =
+export type StatTileState =
   | { status: 'loading' }
   | { status: 'ready'; value: string; unit?: string; caption?: string }
   | { status: 'error'; message: string; onRetry: () => void };

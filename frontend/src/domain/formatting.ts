@@ -26,6 +26,19 @@ export function formatPercent(ratio: number, fractionDigits = 0): string {
   return `${formatNumber(ratio * 100, fractionDigits)} %`;
 }
 
+/** Whole minutes elapsed: "4 min", "1 h 5 min", "3 h"; partial minutes are dropped. */
+export function formatElapsed(milliseconds: number): string {
+  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
+
+  if (totalMinutes < 60) {
+    return `${String(totalMinutes)} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes === 0 ? `${String(hours)} h` : `${String(hours)} h ${String(minutes)} min`;
+}
+
 /** Local time with seconds: "14:29:47". */
 export function formatTime(date: Date): string {
   return date.toLocaleTimeString(LOCALE, {

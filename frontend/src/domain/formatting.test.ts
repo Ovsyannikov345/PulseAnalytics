@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatDayMonth,
   formatDayStartHint,
+  formatElapsed,
   formatHourMinute,
   formatNumber,
   formatPercent,
@@ -32,6 +33,21 @@ describe('formatPercent', () => {
     [0, undefined, '0 %'],
   ])('formats %d as %s', (ratio, fractionDigits, expected) => {
     expect(formatPercent(ratio, fractionDigits)).toBe(expected);
+  });
+});
+
+describe('formatElapsed', () => {
+  it.each([
+    [0, '0 min'],
+    [119_999, '1 min'],
+    [120_000, '2 min'],
+    [59 * 60_000 + 59_999, '59 min'],
+    [60 * 60_000, '1 h'],
+    [65 * 60_000 + 30_000, '1 h 5 min'],
+    [26 * 60 * 60_000, '26 h'],
+    [-5_000, '0 min'],
+  ])('formats %d ms as %s', (milliseconds, expected) => {
+    expect(formatElapsed(milliseconds)).toBe(expected);
   });
 });
 
