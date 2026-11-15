@@ -16,6 +16,7 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
 type Documents = {
   'query AnalyticsAirQuality($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  airQualityStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n    co2 {\n      average\n      minimum\n      maximum\n    }\n    pm25 {\n      average\n      minimum\n      maximum\n    }\n    humidity {\n      average\n      minimum\n      maximum\n    }\n  }\n}': typeof types.AnalyticsAirQualityDocument;
   'query AnalyticsEnergy($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}': typeof types.AnalyticsEnergyDocument;
+  'query AnalyticsMotionActivity($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    motionSamples\n    activityRatio\n  }\n}': typeof types.AnalyticsMotionActivityDocument;
   'query OverviewEnergySparklines($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    energy {\n      average\n    }\n  }\n}': typeof types.OverviewEnergySparklinesDocument;
   'query OverviewEnergyTrend($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}': typeof types.OverviewEnergyTrendDocument;
   'query OverviewIngestionCoverage($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n  }\n}': typeof types.OverviewIngestionCoverageDocument;
@@ -27,6 +28,8 @@ const documents: Documents = {
     types.AnalyticsAirQualityDocument,
   'query AnalyticsEnergy($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}':
     types.AnalyticsEnergyDocument,
+  'query AnalyticsMotionActivity($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    motionSamples\n    activityRatio\n  }\n}':
+    types.AnalyticsMotionActivityDocument,
   'query OverviewEnergySparklines($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    energy {\n      average\n    }\n  }\n}':
     types.OverviewEnergySparklinesDocument,
   'query OverviewEnergyTrend($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to}\n    groupBy: [TIME]\n    bucket: $bucket\n  ) {\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}':
@@ -65,6 +68,12 @@ export function graphql(
 export function graphql(
   source: 'query AnalyticsEnergy($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}',
 ): (typeof documents)['query AnalyticsEnergy($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  energyStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    energy {\n      average\n      minimum\n      maximum\n    }\n  }\n}'];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(
+  source: 'query AnalyticsMotionActivity($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    motionSamples\n    activityRatio\n  }\n}',
+): (typeof documents)['query AnalyticsMotionActivity($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!, $bucket: TimeBucket!) {\n  motionStatistics(\n    filter: {from: $from, to: $to, locations: $locations}\n    groupBy: [LOCATION, TIME]\n    bucket: $bucket\n  ) {\n    location\n    bucketStart\n    samples\n    motionSamples\n    activityRatio\n  }\n}'];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

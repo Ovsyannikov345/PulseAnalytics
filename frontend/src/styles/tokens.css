@@ -37,6 +37,12 @@
   --color-series-4: #eda100;
   --color-series-5: #e87ba4;
   --color-series-6: #008300;
+  /* Motion activity, 0–20 % … 80–100 %. */
+  --color-heat-1: #cde2fb;
+  --color-heat-2: #9ec5f4;
+  --color-heat-3: #5598e7;
+  --color-heat-4: #256abf;
+  --color-heat-5: #104281;
 
   /* Feedback */
   --color-warning-bg: #fff4d6;

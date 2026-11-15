@@ -1,5 +1,5 @@
 import type { MockLink } from '@apollo/client/testing';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,6 +7,7 @@ import { INVALID_FILTER_MESSAGE } from '../../graphql/errors';
 import {
   airQualityMock,
   energyMock,
+  motionActivityMock,
   rejected,
   type BucketedVariables,
 } from '../../test/analyticsMocks';
@@ -39,7 +40,11 @@ const airQuality = airQualityMock(lastDay, [
   { bucketStart: '2026-11-15T11:00:00Z', co2: 672, pm25: 19, humidity: 45 },
 ]);
 
-type Operation = 'energy' | 'airQuality';
+const motion = motionActivityMock(lastDay, [
+  { location: 'KITCHEN', bucketStart: '2026-11-15T11:00:00Z', activityRatio: 0.5 },
+]);
+
+type Operation = 'energy' | 'airQuality' | 'motion';
 
 function renderAnalytics(
   path = '/analytics',
@@ -48,6 +53,7 @@ function renderAnalytics(
   const mocks: Record<Operation, MockLink.MockedResponse[]> = {
     energy: [energy],
     airQuality: [airQuality],
+    motion: [motion],
     ...responses,
   };
   return renderRoute(path, { mocks: Object.values(mocks).flat() });
@@ -167,12 +173,45 @@ describe('AnalyticsPage', () => {
     });
   });
 
+  describe('motion activity', () => {
+    it('loads every location of the last 24 hours in 15-minute buckets', async () => {
+      renderAnalytics();
+
+      expect(screen.getByRole('region', { name: 'Motion activity' })).toHaveAttribute(
+        'aria-busy',
+        'true',
+      );
+      expect(
+        await screen.findByRole('img', {
+          name: /Over the whole range: Kitchen 50 %, Living Room no samples/,
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it('shows a row for the selected location only', async () => {
+      renderAnalytics('/analytics?location=KITCHEN', {
+        energy: [energyMock({ ...lastDay, locations: ['KITCHEN'] }, [])],
+        airQuality: [airQualityMock({ ...lastDay, locations: ['KITCHEN'] }, [])],
+        motion: [
+          motionActivityMock({ ...lastDay, locations: ['KITCHEN'] }, [
+            { location: 'KITCHEN', bucketStart: '2026-11-15T11:00:00Z', activityRatio: 1 },
+          ]),
+        ],
+      });
+
+      expect(
+        await screen.findByRole('img', { name: /Over the whole range: Kitchen 100 %.$/ }),
+      ).toBeInTheDocument();
+    });
+  });
+
   describe('errors', () => {
     it('shows the page error when every widget failed, and retries them all', async () => {
       const user = userEvent.setup();
       renderAnalytics('/analytics', {
         energy: [failing(energy), energy],
         airQuality: [failing(airQuality), airQuality],
+        motion: [failing(motion), motion],
       });
 
       const alert = await screen.findByRole('alert');
@@ -189,11 +228,15 @@ describe('AnalyticsPage', () => {
       renderAnalytics('/analytics', {
         energy: [rejected(energy)],
         airQuality: [rejected(airQuality)],
+        motion: [rejected(motion)],
       });
 
-      expect(await screen.findByRole('alert')).toHaveTextContent(INVALID_FILTER_MESSAGE);
+      await waitFor(() => {
+        expect(screen.getAllByText("This chart couldn't be loaded.")).toHaveLength(2);
+      });
+      expect(await screen.findByText("These charts couldn't be loaded.")).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(INVALID_FILTER_MESSAGE);
       expect(screen.queryByText("Couldn't load the dashboard")).not.toBeInTheDocument();
-      expect(await screen.findByText("This chart couldn't be loaded.")).toBeInTheDocument();
     });
   });
 });

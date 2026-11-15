@@ -8,6 +8,7 @@ import { getQueryErrorKind } from '../../graphql/errors';
 import {
   AnalyticsAirQualityDocument,
   AnalyticsEnergyDocument,
+  AnalyticsMotionActivityDocument,
 } from '../../graphql/generated/graphql';
 import { useWidgetQuery } from '../../graphql/useWidgetQuery';
 import type { WidgetQuery } from '../../graphql/widgetQuery';
@@ -25,6 +26,8 @@ import styles from './AnalyticsPage.module.css';
 import { EnergyCard } from './EnergyCard';
 import { toEnergySeries } from './energySeries';
 import { FilterBar } from './FilterBar';
+import { toMotionActivity } from './motionActivity';
+import { MotionActivityCard } from './MotionActivityCard';
 import { appliedNowState, useAppliedNow } from './useAppliedNow';
 
 function failedRetries(queries: readonly WidgetQuery<unknown>[]): (() => void)[] {
@@ -53,8 +56,15 @@ export function AnalyticsPage() {
     toAirQualitySeries(data.airQualityStatistics, range, bucket, location),
   );
 
-  const results = [energyResult, airQualityResult];
-  const queries = [energy, airQuality];
+  const motionResult = useQuery(AnalyticsMotionActivityDocument, {
+    variables: { ...variables, bucket },
+  });
+  const motion = useWidgetQuery(motionResult, (data) =>
+    toMotionActivity(data.motionStatistics, range, bucket, location),
+  );
+
+  const results = [energyResult, airQualityResult, motionResult];
+  const queries = [energy, airQuality, motion];
   const invalidInput = results.some(
     (result) => result.error !== undefined && getQueryErrorKind(result.error) === 'invalidInput',
   );
@@ -95,6 +105,7 @@ export function AnalyticsPage() {
         <div className={styles.widgets}>
           <EnergyCard energy={energy} location={location} bucket={bucket} />
           <AirQualitySection airQuality={airQuality} location={location} />
+          <MotionActivityCard activity={motion} bucket={bucket} />
         </div>
       )}
     </>

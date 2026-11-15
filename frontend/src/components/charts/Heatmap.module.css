@@ -1,0 +1,87 @@
+.scroll {
+  overflow-x: auto;
+}
+
+.heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 900px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.rowLabel {
+  overflow: hidden;
+  font-size: var(--font-size-md);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cells {
+  display: grid;
+  height: 26px;
+}
+
+.cell {
+  min-width: 0;
+  border-radius: 2px;
+}
+
+.level0 {
+  background: var(--color-heat-1);
+}
+
+.level1 {
+  background: var(--color-heat-2);
+}
+
+.level2 {
+  background: var(--color-heat-3);
+}
+
+.level3 {
+  background: var(--color-heat-4);
+}
+
+.level4 {
+  background: var(--color-heat-5);
+}
+
+.empty {
+  background: var(--color-surface-muted);
+}
+
+.axis {
+  position: relative;
+  height: 18px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.tick {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.tickStart {
+  transform: none;
+}
+
+.tickEnd {
+  transform: translateX(-100%);
+}

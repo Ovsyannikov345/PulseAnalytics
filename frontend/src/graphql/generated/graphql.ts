@@ -45,6 +45,24 @@ export type AnalyticsEnergyQuery = {
   }>;
 };
 
+export type AnalyticsMotionActivityQueryVariables = Exact<{
+  from: string;
+  to: string;
+  locations: Array<MeterLocation> | MeterLocation;
+  bucket: TimeBucket;
+}>;
+
+export type AnalyticsMotionActivityQuery = {
+  motionStatistics: Array<{
+    __typename: 'MotionStatistics';
+    location: MeterLocation | null;
+    bucketStart: string | null;
+    samples: number;
+    motionSamples: number;
+    activityRatio: number;
+  }>;
+};
+
 export type OverviewEnergySparklinesQueryVariables = Exact<{
   from: string;
   to: string;
@@ -379,6 +397,117 @@ export const AnalyticsEnergyDocument = {
     },
   ],
 } as unknown as DocumentNode<AnalyticsEnergyQuery, AnalyticsEnergyQueryVariables>;
+export const AnalyticsMotionActivityDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'AnalyticsMotionActivity' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'MeterLocation' } },
+              },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'TimeBucket' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'motionStatistics' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'from' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'to' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'locations' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+                    },
+                  ],
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'groupBy' },
+                value: {
+                  kind: 'ListValue',
+                  values: [
+                    { kind: 'EnumValue', value: 'LOCATION' },
+                    { kind: 'EnumValue', value: 'TIME' },
+                  ],
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'bucket' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'bucketStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'samples' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'motionSamples' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'activityRatio' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AnalyticsMotionActivityQuery, AnalyticsMotionActivityQueryVariables>;
 export const OverviewEnergySparklinesDocument = {
   kind: 'Document',
   definitions: [
