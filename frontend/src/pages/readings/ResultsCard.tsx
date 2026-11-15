@@ -112,9 +112,9 @@ export function ResultsCard({
         {data.hasNextPage ? (
           <div className={styles.loadMore}>
             {loadMoreFailed ? (
-              <span id={loadMoreErrorId} role="status" className={styles.loadMoreError}>
+              <output id={loadMoreErrorId} className={styles.loadMoreError}>
                 More readings couldn&apos;t be loaded.
-              </span>
+              </output>
             ) : null}
             <Button
               onClick={loadMore}
