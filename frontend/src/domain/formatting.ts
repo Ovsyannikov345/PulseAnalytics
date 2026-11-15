@@ -76,6 +76,11 @@ export function formatDateTime(date: Date): string {
   return `${formatDayMonth(date)} ${formatHourMinute(date)}`;
 }
 
+/** Local date and time with seconds: "15 Nov 14:29:47". */
+export function formatDateTimeWithSeconds(date: Date): string {
+  return `${formatDayMonth(date)} ${formatTime(date)}`;
+}
+
 /**
  * A bucket's label on a chart axis: the local time, or for DAY buckets the date. A DAY bucket is one
  * UTC day, so its label is the UTC date; west of UTC the local date at its start would be the day before.
