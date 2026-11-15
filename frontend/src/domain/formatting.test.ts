@@ -1,10 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  formatBucketRange,
   formatBucketStart,
   formatDateTime,
   formatDayMonth,
   formatDayStartHint,
+  formatElapsed,
   formatHourMinute,
   formatNumber,
   formatPercent,
@@ -32,6 +34,21 @@ describe('formatPercent', () => {
     [0, undefined, '0 %'],
   ])('formats %d as %s', (ratio, fractionDigits, expected) => {
     expect(formatPercent(ratio, fractionDigits)).toBe(expected);
+  });
+});
+
+describe('formatElapsed', () => {
+  it.each([
+    [0, '0 min'],
+    [119_999, '1 min'],
+    [120_000, '2 min'],
+    [59 * 60_000 + 59_999, '59 min'],
+    [60 * 60_000, '1 h'],
+    [65 * 60_000 + 30_000, '1 h 5 min'],
+    [26 * 60 * 60_000, '26 h'],
+    [-5_000, '0 min'],
+  ])('formats %d ms as %s', (milliseconds, expected) => {
+    expect(formatElapsed(milliseconds)).toBe(expected);
   });
 });
 
@@ -109,5 +126,20 @@ describe('formatDayStartHint', () => {
 
   it('gives no hint at UTC', () => {
     expect(formatDayStartHint(0)).toBeNull();
+  });
+});
+
+describe('formatBucketRange', () => {
+  beforeEach(() => {
+    vi.stubEnv('TZ', 'Europe/Moscow');
+  });
+
+  it.each([
+    ['2026-11-15T05:45:00Z', 'FIFTEEN_MINUTES', '15 Nov 08:45–09:00'],
+    ['2026-11-15T20:00:00Z', 'HOUR', '15 Nov 23:00–00:00'],
+    ['2026-11-15T11:29:00Z', 'MINUTE', '15 Nov 14:29–14:30'],
+    ['2026-11-15T00:00:00Z', 'DAY', '15 Nov'],
+  ] as const)('formats a bucket starting %s (%s) as %s', (start, bucket, expected) => {
+    expect(formatBucketRange(new Date(start), bucket)).toBe(expected);
   });
 });

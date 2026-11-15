@@ -6,6 +6,27 @@ const apiGatewayUrl = process.env.API_GATEWAY_URL ?? 'http://localhost:5103';
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rolldownOptions: {
+      output: {
+        // Libraries change less often than the app, so they get their own long-cached chunks.
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /[\\/]node_modules[\\/](react|react-dom|react-router|scheduler|cookie|set-cookie-parser)[\\/]/,
+            },
+            {
+              name: 'apollo',
+              test: /[\\/]node_modules[\\/](@apollo|@wry|graphql|optimism|rxjs|tslib|@graphql-typed-document-node)[\\/]/,
+            },
+            // Catch-all last: on equal priority the earlier group wins.
+            { name: 'vendor', test: /[\\/]node_modules[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/graphql': apiGatewayUrl,

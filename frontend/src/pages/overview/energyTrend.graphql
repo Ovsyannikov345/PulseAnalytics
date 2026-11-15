@@ -1,0 +1,11 @@
+query OverviewEnergyTrend($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {
+  energyStatistics(filter: { from: $from, to: $to }, groupBy: [TIME], bucket: $bucket) {
+    bucketStart
+    samples
+    energy {
+      average
+      minimum
+      maximum
+    }
+  }
+}

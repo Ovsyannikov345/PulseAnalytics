@@ -1,0 +1,5 @@
+query OverviewSampleCount($from: DateTime!, $to: DateTime!) {
+  readingCounts(filter: { from: $from, to: $to }, groupBy: []) {
+    count
+  }
+}

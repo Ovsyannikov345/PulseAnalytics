@@ -1,0 +1,6 @@
+query OverviewIngestionCoverage($from: DateTime!, $to: DateTime!, $bucket: TimeBucket!) {
+  motionStatistics(filter: { from: $from, to: $to }, groupBy: [TIME], bucket: $bucket) {
+    bucketStart
+    samples
+  }
+}

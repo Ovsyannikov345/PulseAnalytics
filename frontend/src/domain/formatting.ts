@@ -1,4 +1,5 @@
 import type { TimeBucket } from '../graphql/generated/enums';
+import { bucketLengthMs } from './timeBuckets';
 
 const LOCALE = 'en-GB';
 
@@ -24,6 +25,18 @@ export function formatNumber(value: number, fractionDigits = 0): string {
 /** A ratio from 0 to 1 as a percentage with a space before the sign: 0.77 → "77 %". */
 export function formatPercent(ratio: number, fractionDigits = 0): string {
   return `${formatNumber(ratio * 100, fractionDigits)} %`;
+}
+
+export function formatElapsed(milliseconds: number): string {
+  const totalMinutes = Math.max(0, Math.floor(milliseconds / 60_000));
+
+  if (totalMinutes < 60) {
+    return `${String(totalMinutes)} min`;
+  }
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes === 0 ? `${String(hours)} h` : `${String(hours)} h ${String(minutes)} min`;
 }
 
 /** Local time with seconds: "14:29:47". */
@@ -59,6 +72,16 @@ export function formatBucketStart(start: Date, bucket: TimeBucket): string {
   return bucket === 'DAY'
     ? start.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', timeZone: 'UTC' })
     : formatHourMinute(start);
+}
+
+/** With the date: a 24 h chart holds the same hour twice. */
+export function formatBucketRange(start: Date, bucket: TimeBucket): string {
+  if (bucket === 'DAY') {
+    return formatBucketStart(start, bucket);
+  }
+
+  const end = new Date(start.getTime() + bucketLengthMs(bucket));
+  return `${formatDateTime(start)}–${formatHourMinute(end)}`;
 }
 
 /**
