@@ -2,9 +2,7 @@ import { cx } from '../cx';
 import styles from './Skeleton.module.css';
 
 interface SkeletonProps {
-  /** A CSS length; the full width by default. */
   width?: string;
-  /** A CSS length. */
   height: string;
   shape?: 'block' | 'pill';
   className?: string;

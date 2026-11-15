@@ -1,7 +1,5 @@
 import type { TimeBucket } from '../graphql/generated/enums';
 
-// British English, as in the mockups: "3,012.52", "14:29:47" and "10 Nov".
-// Dates are formatted per call, not with cached formatters, so they follow the current time zone.
 const LOCALE = 'en-GB';
 
 const MINUTES_PER_DAY = 24 * 60;

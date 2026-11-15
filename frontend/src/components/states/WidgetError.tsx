@@ -5,10 +5,8 @@ import { cx } from '../cx';
 import styles from './WidgetError.module.css';
 
 interface WidgetErrorProps {
-  /** A fixed client text such as "This chart couldn't be loaded."; server messages are never shown. */
   message: string;
   onRetry: () => void;
-  /** Sizes the box, usually to the height of the content it replaces. */
   className?: string;
 }
 
@@ -25,7 +23,6 @@ export function WidgetError({ message, onRetry, className }: Readonly<WidgetErro
         </svg>
         {message}
       </span>
-      {/* Described by the message, so several failed widgets' Retry buttons can be told apart. */}
       <Button size="compact" onClick={onRetry} aria-describedby={messageId}>
         Retry
       </Button>

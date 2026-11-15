@@ -5,7 +5,6 @@ import styles from './EmptyState.module.css';
 interface EmptyStateProps {
   title: string;
   description?: string;
-  /** Actions that lead out of the empty result, e.g. a wider range. */
   children?: ReactNode;
 }
 

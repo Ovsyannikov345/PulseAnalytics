@@ -1,5 +1,3 @@
-// Values above these show a warning chip. They are dashboard hints, not health advice.
-
 /** CO₂ concentration, ppm. */
 export const CO2_WARNING_PPM = 800;
 

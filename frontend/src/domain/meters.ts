@@ -7,8 +7,6 @@ interface EnumNames {
   restName: string;
 }
 
-// Records over the generated unions: a value added to the schema fails the type check until it is named here.
-// Listed in the gateway's order (its enum values), which is also the order of its results.
 const meterTypeNames: Record<MeterType, EnumNames> = {
   AIR_QUALITY: { label: 'Air quality', restName: 'AirQuality' },
   ENERGY: { label: 'Energy', restName: 'Energy' },
@@ -28,7 +26,6 @@ export const meterTypes = Object.keys(meterTypeNames) as readonly MeterType[];
 
 export const meterLocations = Object.keys(meterLocationNames) as readonly MeterLocation[];
 
-/** WeakApp has one meter of each type in each location. */
 export const METERS_PER_TYPE = meterLocations.length;
 
 export const METER_COUNT = meterTypes.length * METERS_PER_TYPE;

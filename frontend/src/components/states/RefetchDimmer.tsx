@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import styles from './RefetchDimmer.module.css';
 
 interface RefetchDimmerProps {
-  /** True while a query reruns with data already shown (new filters, a retry, a poll). */
   refreshing: boolean;
   children: ReactNode;
 }

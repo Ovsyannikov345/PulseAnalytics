@@ -2,7 +2,6 @@ import { Button } from '../Button';
 import styles from './PageError.module.css';
 
 interface PageErrorProps {
-  /** Reruns every query of the page. */
   onRetry: () => void;
   title?: string;
   description?: string;
