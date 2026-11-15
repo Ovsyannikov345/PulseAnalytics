@@ -10,6 +10,7 @@ import {
   bucketStartOf,
   clipToRange,
   fillBuckets,
+  groupBuckets,
   isBucketAllowed,
   maxRangeMs,
   timeBucketLabel,
@@ -245,5 +246,44 @@ describe('clipToRange', () => {
     const clipped = clipToRange(new Date('2026-11-14T13:00:00Z'), 'HOUR', window);
 
     expect(clipped.to.getTime() - clipped.from.getTime()).toBe(0);
+  });
+});
+
+describe('groupBuckets', () => {
+  const grid = bucketGrid(range('2026-11-14T10:00:00Z', '2026-11-14T13:00:00Z'), 'HOUR');
+
+  interface Row {
+    location: string;
+    bucketStart: string | null;
+  }
+
+  it('gives every bucket all its rows, in the order the gateway sent them', () => {
+    const rows: Row[] = [
+      { location: 'KITCHEN', bucketStart: '2026-11-14T10:00:00Z' },
+      { location: 'KITCHEN', bucketStart: '2026-11-14T12:00:00Z' },
+      { location: 'OFFICE', bucketStart: '2026-11-14T13:00:00.000+03:00' },
+    ];
+
+    const groups = groupBuckets(grid, rows, (row) => row.bucketStart);
+
+    expect(
+      groups.map((group) => [group.start.toISOString(), group.rows.map((row) => row.location)]),
+    ).toEqual([
+      ['2026-11-14T10:00:00.000Z', ['KITCHEN', 'OFFICE']],
+      ['2026-11-14T11:00:00.000Z', []],
+      ['2026-11-14T12:00:00.000Z', ['KITCHEN']],
+    ]);
+  });
+
+  it('drops rows without a bucket start or outside the grid', () => {
+    const rows: Row[] = [
+      { location: 'KITCHEN', bucketStart: null },
+      { location: 'KITCHEN', bucketStart: '2026-11-14T09:00:00Z' },
+      { location: 'KITCHEN', bucketStart: '2026-11-14T10:30:00Z' },
+    ];
+
+    const groups = groupBuckets(grid, rows, (row) => row.bucketStart);
+
+    expect(groups.every((group) => group.rows.length === 0)).toBe(true);
   });
 });

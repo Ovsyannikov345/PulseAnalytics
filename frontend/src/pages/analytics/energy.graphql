@@ -1,0 +1,21 @@
+query AnalyticsEnergy(
+  $from: DateTime!
+  $to: DateTime!
+  $locations: [MeterLocation!]!
+  $bucket: TimeBucket!
+) {
+  energyStatistics(
+    filter: { from: $from, to: $to, locations: $locations }
+    groupBy: [LOCATION, TIME]
+    bucket: $bucket
+  ) {
+    location
+    bucketStart
+    samples
+    energy {
+      average
+      minimum
+      maximum
+    }
+  }
+}

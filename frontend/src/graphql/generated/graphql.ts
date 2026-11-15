@@ -10,6 +10,23 @@ export type MeterLocation =
 
 export type TimeBucket = 'DAY' | 'FIFTEEN_MINUTES' | 'FIVE_MINUTES' | 'HOUR' | 'MINUTE';
 
+export type AnalyticsEnergyQueryVariables = Exact<{
+  from: string;
+  to: string;
+  locations: Array<MeterLocation> | MeterLocation;
+  bucket: TimeBucket;
+}>;
+
+export type AnalyticsEnergyQuery = {
+  energyStatistics: Array<{
+    __typename: 'EnergyStatistics';
+    location: MeterLocation | null;
+    bucketStart: string | null;
+    samples: number;
+    energy: { __typename: 'MetricStatistics'; average: number; minimum: number; maximum: number };
+  }>;
+};
+
 export type OverviewEnergySparklinesQueryVariables = Exact<{
   from: string;
   to: string;
@@ -85,6 +102,127 @@ export type OverviewSampleCountQuery = {
   readingCounts: Array<{ __typename: 'ReadingCount'; count: number }>;
 };
 
+export const AnalyticsEnergyDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'AnalyticsEnergy' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'DateTime' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+          type: {
+            kind: 'NonNullType',
+            type: {
+              kind: 'ListType',
+              type: {
+                kind: 'NonNullType',
+                type: { kind: 'NamedType', name: { kind: 'Name', value: 'MeterLocation' } },
+              },
+            },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'TimeBucket' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'energyStatistics' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: {
+                  kind: 'ObjectValue',
+                  fields: [
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'from' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'from' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'to' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'to' } },
+                    },
+                    {
+                      kind: 'ObjectField',
+                      name: { kind: 'Name', value: 'locations' },
+                      value: { kind: 'Variable', name: { kind: 'Name', value: 'locations' } },
+                    },
+                  ],
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'groupBy' },
+                value: {
+                  kind: 'ListValue',
+                  values: [
+                    { kind: 'EnumValue', value: 'LOCATION' },
+                    { kind: 'EnumValue', value: 'TIME' },
+                  ],
+                },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'bucket' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'bucket' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'bucketStart' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'samples' } },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'energy' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'average' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'minimum' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'maximum' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<AnalyticsEnergyQuery, AnalyticsEnergyQueryVariables>;
 export const OverviewEnergySparklinesDocument = {
   kind: 'Document',
   definitions: [
