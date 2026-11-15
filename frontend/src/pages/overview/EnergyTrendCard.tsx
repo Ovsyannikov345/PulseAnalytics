@@ -72,12 +72,12 @@ function Chart({ points, range }: Readonly<{ points: EnergyTrendPoint[]; range: 
       <div className={styles.legend}>
         <span className={styles.legendItem}>
           <span aria-hidden="true" className={styles.lineSwatch} />
-          Average
+          {'Average'}
         </span>
         {gapCount > 0 ? (
           <span className={styles.legendItem}>
             <span aria-hidden="true" className={styles.gapSwatch} />
-            No samples
+            {'No samples'}
           </span>
         ) : null}
       </div>

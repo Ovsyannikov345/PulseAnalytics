@@ -2,8 +2,8 @@ export type WidgetQuery<TData> =
   { status: 'loading' } | { status: 'error'; retry: () => void } | { status: 'ready'; data: TData };
 
 interface QueryResultLike<TData> {
-  data?: TData | undefined;
-  previousData?: TData | undefined;
+  data?: TData;
+  previousData?: TData;
   error?: unknown;
   loading: boolean;
   refetch: () => Promise<unknown>;

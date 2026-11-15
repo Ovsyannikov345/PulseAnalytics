@@ -27,7 +27,8 @@ function hourSpan({ span }: CoverageHour): string {
 
 function Bars({ hours }: Readonly<{ hours: CoverageHour[] }>) {
   const lowest = lowCoverageHour(hours);
-  const label = `Stored samples per hour as a share of the expected polls over the last 24 hours: ${formatPercent(overallShare(hours))} overall${lowest ? `, lowest ${formatPercent(lowest.share)} at ${hourSpan(lowest)}` : ''}.`;
+  const lowestPart = lowest ? `, lowest ${formatPercent(lowest.share)} at ${hourSpan(lowest)}` : '';
+  const label = `Stored samples per hour as a share of the expected polls over the last 24 hours: ${formatPercent(overallShare(hours))} overall${lowestPart}.`;
 
   return (
     <>

@@ -27,6 +27,23 @@ interface TimeSeriesChartProps<TPoint extends TimeSeriesPoint> {
   height?: number;
 }
 
+interface PointTooltipProps<TPoint extends TimeSeriesPoint> {
+  points: readonly TPoint[];
+  renderTooltip: (point: TPoint) => ReactNode;
+  active?: boolean;
+  label?: unknown;
+}
+
+function PointTooltip<TPoint extends TimeSeriesPoint>({
+  points,
+  renderTooltip,
+  active,
+  label,
+}: Readonly<PointTooltipProps<TPoint>>) {
+  const point = active ? points.find((candidate) => candidate.time === label) : undefined;
+  return point ? <div className={styles.tooltip}>{renderTooltip(point)}</div> : null;
+}
+
 export function TimeSeriesChart<TPoint extends TimeSeriesPoint>({
   points,
   bucketLengthMs,
@@ -84,12 +101,7 @@ export function TimeSeriesChart<TPoint extends TimeSeriesPoint>({
             filterNull={false}
             isAnimationActive={false}
             cursor={{ stroke: 'var(--color-text-secondary)' }}
-            content={({ active, label: time }) => {
-              const point = active
-                ? points.find((candidate) => candidate.time === time)
-                : undefined;
-              return point ? <div className={styles.tooltip}>{renderTooltip(point)}</div> : null;
-            }}
+            content={<PointTooltip points={points} renderTooltip={renderTooltip} />}
           />
           <Line
             dataKey="value"
