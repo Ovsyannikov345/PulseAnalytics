@@ -1,0 +1,50 @@
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.icon {
+  flex: none;
+}
+
+.motion {
+  background: var(--color-motion);
+  color: var(--color-text-inverse);
+}
+
+.motion .icon {
+  stroke: var(--color-text-inverse);
+}
+
+.motion .iconFill {
+  fill: var(--color-text-inverse);
+}
+
+.neutral {
+  padding: 3px 10px;
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.warning {
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.warning .icon {
+  stroke: var(--color-warning-text);
+}
+
+.warning .iconFill {
+  fill: var(--color-warning-icon);
+}
