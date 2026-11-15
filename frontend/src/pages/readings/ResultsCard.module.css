@@ -4,6 +4,11 @@
   gap: 12px;
 }
 
+.exportHint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
 .pageSizeLabel {
   color: var(--color-text-secondary);
   font-size: var(--font-size-md);

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   defaultReadingsFilter,
+  exportProblem,
+  exportUrl,
   orderTypes,
   parseReadingsFilter,
   readDraft,
@@ -169,5 +171,51 @@ describe('readDraft', () => {
       types: 'Pick at least one meter type.',
       to: 'Enter a start and an end.',
     });
+  });
+});
+
+describe('exportUrl', () => {
+  beforeEach(() => {
+    vi.stubEnv('TZ', 'Europe/Moscow');
+  });
+
+  it('names types and locations as the REST endpoint binds them, with local times', () => {
+    const url = exportUrl({
+      types: ['AIR_QUALITY', 'ENERGY'],
+      location: 'LIVING_ROOM',
+      range: lastHour,
+    });
+
+    expect(url).toBe(
+      '/api/readings/export?From=2026-11-15T13%3A30%3A00.000%2B03%3A00&To=2026-11-15T14%3A30%3A00.000%2B03%3A00&Types=AirQuality&Types=Energy&Locations=LivingRoom',
+    );
+    const params = new URL(url, 'http://localhost').searchParams;
+    expect(params.get('From')).toBe('2026-11-15T13:30:00.000+03:00');
+    expect(params.getAll('Types')).toEqual(['AirQuality', 'Energy']);
+  });
+
+  it('leaves out locations for all of them', () => {
+    expect(exportUrl(defaultReadingsFilter(now))).not.toContain('Locations');
+  });
+});
+
+describe('exportProblem', () => {
+  const from = new Date('2026-11-08T11:30:00Z');
+
+  function filterTo(to: Date): ReadingsFilter {
+    return { ...defaultReadingsFilter(now), range: { from, to } };
+  }
+
+  it('allows up to exactly 7 days', () => {
+    expect(exportProblem(filterTo(new Date('2026-11-15T11:30:00Z')))).toBeNull();
+  });
+
+  it('explains a longer range', () => {
+    expect(exportProblem(filterTo(new Date('2026-11-15T11:31:00Z')))).toBe(
+      'The export covers up to 7 days; the current range is 7.1 days.',
+    );
+    expect(exportProblem(filterTo(new Date('2026-12-09T11:30:00Z')))).toBe(
+      'The export covers up to 7 days; the current range is 31 days.',
+    );
   });
 });

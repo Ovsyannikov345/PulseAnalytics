@@ -1,6 +1,16 @@
-import { toDateTimeLocalValue } from '../../domain/formatting';
-import { meterLocations, meterTypes } from '../../domain/meters';
-import { checkRange, type TimeRange } from '../../domain/timeRanges';
+import { formatDays, toDateTimeLocalValue } from '../../domain/formatting';
+import {
+  meterLocationRestName,
+  meterLocations,
+  meterTypeRestName,
+  meterTypes,
+} from '../../domain/meters';
+import {
+  checkRange,
+  MAX_EXPORT_RANGE_MS,
+  rangeDurationMs,
+  type TimeRange,
+} from '../../domain/timeRanges';
 import { toIsoWithOffset } from '../../domain/utcOffset';
 import type { MeterLocation, MeterType } from '../../graphql/generated/enums';
 
@@ -138,4 +148,34 @@ export function readDraft(
     },
     problems: null,
   };
+}
+
+const EXPORT_PATH = '/api/readings/export';
+
+/**
+ * The CSV export of a filter. The REST endpoint binds the C# enum names (`AirQuality`) and repeats a
+ * parameter for several values; times keep their offset (`URLSearchParams` encodes its `+`).
+ */
+export function exportUrl(filter: ReadingsFilter): string {
+  const params = new URLSearchParams({
+    From: toIsoWithOffset(filter.range.from),
+    To: toIsoWithOffset(filter.range.to),
+  });
+  for (const type of filter.types) {
+    params.append('Types', meterTypeRestName(type));
+  }
+  if (filter.location) {
+    params.append('Locations', meterLocationRestName(filter.location));
+  }
+
+  return `${EXPORT_PATH}?${params.toString()}`;
+}
+
+/** Why the filter can't be exported (the gateway's 7-day limit), or `null` when it can. */
+export function exportProblem(filter: ReadingsFilter): string | null {
+  const durationMs = rangeDurationMs(filter.range);
+
+  return durationMs > MAX_EXPORT_RANGE_MS
+    ? `The export covers up to ${formatDays(MAX_EXPORT_RANGE_MS)}; the current range is ${formatDays(durationMs)}.`
+    : null;
 }

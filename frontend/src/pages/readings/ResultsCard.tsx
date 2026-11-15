@@ -8,8 +8,10 @@ import { Skeleton } from '../../components/states/Skeleton';
 import { WidgetError } from '../../components/states/WidgetError';
 import { formatDateTime, formatDateTimeWithSeconds, formatNumber } from '../../domain/formatting';
 import { meterLocationLabel, meterTypeLabel } from '../../domain/meters';
+import { ExportLink } from './ExportLink';
 import { MeterTypeIcon } from './MeterTypeIcon';
 import type { ReadingRow, ReadingsPageData, ReadingValues } from './readingRows';
+import { exportProblem, type ReadingsFilter } from './readingsFilter';
 import styles from './ResultsCard.module.css';
 import { pageSizes, type PageSize, type ReadingsTable } from './useReadingsTable';
 
@@ -78,6 +80,8 @@ function shownText(shown: number, total: number | null): ReactNode {
 }
 
 interface ResultsCardProps {
+  /** The applied filter, for the export. */
+  filter: ReadingsFilter;
   readings: ReadingsTable;
   /** The number of readings the filter matches; `null` while unknown. */
   total: number | null;
@@ -88,6 +92,7 @@ interface ResultsCardProps {
 
 /** The applied filter's readings, newest first, loaded a page at a time. */
 export function ResultsCard({
+  filter,
   readings,
   total,
   pageSize,
@@ -96,6 +101,8 @@ export function ResultsCard({
 }: Readonly<ResultsCardProps>) {
   const pageSizeId = useId();
   const loadMoreErrorId = useId();
+  const exportHintId = useId();
+  const exportBlocked = exportProblem(filter);
   const { table, loadMore, loadingMore, loadMoreFailed } = readings;
 
   function footer(data: ReadingsPageData, refreshing: boolean) {
@@ -175,28 +182,35 @@ export function ResultsCard({
       busy={table.status === 'loading'}
       refreshing={table.status === 'ready' && table.refreshing}
       actions={
-        <div className={styles.pageSize}>
-          <label htmlFor={pageSizeId} className={styles.pageSizeLabel}>
-            Load at a time
-          </label>
-          <Select
-            id={pageSizeId}
-            value={pageSize}
-            className={styles.pageSizeSelect}
-            onChange={(event) => {
-              // The options are the page sizes.
-              onPageSizeChange(Number(event.target.value) as PageSize);
-            }}
-          >
-            {pageSizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </Select>
-        </div>
+        <>
+          <div className={styles.pageSize}>
+            <label htmlFor={pageSizeId} className={styles.pageSizeLabel}>
+              Load at a time
+            </label>
+            <Select
+              id={pageSizeId}
+              value={pageSize}
+              className={styles.pageSizeSelect}
+              onChange={(event) => {
+                // The options are the page sizes.
+                onPageSizeChange(Number(event.target.value) as PageSize);
+              }}
+            >
+              {pageSizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <ExportLink filter={filter} problem={exportBlocked} describedBy={exportHintId} />
+        </>
       }
     >
+      <p id={exportHintId} className={styles.exportHint}>
+        {exportBlocked ??
+          'The export downloads every reading of the current filter as CSV (ranges up to 7 days).'}
+      </p>
       {content()}
     </Card>
   );

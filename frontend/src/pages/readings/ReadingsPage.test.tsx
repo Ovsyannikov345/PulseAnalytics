@@ -345,6 +345,46 @@ describe('ReadingsPage', () => {
     });
   });
 
+  describe('export', () => {
+    it('downloads the applied filter as CSV', async () => {
+      const variables: ReadingFilterVariables = { ...energyOnly, locations: ['KITCHEN'] };
+      renderRoute(`/readings${energyOnlySearch}&location=KITCHEN`, {
+        mocks: [matchCountsMock(variables, counts), readingsMock(variables, energyReadings(1, 1))],
+      });
+
+      const link = within(results()).getByRole('link', { name: 'Export CSV' });
+
+      expect(link).toHaveAttribute(
+        'href',
+        '/api/readings/export?From=2026-11-15T13%3A30%3A00.000%2B03%3A00&To=2026-11-15T14%3A30%3A00.000%2B03%3A00&Types=Energy&Locations=Kitchen',
+      );
+      expect(link).toHaveAttribute('download');
+      expect(link).toHaveAccessibleDescription(
+        'The export downloads every reading of the current filter as CSV (ranges up to 7 days).',
+      );
+      await expectShown(/^Showing 1 /);
+    });
+
+    it('is disabled with the reason over 7 days', async () => {
+      const variables: ReadingFilterVariables = {
+        ...defaultFilterVariables,
+        from: '2026-10-15T14:30:00.000+03:00',
+      };
+      renderRoute('/readings?from=2026-10-15T11:30:00Z&to=2026-11-15T11:30:00Z', {
+        mocks: [matchCountsMock(variables, counts), readingsMock(variables, energyReadings(1, 1))],
+      });
+
+      const button = within(results()).getByRole('button', { name: 'Export CSV' });
+
+      expect(button).toBeDisabled();
+      expect(button).toHaveAccessibleDescription(
+        'The export covers up to 7 days; the current range is 31 days.',
+      );
+      expect(within(results()).queryByRole('link', { name: 'Export CSV' })).toBeNull();
+      await expectShown(/^Showing 1 /);
+    });
+  });
+
   describe('page', () => {
     it('shows one error when every query failed and loads all again on Retry', async () => {
       const user = userEvent.setup();

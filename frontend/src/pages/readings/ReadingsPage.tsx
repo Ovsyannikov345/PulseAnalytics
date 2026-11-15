@@ -96,6 +96,7 @@ export function ReadingsPage() {
           <PageError onRetry={loadAgain} />
         ) : (
           <ResultsCard
+            filter={filter}
             readings={readings}
             total={counts.status === 'ready' ? counts.data.total : null}
             pageSize={pageSize}
