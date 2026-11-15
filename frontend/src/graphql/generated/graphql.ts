@@ -8,6 +8,20 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
 export type MeterLocation =
   'BEDROOM' | 'CORRIDOR' | 'GARAGE' | 'KITCHEN' | 'LIVING_ROOM' | 'OFFICE';
 
+export type MeterType = 'AIR_QUALITY' | 'ENERGY' | 'MOTION';
+
+/** Selects readings by meter and time. Omitted or empty fields don't filter. */
+export type ReadingFilterInput = {
+  /** Inclusive start of the time range. */
+  from?: string | null | undefined;
+  /** Locations to include. */
+  locations?: Array<MeterLocation> | null | undefined;
+  /** Exclusive end of the time range; must be later than `from`. */
+  to?: string | null | undefined;
+  /** Meter types to include. */
+  types?: Array<MeterType> | null | undefined;
+};
+
 export type TimeBucket = 'DAY' | 'FIFTEEN_MINUTES' | 'FIVE_MINUTES' | 'HOUR' | 'MINUTE';
 
 export type AnalyticsAirQualityQueryVariables = Exact<{
@@ -181,6 +195,58 @@ export type OverviewSampleCountQueryVariables = Exact<{
 
 export type OverviewSampleCountQuery = {
   readingCounts: Array<{ __typename: 'ReadingCount'; count: number }>;
+};
+
+export type ReadingsMatchCountsQueryVariables = Exact<{
+  filter: ReadingFilterInput;
+}>;
+
+export type ReadingsMatchCountsQuery = {
+  readingCounts: Array<{ __typename: 'ReadingCount'; type: MeterType | null; count: number }>;
+};
+
+export type ReadingsTableQueryVariables = Exact<{
+  filter: ReadingFilterInput;
+  first: number;
+  after?: string | null | undefined;
+}>;
+
+export type ReadingsTableQuery = {
+  readings: {
+    __typename: 'MeterReadingConnection';
+    edges: Array<{
+      __typename: 'MeterReadingEdge';
+      cursor: string;
+      node:
+        | {
+            __typename: 'AirQualityReading';
+            co2: number;
+            pm25: number;
+            humidity: number;
+            id: string;
+            type: MeterType;
+            location: MeterLocation;
+            receivedAt: string;
+          }
+        | {
+            __typename: 'EnergyReading';
+            energy: number;
+            id: string;
+            type: MeterType;
+            location: MeterLocation;
+            receivedAt: string;
+          }
+        | {
+            __typename: 'MotionReading';
+            motionDetected: boolean;
+            id: string;
+            type: MeterType;
+            location: MeterLocation;
+            receivedAt: string;
+          };
+    }> | null;
+    pageInfo: { __typename: 'PageInfo'; hasNextPage: boolean; endCursor: string | null };
+  } | null;
 };
 
 export const AnalyticsAirQualityDocument = {
@@ -1268,3 +1334,193 @@ export const OverviewSampleCountDocument = {
     },
   ],
 } as unknown as DocumentNode<OverviewSampleCountQuery, OverviewSampleCountQueryVariables>;
+export const ReadingsMatchCountsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ReadingsMatchCounts' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ReadingFilterInput' } },
+          },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'readingCounts' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'groupBy' },
+                value: { kind: 'ListValue', values: [{ kind: 'EnumValue', value: 'TYPE' }] },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'count' } },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ReadingsMatchCountsQuery, ReadingsMatchCountsQueryVariables>;
+export const ReadingsTableDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'ReadingsTable' },
+      variableDefinitions: [
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'ReadingFilterInput' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'first' } },
+          type: {
+            kind: 'NonNullType',
+            type: { kind: 'NamedType', name: { kind: 'Name', value: 'Int' } },
+          },
+        },
+        {
+          kind: 'VariableDefinition',
+          variable: { kind: 'Variable', name: { kind: 'Name', value: 'after' } },
+          type: { kind: 'NamedType', name: { kind: 'Name', value: 'String' } },
+        },
+      ],
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'readings' },
+            arguments: [
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'filter' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'filter' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'first' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'first' } },
+              },
+              {
+                kind: 'Argument',
+                name: { kind: 'Name', value: 'after' },
+                value: { kind: 'Variable', name: { kind: 'Name', value: 'after' } },
+              },
+            ],
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'edges' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'cursor' } },
+                      {
+                        kind: 'Field',
+                        name: { kind: 'Name', value: 'node' },
+                        selectionSet: {
+                          kind: 'SelectionSet',
+                          selections: [
+                            { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'type' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                            { kind: 'Field', name: { kind: 'Name', value: 'receivedAt' } },
+                            {
+                              kind: 'InlineFragment',
+                              typeCondition: {
+                                kind: 'NamedType',
+                                name: { kind: 'Name', value: 'AirQualityReading' },
+                              },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'co2' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'pm25' } },
+                                  { kind: 'Field', name: { kind: 'Name', value: 'humidity' } },
+                                ],
+                              },
+                            },
+                            {
+                              kind: 'InlineFragment',
+                              typeCondition: {
+                                kind: 'NamedType',
+                                name: { kind: 'Name', value: 'EnergyReading' },
+                              },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  { kind: 'Field', name: { kind: 'Name', value: 'energy' } },
+                                ],
+                              },
+                            },
+                            {
+                              kind: 'InlineFragment',
+                              typeCondition: {
+                                kind: 'NamedType',
+                                name: { kind: 'Name', value: 'MotionReading' },
+                              },
+                              selectionSet: {
+                                kind: 'SelectionSet',
+                                selections: [
+                                  {
+                                    kind: 'Field',
+                                    name: { kind: 'Name', value: 'motionDetected' },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'Field',
+                  name: { kind: 'Name', value: 'pageInfo' },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'hasNextPage' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'endCursor' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<ReadingsTableQuery, ReadingsTableQueryVariables>;

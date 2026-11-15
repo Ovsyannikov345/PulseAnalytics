@@ -4,6 +4,7 @@ import {
   formatBucketRange,
   formatBucketStart,
   formatDateTime,
+  formatDateTimeWithSeconds,
   formatDayMonth,
   formatDayStartHint,
   formatDays,
@@ -86,6 +87,7 @@ describe('date and time formatting', () => {
     it('formats the local date and time', () => {
       expect(formatDayMonth(instant)).toBe('10 Nov');
       expect(formatDateTime(instant)).toBe('10 Nov 14:30');
+      expect(formatDateTimeWithSeconds(instant)).toBe('10 Nov 14:30:05');
     });
 
     it('labels sub-day buckets with the local time and DAY buckets with the date', () => {

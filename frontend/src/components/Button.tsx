@@ -3,8 +3,10 @@ import type { ButtonHTMLAttributes } from 'react';
 import styles from './Button.module.css';
 import { cx } from './cx';
 
+export type ButtonVariant = 'primary' | 'secondary' | 'outline';
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary';
+  variant?: ButtonVariant;
   size?: 'regular' | 'compact';
 }
 

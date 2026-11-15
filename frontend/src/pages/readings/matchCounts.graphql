@@ -1,0 +1,6 @@
+query ReadingsMatchCounts($filter: ReadingFilterInput!) {
+  readingCounts(filter: $filter, groupBy: [TYPE]) {
+    type
+    count
+  }
+}

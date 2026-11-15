@@ -10,6 +10,8 @@
   font: inherit;
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
+  /* Also styles links that look like buttons (`ButtonLink`). */
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -32,6 +34,16 @@
 
 .secondary:hover {
   background: var(--color-surface-muted);
+}
+
+.outline {
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.outline:hover {
+  background: var(--color-primary-soft);
 }
 
 .compact {

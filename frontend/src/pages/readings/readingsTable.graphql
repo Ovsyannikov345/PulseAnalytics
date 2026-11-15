@@ -1,0 +1,28 @@
+query ReadingsTable($filter: ReadingFilterInput!, $first: Int!, $after: String) {
+  readings(filter: $filter, first: $first, after: $after) {
+    edges {
+      cursor
+      node {
+        id
+        type
+        location
+        receivedAt
+        ... on AirQualityReading {
+          co2
+          pm25
+          humidity
+        }
+        ... on EnergyReading {
+          energy
+        }
+        ... on MotionReading {
+          motionDetected
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
