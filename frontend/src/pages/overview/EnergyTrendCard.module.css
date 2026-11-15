@@ -1,0 +1,69 @@
+.card {
+  flex: 999 1 620px;
+}
+
+.error {
+  min-height: 270px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lineSwatch {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  background: var(--color-chart);
+}
+
+.gapSwatch {
+  display: inline-block;
+  width: 16px;
+  height: 10px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 2px;
+  background: var(--color-surface-muted);
+}
+
+.tooltipTitle {
+  margin-bottom: 6px;
+  font-weight: var(--font-weight-semibold);
+}
+
+.tooltipRows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+
+.tooltipRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tooltipRow dt {
+  color: var(--color-text-secondary);
+}
+
+.tooltipRow dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+}
+
+.tooltipEmpty {
+  color: var(--color-text-secondary);
+}

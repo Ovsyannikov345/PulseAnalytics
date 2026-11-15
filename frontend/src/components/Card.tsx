@@ -6,16 +6,24 @@ import { cx } from './cx';
 interface CardProps {
   title: string;
   description?: string;
+  /** While the content loads for the first time (skeletons). */
+  busy?: boolean;
   children: ReactNode;
   className?: string;
 }
 
 /** A widget's frame: a titled region (`h2`) with an optional description. */
-export function Card({ title, description, children, className }: Readonly<CardProps>) {
+export function Card({
+  title,
+  description,
+  busy = false,
+  children,
+  className,
+}: Readonly<CardProps>) {
   const titleId = useId();
 
   return (
-    <section aria-labelledby={titleId} className={cx(styles.card, className)}>
+    <section aria-labelledby={titleId} aria-busy={busy} className={cx(styles.card, className)}>
       <div className={styles.header}>
         <h2 id={titleId} className={styles.title}>
           {title}

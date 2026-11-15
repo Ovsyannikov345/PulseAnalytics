@@ -6,6 +6,8 @@ import { toIsoWithOffset } from '../../domain/utcOffset';
 import { latestReadings } from '../../test/overviewFixtures';
 import {
   energySparklinesMock,
+  energyTrendMock,
+  ingestionCoverageMock,
   latestReadingsMock,
   sampleCountMock,
 } from '../../test/overviewMocks';
@@ -50,6 +52,8 @@ function windowMocks(end: Date, sampleCount = 79_836): MockLink.MockedResponse[]
   return [
     sampleCountMock({ from: before(24), to }, sampleCount),
     energySparklinesMock({ from: before(2), to }, []),
+    energyTrendMock({ from: before(24), to }, []),
+    ingestionCoverageMock({ from: before(24), to }, []),
   ];
 }
 

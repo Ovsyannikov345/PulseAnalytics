@@ -1,4 +1,5 @@
 import type { TimeBucket } from '../graphql/generated/enums';
+import { bucketLengthMs } from './timeBuckets';
 
 const LOCALE = 'en-GB';
 
@@ -72,6 +73,19 @@ export function formatBucketStart(start: Date, bucket: TimeBucket): string {
   return bucket === 'DAY'
     ? start.toLocaleDateString(LOCALE, { day: 'numeric', month: 'short', timeZone: 'UTC' })
     : formatHourMinute(start);
+}
+
+/**
+ * A bucket's time span for tooltips: "15 Nov 08:45–09:00", or for a DAY bucket its UTC date ("15 Nov").
+ * The date is part of it because a chart of the last 24 hours holds the same hour twice.
+ */
+export function formatBucketRange(start: Date, bucket: TimeBucket): string {
+  if (bucket === 'DAY') {
+    return formatBucketStart(start, bucket);
+  }
+
+  const end = new Date(start.getTime() + bucketLengthMs(bucket));
+  return `${formatDateTime(start)}–${formatHourMinute(end)}`;
 }
 
 /**

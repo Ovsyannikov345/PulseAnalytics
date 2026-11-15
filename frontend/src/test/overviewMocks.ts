@@ -3,6 +3,8 @@ import type { MockLink } from '@apollo/client/testing';
 import type { MeterLocation } from '../graphql/generated/enums';
 import {
   OverviewEnergySparklinesDocument,
+  OverviewEnergyTrendDocument,
+  OverviewIngestionCoverageDocument,
   OverviewLatestReadingsDocument,
   OverviewSampleCountDocument,
 } from '../graphql/generated/graphql';
@@ -43,6 +45,55 @@ export function energySparklinesMock(
           location,
           bucketStart,
           energy: { __typename: 'MetricStatistics', average },
+        })),
+      },
+    },
+  };
+}
+
+export function energyTrendMock(
+  variables: { from: string; to: string },
+  rows: {
+    bucketStart: string;
+    average: number;
+    minimum: number;
+    maximum: number;
+    samples: number;
+  }[],
+): MockLink.MockedResponse {
+  return {
+    request: {
+      query: OverviewEnergyTrendDocument,
+      variables: { ...variables, bucket: 'FIFTEEN_MINUTES' },
+    },
+    result: {
+      data: {
+        energyStatistics: rows.map(({ bucketStart, samples, average, minimum, maximum }) => ({
+          __typename: 'EnergyStatistics',
+          bucketStart,
+          samples,
+          energy: { __typename: 'MetricStatistics', average, minimum, maximum },
+        })),
+      },
+    },
+  };
+}
+
+export function ingestionCoverageMock(
+  variables: { from: string; to: string },
+  rows: { bucketStart: string; samples: number }[],
+): MockLink.MockedResponse {
+  return {
+    request: {
+      query: OverviewIngestionCoverageDocument,
+      variables: { ...variables, bucket: 'HOUR' },
+    },
+    result: {
+      data: {
+        motionStatistics: rows.map(({ bucketStart, samples }) => ({
+          __typename: 'MotionStatistics',
+          bucketStart,
+          samples,
         })),
       },
     },

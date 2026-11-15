@@ -21,6 +21,8 @@ export default defineConfig({
               name: 'apollo',
               test: /[\\/]node_modules[\\/](@apollo|@wry|graphql|optimism|rxjs|tslib|@graphql-typed-document-node)[\\/]/,
             },
+            // The rest, mostly Recharts and its d3 and Redux dependencies; earlier groups win ties.
+            { name: 'vendor', test: /[\\/]node_modules[\\/]/ },
           ],
         },
       },

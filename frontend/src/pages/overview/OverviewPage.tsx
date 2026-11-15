@@ -7,16 +7,22 @@ import { Skeleton } from '../../components/states/Skeleton';
 import { expectedSamples, POLL_PERIOD_MS } from '../../domain/expectedSamples';
 import { formatTime } from '../../domain/formatting';
 import { isStale } from '../../domain/freshness';
-import { METER_COUNT } from '../../domain/meters';
+import { METER_COUNT, METERS_PER_TYPE } from '../../domain/meters';
 import { presetRange, type TimeRange } from '../../domain/timeRanges';
 import { toIsoWithOffset } from '../../domain/utcOffset';
 import {
   OverviewEnergySparklinesDocument,
+  OverviewEnergyTrendDocument,
+  OverviewIngestionCoverageDocument,
   OverviewLatestReadingsDocument,
   OverviewSampleCountDocument,
 } from '../../graphql/generated/graphql';
 import { mapWidgetQuery, toWidgetQuery, type WidgetQuery } from '../../graphql/widgetQuery';
+import { CoverageCard } from './CoverageCard';
 import { SPARKLINE_BUCKET, SPARKLINE_RANGE_MS, toEnergySparklines } from './energySparklines';
+import { ENERGY_TREND_BUCKET, toEnergyTrend } from './energyTrend';
+import { EnergyTrendCard } from './EnergyTrendCard';
+import { COVERAGE_BUCKET, toIngestionCoverage } from './ingestionCoverage';
 import { summarizeLatest } from './latestValues';
 import { LocationsSection } from './LocationsSection';
 import styles from './OverviewPage.module.css';
@@ -57,6 +63,14 @@ export function OverviewPage() {
     variables: { ...rangeVariables(lastTwoHours), bucket: SPARKLINE_BUCKET },
     fetchPolicy,
   });
+  const energyTrendResult = useQuery(OverviewEnergyTrendDocument, {
+    variables: { ...rangeVariables(lastDay), bucket: ENERGY_TREND_BUCKET },
+    fetchPolicy,
+  });
+  const coverageResult = useQuery(OverviewIngestionCoverageDocument, {
+    variables: { ...rangeVariables(lastDay), bucket: COVERAGE_BUCKET },
+    fetchPolicy,
+  });
 
   const latest = mapWidgetQuery(toWidgetQuery(latestResult), (data) =>
     summarizeLatest(data.latestReadings),
@@ -70,7 +84,15 @@ export function OverviewPage() {
     toEnergySparklines(data.energyStatistics, lastTwoHours, SPARKLINE_BUCKET),
   );
 
-  const queries = [latest, sampleCount, sparklines];
+  const energyTrend = mapWidgetQuery(toWidgetQuery(energyTrendResult), (data) =>
+    toEnergyTrend(data.energyStatistics, lastDay, ENERGY_TREND_BUCKET),
+  );
+  // Each poll stores a reading of every meter, so one type's samples measure the polls.
+  const coverage = mapWidgetQuery(toWidgetQuery(coverageResult), (data) =>
+    toIngestionCoverage(data.motionStatistics, lastDay, COVERAGE_BUCKET, METERS_PER_TYPE),
+  );
+
+  const queries = [latest, sampleCount, sparklines, energyTrend, coverage];
   const retries = failedRetries(queries);
   const latestReceivedAt = latest.status === 'ready' ? latest.data.latestReceivedAt : null;
 
@@ -109,6 +131,10 @@ export function OverviewPage() {
             expectedSamples={expectedSamples(lastDay, METER_COUNT)}
           />
           <LocationsSection latest={latest} trend={sparklines} />
+          <section aria-label="Trends" className={styles.trends}>
+            <EnergyTrendCard trend={energyTrend} range={lastDay} />
+            <CoverageCard coverage={coverage} />
+          </section>
           <footer className={styles.footer}>
             Every value is a sample: meters are polled every {String(POLL_PERIOD_MS / 1000)} s and
             stamped with the time they were received.

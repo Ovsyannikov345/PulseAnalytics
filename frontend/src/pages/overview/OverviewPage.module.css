@@ -3,6 +3,12 @@
   font-size: var(--font-size-md);
 }
 
+.trends {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .footer {
   padding-top: 16px;
   border-top: 1px solid var(--color-border);
