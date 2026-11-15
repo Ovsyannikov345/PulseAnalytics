@@ -7,8 +7,11 @@ import { PageError } from '../../components/states/PageError';
 import { getQueryErrorKind } from '../../graphql/errors';
 import {
   AnalyticsAirQualityDocument,
+  AnalyticsAirQualitySummaryDocument,
   AnalyticsEnergyDocument,
+  AnalyticsEnergySummaryDocument,
   AnalyticsMotionActivityDocument,
+  AnalyticsMotionSummaryDocument,
 } from '../../graphql/generated/graphql';
 import { useWidgetQuery } from '../../graphql/useWidgetQuery';
 import type { WidgetQuery } from '../../graphql/widgetQuery';
@@ -26,6 +29,8 @@ import styles from './AnalyticsPage.module.css';
 import { EnergyCard } from './EnergyCard';
 import { toEnergySeries } from './energySeries';
 import { FilterBar } from './FilterBar';
+import { toAirQualitySummary, toEnergySummary, toMotionSummary } from './locationSummary';
+import { LocationSummaryCard } from './LocationSummaryCard';
 import { toMotionActivity } from './motionActivity';
 import { MotionActivityCard } from './MotionActivityCard';
 import { appliedNowState, useAppliedNow } from './useAppliedNow';
@@ -63,8 +68,28 @@ export function AnalyticsPage() {
     toMotionActivity(data.motionStatistics, range, bucket, location),
   );
 
-  const results = [energyResult, airQualityResult, motionResult];
-  const queries = [energy, airQuality, motion];
+  const energySummaryResult = useQuery(AnalyticsEnergySummaryDocument, { variables });
+  const energySummary = useWidgetQuery(energySummaryResult, (data) =>
+    toEnergySummary(data.energyStatistics),
+  );
+  const airQualitySummaryResult = useQuery(AnalyticsAirQualitySummaryDocument, { variables });
+  const airQualitySummary = useWidgetQuery(airQualitySummaryResult, (data) =>
+    toAirQualitySummary(data.airQualityStatistics),
+  );
+  const motionSummaryResult = useQuery(AnalyticsMotionSummaryDocument, { variables });
+  const motionSummary = useWidgetQuery(motionSummaryResult, (data) =>
+    toMotionSummary(data.motionStatistics),
+  );
+
+  const results = [
+    energyResult,
+    airQualityResult,
+    motionResult,
+    energySummaryResult,
+    airQualitySummaryResult,
+    motionSummaryResult,
+  ];
+  const queries = [energy, airQuality, motion, energySummary, airQualitySummary, motionSummary];
   const invalidInput = results.some(
     (result) => result.error !== undefined && getQueryErrorKind(result.error) === 'invalidInput',
   );
@@ -106,6 +131,12 @@ export function AnalyticsPage() {
           <EnergyCard energy={energy} location={location} bucket={bucket} />
           <AirQualitySection airQuality={airQuality} location={location} />
           <MotionActivityCard activity={motion} bucket={bucket} />
+          <LocationSummaryCard
+            energy={energySummary}
+            airQuality={airQualitySummary}
+            motion={motionSummary}
+            location={location}
+          />
         </div>
       )}
     </>

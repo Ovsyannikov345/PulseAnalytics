@@ -3,8 +3,11 @@ import type { MockLink } from '@apollo/client/testing';
 import type { MeterLocation, TimeBucket } from '../graphql/generated/enums';
 import {
   AnalyticsAirQualityDocument,
+  AnalyticsAirQualitySummaryDocument,
   AnalyticsEnergyDocument,
+  AnalyticsEnergySummaryDocument,
   AnalyticsMotionActivityDocument,
+  AnalyticsMotionSummaryDocument,
 } from '../graphql/generated/graphql';
 
 export interface StatisticsVariables {
@@ -76,6 +79,63 @@ export function motionActivityMock(
           bucketStart,
           samples,
           motionSamples: Math.round(activityRatio * samples),
+          activityRatio,
+        })),
+      },
+    },
+  };
+}
+
+export function energySummaryMock(
+  variables: StatisticsVariables,
+  rows: { location: MeterLocation; average: number; minimum: number; maximum: number }[],
+): MockLink.MockedResponse {
+  return {
+    request: { query: AnalyticsEnergySummaryDocument, variables },
+    result: {
+      data: {
+        energyStatistics: rows.map(({ location, average, minimum, maximum }) => ({
+          __typename: 'EnergyStatistics',
+          location,
+          energy: metric(average, minimum, maximum),
+        })),
+      },
+    },
+  };
+}
+
+export function airQualitySummaryMock(
+  variables: StatisticsVariables,
+  rows: { location: MeterLocation; co2: number; pm25: number; humidity: number }[],
+): MockLink.MockedResponse {
+  return {
+    request: { query: AnalyticsAirQualitySummaryDocument, variables },
+    result: {
+      data: {
+        airQualityStatistics: rows.map(({ location, co2, pm25, humidity }) => ({
+          __typename: 'AirQualityStatistics',
+          location,
+          co2: { __typename: 'MetricStatistics', average: co2 },
+          pm25: { __typename: 'MetricStatistics', average: pm25 },
+          humidity: { __typename: 'MetricStatistics', average: humidity },
+        })),
+      },
+    },
+  };
+}
+
+export function motionSummaryMock(
+  variables: StatisticsVariables,
+  rows: { location: MeterLocation; activityRatio: number; samples: number }[],
+): MockLink.MockedResponse {
+  return {
+    request: { query: AnalyticsMotionSummaryDocument, variables },
+    result: {
+      data: {
+        motionStatistics: rows.map(({ location, activityRatio, samples }) => ({
+          __typename: 'MotionStatistics',
+          location,
+          samples,
           activityRatio,
         })),
       },

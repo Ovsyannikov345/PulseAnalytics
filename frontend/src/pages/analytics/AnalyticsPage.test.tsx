@@ -6,10 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { INVALID_FILTER_MESSAGE } from '../../graphql/errors';
 import {
   airQualityMock,
+  airQualitySummaryMock,
   energyMock,
+  energySummaryMock,
   motionActivityMock,
+  motionSummaryMock,
   rejected,
   type BucketedVariables,
+  type StatisticsVariables,
 } from '../../test/analyticsMocks';
 import { failing } from '../../test/overviewMocks';
 import { renderRoute } from '../../test/renderRoute';
@@ -44,7 +48,24 @@ const motion = motionActivityMock(lastDay, [
   { location: 'KITCHEN', bucketStart: '2026-11-15T11:00:00Z', activityRatio: 0.5 },
 ]);
 
-type Operation = 'energy' | 'airQuality' | 'motion';
+const lastDayWhole: StatisticsVariables = {
+  from: lastDay.from,
+  to: lastDay.to,
+  locations: [],
+};
+
+const energySummary = energySummaryMock(lastDayWhole, [
+  { location: 'KITCHEN', average: 512.345, minimum: 12.19, maximum: 989.23 },
+]);
+const airQualitySummary = airQualitySummaryMock(lastDayWhole, [
+  { location: 'KITCHEN', co2: 712, pm25: 22.4, humidity: 38.6 },
+]);
+const motionSummary = motionSummaryMock(lastDayWhole, [
+  { location: 'KITCHEN', activityRatio: 0.42, samples: 4435 },
+]);
+
+type Operation =
+  'energy' | 'airQuality' | 'motion' | 'energySummary' | 'airQualitySummary' | 'motionSummary';
 
 function renderAnalytics(
   path = '/analytics',
@@ -54,6 +75,9 @@ function renderAnalytics(
     energy: [energy],
     airQuality: [airQuality],
     motion: [motion],
+    energySummary: [energySummary],
+    airQualitySummary: [airQualitySummary],
+    motionSummary: [motionSummary],
     ...responses,
   };
   return renderRoute(path, { mocks: Object.values(mocks).flat() });
@@ -63,7 +87,8 @@ function rangeButton(name: string) {
   return within(screen.getByRole('group', { name: 'Time range' })).getByRole('button', { name });
 }
 
-describe('AnalyticsPage', () => {
+// Each test renders the whole page: five Recharts charts and a table, slow under coverage on a busy machine.
+describe('AnalyticsPage', { timeout: 15_000 }, () => {
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(now);
@@ -205,6 +230,36 @@ describe('AnalyticsPage', () => {
     });
   });
 
+  describe('summary by location', () => {
+    it('joins the three operations into one row per location', async () => {
+      renderAnalytics();
+
+      const kitchen = await screen.findByRole('rowheader', { name: 'Kitchen' });
+      expect(kitchen.closest('tr')).toHaveTextContent(
+        'Kitchen512.3512.19989.2371222.438.642 %4,435',
+      );
+      expect(screen.getAllByRole('rowheader')).toHaveLength(6);
+    });
+
+    it('asks for the selected location only', async () => {
+      const kitchenOnly = { ...lastDayWhole, locations: ['KITCHEN' as const] };
+      renderAnalytics('/analytics?location=KITCHEN', {
+        energy: [energyMock({ ...lastDay, locations: ['KITCHEN'] }, [])],
+        airQuality: [airQualityMock({ ...lastDay, locations: ['KITCHEN'] }, [])],
+        motion: [motionActivityMock({ ...lastDay, locations: ['KITCHEN'] }, [])],
+        energySummary: [energySummaryMock(kitchenOnly, [])],
+        airQualitySummary: [airQualitySummaryMock(kitchenOnly, [])],
+        motionSummary: [
+          motionSummaryMock(kitchenOnly, [{ location: 'KITCHEN', activityRatio: 1, samples: 10 }]),
+        ],
+      });
+
+      const kitchen = await screen.findByRole('rowheader', { name: 'Kitchen' });
+      expect(kitchen.closest('tr')).toHaveTextContent('Kitchen——————100 %10');
+      expect(screen.getAllByRole('rowheader')).toHaveLength(1);
+    });
+  });
+
   describe('errors', () => {
     it('shows the page error when every widget failed, and retries them all', async () => {
       const user = userEvent.setup();
@@ -212,6 +267,9 @@ describe('AnalyticsPage', () => {
         energy: [failing(energy), energy],
         airQuality: [failing(airQuality), airQuality],
         motion: [failing(motion), motion],
+        energySummary: [failing(energySummary), energySummary],
+        airQualitySummary: [failing(airQualitySummary), airQualitySummary],
+        motionSummary: [failing(motionSummary), motionSummary],
       });
 
       const alert = await screen.findByRole('alert');
@@ -222,6 +280,7 @@ describe('AnalyticsPage', () => {
 
       expect(await screen.findByRole('img', { name: /^Average energy/ })).toBeInTheDocument();
       expect(await screen.findByRole('region', { name: 'CO₂' })).toBeInTheDocument();
+      expect(await screen.findByRole('table', { name: 'Summary by location' })).toBeInTheDocument();
     });
 
     it('shows a rejected filter at the filters instead of the page error', async () => {
@@ -229,12 +288,16 @@ describe('AnalyticsPage', () => {
         energy: [rejected(energy)],
         airQuality: [rejected(airQuality)],
         motion: [rejected(motion)],
+        energySummary: [rejected(energySummary)],
+        airQualitySummary: [rejected(airQualitySummary)],
+        motionSummary: [rejected(motionSummary)],
       });
 
       await waitFor(() => {
         expect(screen.getAllByText("This chart couldn't be loaded.")).toHaveLength(2);
       });
       expect(await screen.findByText("These charts couldn't be loaded.")).toBeInTheDocument();
+      expect(await screen.findByText("This table couldn't be loaded.")).toBeInTheDocument();
       expect(screen.getByRole('alert')).toHaveTextContent(INVALID_FILTER_MESSAGE);
       expect(screen.queryByText("Couldn't load the dashboard")).not.toBeInTheDocument();
     });

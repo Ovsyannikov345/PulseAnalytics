@@ -1,0 +1,10 @@
+query AnalyticsEnergySummary($from: DateTime!, $to: DateTime!, $locations: [MeterLocation!]!) {
+  energyStatistics(filter: { from: $from, to: $to, locations: $locations }, groupBy: [LOCATION]) {
+    location
+    energy {
+      average
+      minimum
+      maximum
+    }
+  }
+}
