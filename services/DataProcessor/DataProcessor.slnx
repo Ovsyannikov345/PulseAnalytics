@@ -13,6 +13,7 @@
   </Folder>
   <Project Path="DataProcessor.Api/DataProcessor.Api.csproj" />
   <Project Path="DataProcessor.Application/DataProcessor.Application.csproj" />
+  <Project Path="DataProcessor.Contracts/DataProcessor.Contracts.csproj" />
   <Project Path="DataProcessor.Domain/DataProcessor.Domain.csproj" />
   <Project Path="DataProcessor.Infrastructure/DataProcessor.Infrastructure.csproj" />
 </Solution>

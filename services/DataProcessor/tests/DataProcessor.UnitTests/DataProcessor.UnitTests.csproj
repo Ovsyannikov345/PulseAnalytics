@@ -22,6 +22,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\DataProcessor.Api\DataProcessor.Api.csproj" />
 		<ProjectReference Include="..\..\DataProcessor.Application\DataProcessor.Application.csproj" />
+		<ProjectReference Include="..\..\DataProcessor.Contracts\DataProcessor.Contracts.csproj" />
 		<ProjectReference Include="..\..\DataProcessor.Infrastructure\DataProcessor.Infrastructure.csproj" />
 	</ItemGroup>
 
