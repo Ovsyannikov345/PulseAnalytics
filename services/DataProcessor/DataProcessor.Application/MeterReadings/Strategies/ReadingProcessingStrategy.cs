@@ -78,7 +78,7 @@ internal abstract class ReadingProcessingStrategy<TModel>(
         metrics.RecordReading(MeterType, model.Location, ReadingOutcome.Stored);
 
         // The stored event is a best-effort live hint: the reading is already stored, and a redelivery would only
-        // be skipped as a duplicate, so a failed publish doesn't fail the message. The publisher logs and counts it.
+        // be skipped as a duplicate, so a failed publish doesn't fail the message.
         _ = await storedReadingsPublisher.PublishAsync(reading, ct);
 
         return Result.Succeed();

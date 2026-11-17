@@ -27,7 +27,7 @@ internal static class StoredReadingMessageMapper
     public static OutgoingMessage ToOutgoingMessage(MeterReading reading)
     {
         var messageId = Guid.CreateVersion7();
-        var location = ToContractLocation(reading.Location);
+        var location = ToExtenrnalContractLocation(reading.Location);
 
         return reading.Payload switch
         {
@@ -84,8 +84,7 @@ internal static class StoredReadingMessageMapper
             Persistent: false);
     }
 
-    // Mapped by name, not by value, so the contract doesn't depend on the database's integer values.
-    private static ContractMeterLocation ToContractLocation(MeterLocation location)
+    private static ContractMeterLocation ToExtenrnalContractLocation(MeterLocation location)
     {
         return location switch
         {

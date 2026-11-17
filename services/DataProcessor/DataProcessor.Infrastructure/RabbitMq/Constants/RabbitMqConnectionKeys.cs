@@ -1,4 +1,4 @@
-﻿namespace DataProcessor.Infrastructure.RabbitMq.Connection;
+﻿namespace DataProcessor.Infrastructure.RabbitMq.Constants;
 
 /// <summary>
 /// Service keys of the two RabbitMQ connections. Publishing has a connection of its own, because the broker blocks

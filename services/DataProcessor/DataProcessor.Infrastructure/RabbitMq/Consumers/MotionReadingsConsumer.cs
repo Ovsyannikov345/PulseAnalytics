@@ -4,6 +4,7 @@ using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.Telemetry.Metrics;
 using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
+using DataProcessor.Infrastructure.RabbitMq.Constants;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.DependencyInjection;

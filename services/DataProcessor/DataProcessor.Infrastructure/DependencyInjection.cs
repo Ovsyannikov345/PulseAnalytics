@@ -4,6 +4,7 @@ using DataProcessor.Infrastructure.Database;
 using DataProcessor.Infrastructure.Database.Configuration;
 using DataProcessor.Infrastructure.RabbitMq.Configuration;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
+using DataProcessor.Infrastructure.RabbitMq.Constants;
 using DataProcessor.Infrastructure.RabbitMq.Consumers;
 using DataProcessor.Infrastructure.RabbitMq.Publishers;
 using Microsoft.EntityFrameworkCore;

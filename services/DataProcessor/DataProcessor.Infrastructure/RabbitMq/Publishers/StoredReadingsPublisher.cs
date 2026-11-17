@@ -6,6 +6,7 @@ using DataProcessor.Domain.Entities.MeterReadings;
 using DataProcessor.Infrastructure.Abstractions;
 using DataProcessor.Infrastructure.RabbitMq.Configuration;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
+using DataProcessor.Infrastructure.RabbitMq.Constants;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,10 +19,6 @@ namespace DataProcessor.Infrastructure.RabbitMq.Publishers;
 /// <summary>
 /// Publishes one stored event per stored reading over a single long-lived channel.
 /// </summary>
-/// <remarks>
-/// The processor publishes one event per consumed message, so opening a channel per event would cost a broker
-/// round trip each time. Publishes are serialized, because a channel must not be used concurrently.
-/// </remarks>
 internal sealed class StoredReadingsPublisher(
     [FromKeyedServices(RabbitMqConnectionKeys.Publishing)] IRabbitMqConnectionProvider connectionProvider,
     IOptions<RabbitMqSettings> options,
@@ -40,6 +37,7 @@ internal sealed class StoredReadingsPublisher(
     {
         var message = StoredReadingMessageMapper.ToOutgoingMessage(reading);
 
+        // Opening a new channel each time is too expensive. But channel must not be used concurrently.
         await _publishLock.WaitAsync(ct);
 
         try
