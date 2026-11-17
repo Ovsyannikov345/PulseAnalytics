@@ -72,9 +72,14 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
         await PublishAsync(RoutingKeys[typeof(TEvent)], readingEvent.MessageId, typeof(TEvent).Name, body, ct);
     }
 
-    public async Task PublishRawAsync(string routingKey, byte[] body, CancellationToken ct)
+    /// <returns>The message ID the message was published with.</returns>
+    public async Task<Guid> PublishRawAsync(string routingKey, byte[] body, CancellationToken ct)
     {
-        await PublishAsync(routingKey, Guid.CreateVersion7(), "Unknown", body, ct);
+        var messageId = Guid.CreateVersion7();
+
+        await PublishAsync(routingKey, messageId, "Unknown", body, ct);
+
+        return messageId;
     }
 
     /// <summary>
@@ -105,6 +110,21 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
         var state = await GetQueueStateAsync(queue, ct);
 
         return state?.MessageCount ?? throw new InvalidOperationException($"Queue {queue} does not exist");
+    }
+
+    /// <summary>
+    /// Takes every ready message off the queue and returns their message IDs.
+    /// </summary>
+    public async Task<IReadOnlyList<string?>> TakeReadyMessageIdsAsync(string queue, CancellationToken ct)
+    {
+        var messageIds = new List<string?>();
+
+        while (await _channel.BasicGetAsync(queue, autoAck: true, ct) is { } message)
+        {
+            messageIds.Add(message.BasicProperties.MessageId);
+        }
+
+        return messageIds;
     }
 
     public async Task PurgeAsync(string queue, CancellationToken ct)

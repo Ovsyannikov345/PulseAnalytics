@@ -18,6 +18,8 @@ public static class ObservabilityExtensions
 
     private const string RabbitMqSubscriberSourceName = "RabbitMQ.Client.Subscriber";
 
+    private const string RabbitMqPublisherSourceName = "RabbitMQ.Client.Publisher";
+
     public static IServiceCollection AddObservability(this IServiceCollection services, IConfiguration configuration)
     {
         var openTelemetrySettings = configuration.GetSection(OpenTelemetrySettings.SectionName).Get<OpenTelemetrySettings>();
@@ -48,6 +50,7 @@ public static class ObservabilityExtensions
             .WithTracing(tracing => tracing
                 .AddSource(ProcessorTelemetry.ScopeName)
                 .AddSource(RabbitMqSubscriberSourceName)
+                .AddSource(RabbitMqPublisherSourceName)
                 .AddSource(NpgsqlTelemetryName)
                 .AddAspNetCoreInstrumentation(options => options.Filter = context => !context.IsHealthCheckRequest())
                 .AddOtlpExporter(exporterOptions => exporterOptions.Endpoint = otlpEndpoint));

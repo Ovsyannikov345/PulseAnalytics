@@ -14,7 +14,8 @@ public sealed class RabbitMqSettingsTests
         VirtualHost = "/",
         UserName = "processor",
         Password = "secret",
-        ClientProvidedName = "pulse-analytics.data-processor"
+        ClientProvidedName = "pulse-analytics.data-processor",
+        PublishTimeoutInSeconds = 5
     };
 
     [Fact]
@@ -131,5 +132,35 @@ public sealed class RabbitMqSettingsTests
 
         // Assert
         results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(RabbitMqSettings.Port)]);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(60)]
+    public void Validate_PublishTimeoutWithinRange_Passes(int publishTimeoutInSeconds)
+    {
+        // Arrange
+        var settings = ValidSettings with { PublishTimeoutInSeconds = publishTimeoutInSeconds };
+
+        // Act
+        var results = DataAnnotationsValidator.Validate(settings);
+
+        // Assert
+        results.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)] // A missing PublishTimeoutInSeconds binds to 0
+    [InlineData(61)]
+    public void Validate_PublishTimeoutOutOfRange_Fails(int publishTimeoutInSeconds)
+    {
+        // Arrange
+        var settings = ValidSettings with { PublishTimeoutInSeconds = publishTimeoutInSeconds };
+
+        // Act
+        var results = DataAnnotationsValidator.Validate(settings);
+
+        // Assert
+        results.ShouldHaveSingleItem().MemberNames.ShouldBe([nameof(RabbitMqSettings.PublishTimeoutInSeconds)]);
     }
 }

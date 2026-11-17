@@ -20,6 +20,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DataProcessor.Application\DataProcessor.Application.csproj" />
+		<ProjectReference Include="..\DataProcessor.Contracts\DataProcessor.Contracts.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

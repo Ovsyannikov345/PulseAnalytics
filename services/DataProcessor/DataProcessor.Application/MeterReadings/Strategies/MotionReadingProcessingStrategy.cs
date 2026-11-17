@@ -1,5 +1,6 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Interfaces.Database;
+using DataProcessor.Application.Interfaces.Messaging;
 using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.Telemetry.Metrics;
 using DataProcessor.Application.Validation;
@@ -13,9 +14,10 @@ namespace DataProcessor.Application.MeterReadings.Strategies;
 internal sealed class MotionReadingProcessingStrategy(
     IApplicationDbContext dbContext,
     IValidator<MotionReadingModel> validator,
+    IStoredReadingsPublisher storedReadingsPublisher,
     IMetricsService metrics,
     ILogger<MotionReadingProcessingStrategy> logger)
-    : ReadingProcessingStrategy<MotionReadingModel>(dbContext, metrics, logger)
+    : ReadingProcessingStrategy<MotionReadingModel>(dbContext, storedReadingsPublisher, metrics, logger)
 {
     protected override MeterType MeterType => MeterType.Motion;
 

@@ -1,4 +1,6 @@
-﻿using DataProcessor.Application.Interfaces.Database;
+﻿using Ausiannikau.Utilities.Results;
+using DataProcessor.Application.Interfaces.Database;
+using DataProcessor.Application.Interfaces.Messaging;
 using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.MeterReadings.Strategies;
 using DataProcessor.Application.Telemetry.Metrics;
@@ -28,6 +30,7 @@ public sealed class ReadingProcessingStrategiesTests
     private readonly IValidator<MotionReadingModel> _motionValidator = A.Fake<IValidator<MotionReadingModel>>();
     private readonly IValidator<EnergyReadingModel> _energyValidator = A.Fake<IValidator<EnergyReadingModel>>();
     private readonly IValidator<AirQualityReadingModel> _airQualityValidator = A.Fake<IValidator<AirQualityReadingModel>>();
+    private readonly IStoredReadingsPublisher _storedReadingsPublisher = A.Fake<IStoredReadingsPublisher>();
     private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
     private readonly FakeLogCollector _logCollector = new();
 
@@ -35,6 +38,8 @@ public sealed class ReadingProcessingStrategiesTests
     {
         StoredReadingsAre(CreateStoredReading(Guid.CreateVersion7()));
         ValidationReturns(new ValidationResult());
+        A.CallTo(() => _storedReadingsPublisher.PublishAsync(A<MeterReading>._, A<CancellationToken>._))
+            .Returns(Result.Succeed());
     }
 
     public enum StrategyKind
@@ -289,6 +294,116 @@ public sealed class ReadingProcessingStrategiesTests
         A.CallTo(_metrics).MustNotHaveHappened();
     }
 
+    [Theory]
+    [InlineData(StrategyKind.Motion)]
+    [InlineData(StrategyKind.Energy)]
+    [InlineData(StrategyKind.AirQuality)]
+    public async Task ProcessAsync_NewReading_PublishesAddedReadingAfterSavingChanges(StrategyKind kind)
+    {
+        // Act
+        await CreateSut(kind).ProcessAsync(CreateModel(kind), TestContext.Current.CancellationToken);
+
+        // Assert
+        var addedReading = Fake.GetCalls(_dbContext)
+            .Single(call => call.Method.Name == nameof(IApplicationDbContext.Add))
+            .GetArgument<MeterReading>(0)!;
+
+        A.CallTo(() => _dbContext.SaveChangesAsync(A<CancellationToken>._))
+            .MustHaveHappenedOnceExactly()
+            .Then(A.CallTo(() => _storedReadingsPublisher.PublishAsync(
+                    A<MeterReading>.That.IsSameAs(addedReading),
+                    A<CancellationToken>._))
+                .MustHaveHappenedOnceExactly());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_NewReading_PassesCancellationTokenToPublisher()
+    {
+        // Arrange
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+
+        // Act
+        await CreateSut(StrategyKind.Motion).ProcessAsync(CreateModel(StrategyKind.Motion), cts.Token);
+
+        // Assert
+        A.CallTo(() => _storedReadingsPublisher.PublishAsync(A<MeterReading>._, cts.Token)).MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_PublishFails_StillSucceeds()
+    {
+        // Arrange
+        A.CallTo(() => _storedReadingsPublisher.PublishAsync(A<MeterReading>._, A<CancellationToken>._))
+            .Returns(Result.Fail("Message was not confirmed by RabbitMQ in time"));
+
+        // Act
+        var result = await CreateSut(StrategyKind.Energy)
+            .ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        A.CallTo(() => _metrics.RecordReading(MeterType.Energy, MeterLocation.Office, ReadingOutcome.Stored))
+            .MustHaveHappenedOnceExactly();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_CancelledWhilePublishing_Throws()
+    {
+        // Arrange
+        A.CallTo(() => _storedReadingsPublisher.PublishAsync(A<MeterReading>._, A<CancellationToken>._))
+            .ThrowsAsync(new OperationCanceledException());
+
+        // Act
+        var act = () => CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.ShouldThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ReadingWithStoredDeduplicationKey_PublishesNothing()
+    {
+        // Arrange
+        StoredReadingsAre(CreateStoredReading(DeduplicationKey));
+
+        // Act
+        await CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_storedReadingsPublisher).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_InvalidReading_PublishesNothing()
+    {
+        // Arrange
+        ValidationReturns(new ValidationResult(
+        [
+            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+        ]));
+
+        // Act
+        await CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        A.CallTo(_storedReadingsPublisher).MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_SavingChangesThrows_PublishesNothing()
+    {
+        // Arrange
+        A.CallTo(() => _dbContext.SaveChangesAsync(A<CancellationToken>._))
+            .ThrowsAsync(new InvalidOperationException("Database is unavailable"));
+
+        // Act
+        var act = () => CreateSut(StrategyKind.Energy).ProcessAsync(CreateModel(StrategyKind.Energy), TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.ShouldThrowAsync<InvalidOperationException>();
+        A.CallTo(_storedReadingsPublisher).MustNotHaveHappened();
+    }
+
     private static MeterReadingModel CreateModel(StrategyKind kind)
     {
         return kind switch
@@ -338,16 +453,19 @@ public sealed class ReadingProcessingStrategiesTests
             StrategyKind.Motion => new MotionReadingProcessingStrategy(
                 _dbContext,
                 _motionValidator,
+                _storedReadingsPublisher,
                 _metrics,
                 new FakeLogger<MotionReadingProcessingStrategy>(_logCollector)),
             StrategyKind.Energy => new EnergyReadingProcessingStrategy(
                 _dbContext,
                 _energyValidator,
+                _storedReadingsPublisher,
                 _metrics,
                 new FakeLogger<EnergyReadingProcessingStrategy>(_logCollector)),
             _ => new AirQualityReadingProcessingStrategy(
                 _dbContext,
                 _airQualityValidator,
+                _storedReadingsPublisher,
                 _metrics,
                 new FakeLogger<AirQualityReadingProcessingStrategy>(_logCollector))
         };

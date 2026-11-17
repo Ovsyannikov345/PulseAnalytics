@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
 internal sealed class MotionReadingsConsumer(
-    IRabbitMqConnectionProvider connectionProvider,
+    [FromKeyedServices(RabbitMqConnectionKeys.Consuming)] IRabbitMqConnectionProvider connectionProvider,
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IMetricsService metrics,
