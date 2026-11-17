@@ -59,7 +59,7 @@ jobs:
           /k:"${{ inputs.project-key }}"
           /o:"${{ env.SONAR_ORGANIZATION }}"
           /d:sonar.host.url="${{ env.SONAR_HOST_URL }}"
-          /d:sonar.projectBaseDir="$(dirname '${{ inputs.solution }}')"
+          /d:sonar.projectBaseDir="${{ github.workspace }}/$(dirname '${{ inputs.solution }}')"
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.cs.vscoveragexml.reportsPaths="${{ runner.temp }}/coverage/**/*.xml"
           /d:sonar.qualitygate.wait=true
