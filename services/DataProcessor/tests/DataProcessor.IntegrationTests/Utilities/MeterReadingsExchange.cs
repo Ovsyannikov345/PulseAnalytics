@@ -67,14 +67,25 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
     public async Task PublishAsync<TEvent>(TEvent readingEvent, CancellationToken ct)
         where TEvent : MeterReadingEvent
     {
-        var body = JsonSerializer.SerializeToUtf8Bytes(readingEvent, JsonSerializerOptions.Web);
-
-        await PublishAsync(RoutingKeys[typeof(TEvent)], readingEvent.MessageId, typeof(TEvent).Name, body, ct);
+        await PublishAsync(readingEvent, Guid.CreateVersion7(), ct);
     }
 
-    public async Task PublishRawAsync(string routingKey, byte[] body, CancellationToken ct)
+    public async Task PublishAsync<TEvent>(TEvent readingEvent, Guid correlationId, CancellationToken ct)
+        where TEvent : MeterReadingEvent
     {
-        await PublishAsync(routingKey, Guid.CreateVersion7(), "Unknown", body, ct);
+        var body = JsonSerializer.SerializeToUtf8Bytes(readingEvent, JsonSerializerOptions.Web);
+
+        await PublishAsync(RoutingKeys[typeof(TEvent)], readingEvent.MessageId, correlationId, typeof(TEvent).Name, body, ct);
+    }
+
+    /// <returns>The message ID the message was published with.</returns>
+    public async Task<Guid> PublishRawAsync(string routingKey, byte[] body, CancellationToken ct)
+    {
+        var messageId = Guid.CreateVersion7();
+
+        await PublishAsync(routingKey, messageId, Guid.CreateVersion7(), "Unknown", body, ct);
+
+        return messageId;
     }
 
     /// <summary>
@@ -107,6 +118,21 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
         return state?.MessageCount ?? throw new InvalidOperationException($"Queue {queue} does not exist");
     }
 
+    /// <summary>
+    /// Takes every ready message off the queue and returns their message IDs.
+    /// </summary>
+    public async Task<IReadOnlyList<string?>> TakeReadyMessageIdsAsync(string queue, CancellationToken ct)
+    {
+        var messageIds = new List<string?>();
+
+        while (await _channel.BasicGetAsync(queue, autoAck: true, ct) is { } message)
+        {
+            messageIds.Add(message.BasicProperties.MessageId);
+        }
+
+        return messageIds;
+    }
+
     public async Task PurgeAsync(string queue, CancellationToken ct)
     {
         await _channel.QueuePurgeAsync(queue, ct);
@@ -121,12 +147,18 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    private async Task PublishAsync(string routingKey, Guid messageId, string messageType, byte[] body, CancellationToken ct)
+    private async Task PublishAsync(
+        string routingKey,
+        Guid messageId,
+        Guid correlationId,
+        string messageType,
+        byte[] body,
+        CancellationToken ct)
     {
         var properties = new BasicProperties
         {
             MessageId = messageId.ToString(),
-            CorrelationId = Guid.CreateVersion7().ToString(),
+            CorrelationId = correlationId.ToString(),
             ContentType = "application/json",
             DeliveryMode = DeliveryModes.Persistent,
             Type = messageType

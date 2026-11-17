@@ -1,5 +1,6 @@
 ﻿using Ausiannikau.Utilities.Results;
 using DataProcessor.Application.Interfaces.Database;
+using DataProcessor.Application.Interfaces.Messaging;
 using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.Telemetry.Metrics;
 using DataProcessor.Application.Telemetry.Metrics.Enums;
@@ -20,6 +21,7 @@ internal interface IReadingProcessingStrategy
 
 internal abstract class ReadingProcessingStrategy<TModel>(
     IApplicationDbContext dbContext,
+    IStoredReadingsPublisher storedReadingsPublisher,
     IMetricsService metrics,
     ILogger logger)
     : IReadingProcessingStrategy
@@ -58,20 +60,26 @@ internal abstract class ReadingProcessingStrategy<TModel>(
             return Result.Succeed();
         }
 
-        dbContext.Add(new MeterReading
+        var reading = new MeterReading
         {
             DeduplicationKey = typedModel.DeduplicationKey,
             Type = MeterType,
             Location = typedModel.Location,
             ReceivedAt = typedModel.ReceivedAt,
             Payload = CreatePayload(typedModel)
-        });
+        };
+
+        dbContext.Add(reading);
 
         await dbContext.SaveChangesAsync(ct);
 
         logger.ReadingStored(MeterType, model.Location, model.DeduplicationKey);
 
         metrics.RecordReading(MeterType, model.Location, ReadingOutcome.Stored);
+
+        // The stored event is a best-effort live hint: the reading is already stored, and a redelivery would only
+        // be skipped as a duplicate, so a failed publish doesn't fail the message.
+        _ = await storedReadingsPublisher.PublishAsync(reading, ct);
 
         return Result.Succeed();
     }

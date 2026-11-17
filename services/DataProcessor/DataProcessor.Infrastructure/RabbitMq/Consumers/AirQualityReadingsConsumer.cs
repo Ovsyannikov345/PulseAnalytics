@@ -4,6 +4,7 @@ using DataProcessor.Application.MeterReadings.Models;
 using DataProcessor.Application.Telemetry.Metrics;
 using DataProcessor.Application.Telemetry.Traces;
 using DataProcessor.Infrastructure.RabbitMq.Connection;
+using DataProcessor.Infrastructure.RabbitMq.Constants;
 using DataProcessor.Infrastructure.RabbitMq.Mappers;
 using DataProcessor.Infrastructure.RabbitMq.Topology;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace DataProcessor.Infrastructure.RabbitMq.Consumers;
 
 internal sealed class AirQualityReadingsConsumer(
-    IRabbitMqConnectionProvider connectionProvider,
+    [FromKeyedServices(RabbitMqConnectionKeys.Consuming)] IRabbitMqConnectionProvider connectionProvider,
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     IMetricsService metrics,

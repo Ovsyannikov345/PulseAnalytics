@@ -1,4 +1,6 @@
-﻿namespace DataProcessor.Infrastructure.RabbitMq.Topology;
+﻿using RabbitMQ.Client;
+
+namespace DataProcessor.Infrastructure.RabbitMq.Topology;
 
 internal static class RabbitMqTopology
 {
@@ -15,6 +17,22 @@ internal static class RabbitMqTopology
                 public const string EnergyReadingReceived = "meter-reading.energy.received";
 
                 public const string AirQualityReadingReceived = "meter-reading.air-quality.received";
+            }
+        }
+
+        public static class StoredReadingsExchange
+        {
+            public const string Name = "pulse.meter-readings.stored";
+
+            public const string Type = ExchangeType.Topic;
+
+            public static class RoutingKeys
+            {
+                public const string MotionReadingStored = "meter-reading.motion.stored";
+
+                public const string EnergyReadingStored = "meter-reading.energy.stored";
+
+                public const string AirQualityReadingStored = "meter-reading.air-quality.stored";
             }
         }
     }

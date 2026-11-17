@@ -10,6 +10,8 @@ public interface IMetricsService
     public void RecordMessageProcessed(string messageType, TimeSpan duration, ConsumeOutcome outcome);
 
     public void RecordReading(MeterType meterType, MeterLocation location, ReadingOutcome outcome);
+
+    public void RecordPublish(string messageType, PublishOutcome outcome);
 }
 
 internal sealed class MetricsService : IMetricsService
@@ -18,11 +20,15 @@ internal sealed class MetricsService : IMetricsService
 
     public const string ReadingsProcessedName = "data_processor.readings.processed";
 
+    public const string MessagesPublishedName = "data_processor.messages.published";
+
     private static readonly double[] MessageProcessingDurationBuckets = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5];
 
     private readonly Histogram<double> _messageProcessingDuration;
 
     private readonly Counter<long> _readingsProcessed;
+
+    private readonly Counter<long> _messagesPublished;
 
     public MetricsService(IMeterFactory meterFactory)
     {
@@ -38,6 +44,11 @@ internal sealed class MetricsService : IMetricsService
             ReadingsProcessedName,
             unit: "{reading}",
             description: "Number of meter readings processed, by reading type, location and outcome.");
+
+        _messagesPublished = meter.CreateCounter<long>(
+            MessagesPublishedName,
+            unit: "{message}",
+            description: "Number of messages handed to RabbitMQ, by message type and outcome.");
     }
 
     public void RecordMessageProcessed(string messageType, TimeSpan duration, ConsumeOutcome outcome)
@@ -55,6 +66,27 @@ internal sealed class MetricsService : IMetricsService
             new KeyValuePair<string, object?>(ProcessorTelemetry.Tags.ReadingType, ToTagValue(meterType)),
             new KeyValuePair<string, object?>(ProcessorTelemetry.Tags.ReadingLocation, ToTagValue(location)),
             new KeyValuePair<string, object?>(ProcessorTelemetry.Tags.Outcome, ToTagValue(outcome)));
+    }
+
+    public void RecordPublish(string messageType, PublishOutcome outcome)
+    {
+        _messagesPublished.Add(
+            1,
+            new KeyValuePair<string, object?>(ProcessorTelemetry.Tags.MessageType, messageType),
+            new KeyValuePair<string, object?>(ProcessorTelemetry.Tags.Outcome, ToTagValue(outcome)));
+    }
+
+    private static string ToTagValue(PublishOutcome outcome)
+    {
+        return outcome switch
+        {
+            PublishOutcome.Confirmed => "confirmed",
+            PublishOutcome.TimedOut => "timed_out",
+            PublishOutcome.Nacked => "nacked",
+            PublishOutcome.Failed => "failed",
+            PublishOutcome.Skipped => "skipped",
+            _ => throw new UnreachableException($"No tag value for publish outcome {outcome}")
+        };
     }
 
     private static string ToTagValue(ConsumeOutcome outcome)

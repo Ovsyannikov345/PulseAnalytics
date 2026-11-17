@@ -92,16 +92,17 @@ public sealed class ProcessingPipelineTests(RabbitMqContainerFixture rabbitMq, P
         var storedBefore = await StoredReadings.CountAsync(factory, ct);
 
         // Act
-        await exchange.PublishRawAsync(MeterReadingsExchange.MotionRoutingKey, Encoding.UTF8.GetBytes(body), ct);
+        var invalidMessageId = await exchange.PublishRawAsync(MeterReadingsExchange.MotionRoutingKey, Encoding.UTF8.GetBytes(body), ct);
         await exchange.PublishAsync(validReading, ct);
         await StoredReadings.WaitForAsync(factory, [validReading.MessageId], ct);
 
         // Assert
         (await StoredReadings.CountAsync(factory, ct)).ShouldBe(storedBefore + 1);
 
-        // Stopping the processor returns unacked messages to the queue, so an empty queue means the message was not requeued.
+        // Stopping the processor returns unacked messages to the queue, so the invalid message must not be among them.
+        // The valid one may be: it is stored before its stored event is published and it is acked.
         await factory.DisposeAsync();
-        (await exchange.GetReadyMessageCountAsync(MeterReadingsExchange.MotionQueue, ct)).ShouldBe(0u);
+        (await exchange.TakeReadyMessageIdsAsync(MeterReadingsExchange.MotionQueue, ct)).ShouldNotContain(invalidMessageId.ToString());
     }
 
     [Fact]

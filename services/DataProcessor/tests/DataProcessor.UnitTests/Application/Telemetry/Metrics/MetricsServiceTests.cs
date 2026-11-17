@@ -106,6 +106,38 @@ public sealed class MetricsServiceTests : IDisposable
         collector.GetMeasurementSnapshot().ShouldHaveSingleItem().Tags["app.reading.location"].ShouldBe(expectedLocation);
     }
 
+    [Theory]
+    [InlineData(PublishOutcome.Confirmed, "confirmed")]
+    [InlineData(PublishOutcome.TimedOut, "timed_out")]
+    [InlineData(PublishOutcome.Nacked, "nacked")]
+    [InlineData(PublishOutcome.Failed, "failed")]
+    [InlineData(PublishOutcome.Skipped, "skipped")]
+    public void RecordPublish_AnyOutcome_CountsOneMessageWithTypeAndOutcome(PublishOutcome outcome, string expectedOutcome)
+    {
+        // Arrange
+        using var collector = Collect<long>(MetricsService.MessagesPublishedName);
+
+        // Act
+        _sut.RecordPublish("MotionReadingStored", outcome);
+
+        // Assert
+        collector.Instrument.ShouldNotBeNull().Unit.ShouldBe("{message}");
+        var measurement = collector.GetMeasurementSnapshot().ShouldHaveSingleItem();
+        measurement.Value.ShouldBe(1);
+        measurement.Tags["app.message.type"].ShouldBe("MotionReadingStored");
+        measurement.Tags["app.outcome"].ShouldBe(expectedOutcome);
+    }
+
+    [Fact]
+    public void RecordPublish_UndefinedOutcome_ThrowsUnreachableException()
+    {
+        // Act
+        var act = () => _sut.RecordPublish("MotionReadingStored", (PublishOutcome)int.MaxValue);
+
+        // Assert
+        act.ShouldThrow<UnreachableException>();
+    }
+
     [Fact]
     public void RecordMessageProcessed_UndefinedOutcome_ThrowsUnreachableException()
     {

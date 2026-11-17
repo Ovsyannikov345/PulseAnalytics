@@ -11,6 +11,57 @@ internal static class RabbitMqChannelFakeExtensions
 {
     private const string BasicConsumeAsyncMethodName = nameof(IChannel.BasicConsumeAsync);
 
+    private const string BasicPublishAsyncMethodName = nameof(IChannel.BasicPublishAsync);
+
+    public static IReturnValueArgumentValidationConfiguration<ValueTask> CallsToBasicPublishAsync(this IChannel channel)
+    {
+        return A.CallTo(() => channel.BasicPublishAsync(
+            A<string>._,
+            A<string>._,
+            A<bool>._,
+            A<BasicProperties>._,
+            A<ReadOnlyMemory<byte>>._,
+            A<CancellationToken>._));
+    }
+
+    // The ExchangeDeclareAsync extension used by the code under test calls this full overload.
+    public static IReturnValueArgumentValidationConfiguration<Task> CallsToExchangeDeclareAsync(this IChannel channel)
+    {
+        return A.CallTo(() => channel.ExchangeDeclareAsync(
+            A<string>._,
+            A<string>._,
+            A<bool>._,
+            A<bool>._,
+            A<IDictionary<string, object?>?>._,
+            A<bool>._,
+            A<bool>._,
+            A<CancellationToken>._));
+    }
+
+    /// <summary>
+    /// Simulates a publish whose broker confirmation never arrives: it completes only when its token is cancelled.
+    /// </summary>
+    public static void HangsUntilPublishIsCancelled(this IChannel channel)
+    {
+        channel.CallsToBasicPublishAsync()
+            .ReturnsLazily(call => new ValueTask(Task.Delay(Timeout.Infinite, call.GetArgument<CancellationToken>(5))));
+    }
+
+    public static IReadOnlyList<PublishedMessage> PublishedMessages(this IChannel channel)
+    {
+        return
+        [
+            .. Fake.GetCalls(channel)
+                .Where(call => call.Method.Name == BasicPublishAsyncMethodName)
+                .Select(call => new PublishedMessage(
+                    call.GetArgument<string>(0)!,
+                    call.GetArgument<string>(1)!,
+                    call.GetArgument<bool>(2),
+                    call.GetArgument<BasicProperties>(3)!,
+                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray()))
+        ];
+    }
+
     // The BasicConsumeAsync extension used by the code under test calls this full overload.
     public static IReturnValueArgumentValidationConfiguration<Task<string>> CallsToBasicConsumeAsync(this IChannel channel)
     {
@@ -67,3 +118,5 @@ internal static class RabbitMqChannelFakeExtensions
         ];
     }
 }
+
+internal sealed record PublishedMessage(string Exchange, string RoutingKey, bool Mandatory, BasicProperties Properties, byte[] Body);
