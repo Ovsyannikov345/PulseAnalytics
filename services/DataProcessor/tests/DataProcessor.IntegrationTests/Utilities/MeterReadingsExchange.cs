@@ -67,9 +67,15 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
     public async Task PublishAsync<TEvent>(TEvent readingEvent, CancellationToken ct)
         where TEvent : MeterReadingEvent
     {
+        await PublishAsync(readingEvent, Guid.CreateVersion7(), ct);
+    }
+
+    public async Task PublishAsync<TEvent>(TEvent readingEvent, Guid correlationId, CancellationToken ct)
+        where TEvent : MeterReadingEvent
+    {
         var body = JsonSerializer.SerializeToUtf8Bytes(readingEvent, JsonSerializerOptions.Web);
 
-        await PublishAsync(RoutingKeys[typeof(TEvent)], readingEvent.MessageId, typeof(TEvent).Name, body, ct);
+        await PublishAsync(RoutingKeys[typeof(TEvent)], readingEvent.MessageId, correlationId, typeof(TEvent).Name, body, ct);
     }
 
     /// <returns>The message ID the message was published with.</returns>
@@ -77,7 +83,7 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
     {
         var messageId = Guid.CreateVersion7();
 
-        await PublishAsync(routingKey, messageId, "Unknown", body, ct);
+        await PublishAsync(routingKey, messageId, Guid.CreateVersion7(), "Unknown", body, ct);
 
         return messageId;
     }
@@ -141,12 +147,18 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
         await _connection.DisposeAsync();
     }
 
-    private async Task PublishAsync(string routingKey, Guid messageId, string messageType, byte[] body, CancellationToken ct)
+    private async Task PublishAsync(
+        string routingKey,
+        Guid messageId,
+        Guid correlationId,
+        string messageType,
+        byte[] body,
+        CancellationToken ct)
     {
         var properties = new BasicProperties
         {
             MessageId = messageId.ToString(),
-            CorrelationId = Guid.CreateVersion7().ToString(),
+            CorrelationId = correlationId.ToString(),
             ContentType = "application/json",
             DeliveryMode = DeliveryModes.Persistent,
             Type = messageType
