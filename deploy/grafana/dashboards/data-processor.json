@@ -227,9 +227,45 @@
     },
     {
       "type": "row",
-      "title": "Database",
+      "title": "Stored events",
       "collapsed": false,
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Stored events published per minute by outcome",
+      "description": "One best-effort event per stored reading for live updates. confirmed = accepted by the broker (dropped there while no queue is bound); timed_out / nacked / failed = publish failed; skipped = never sent because the channel was unavailable. A failed publish doesn't fail the reading.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "confirmed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "timed_out" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "nacked" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "failed" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "dark-red" } }] },
+          { "matcher": { "id": "byName", "options": "skipped" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(data_processor_messages_published_total{job=\"data-processor\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Database",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
       "panels": []
     },
     {
@@ -237,7 +273,7 @@
       "title": "Database command duration",
       "description": "Npgsql command execution time (duplicate checks, inserts, migrations at startup).",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 32 },
       "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -257,7 +293,7 @@
       "type": "timeseries",
       "title": "Database commands per minute",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 32 },
       "fieldConfig": {
         "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } },
         "overrides": [
@@ -282,7 +318,7 @@
       "type": "timeseries",
       "title": "Connection pool and executing commands",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -294,7 +330,7 @@
       "type": "row",
       "title": "RabbitMQ queues",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
       "panels": []
     },
     {
@@ -302,7 +338,7 @@
       "title": "Messages waiting per queue",
       "description": "ready = waiting for a consumer; unacked = delivered to the processor and not yet acked or nacked.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 41 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -323,7 +359,7 @@
       "title": "Consumers per queue",
       "description": "0 means the processor is not consuming the queue (down, or waiting to restart its consumer).",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 41 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -338,14 +374,14 @@
       "type": "row",
       "title": "Runtime",
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
       "panels": []
     },
     {
       "type": "timeseries",
       "title": "CPU",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 41 },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 50 },
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -360,7 +396,7 @@
       "type": "timeseries",
       "title": "Memory",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 41 },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 50 },
       "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -372,7 +408,7 @@
       "type": "timeseries",
       "title": "GC collections per minute",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 41 },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 50 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
@@ -387,7 +423,7 @@
       "type": "timeseries",
       "title": "Thread pool and exceptions",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 41 },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 50 },
       "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [
