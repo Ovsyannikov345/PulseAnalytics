@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".dockerignore" />
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="Dockerfile" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NotificationService.IntegrationTests/NotificationService.IntegrationTests.csproj" />
+    <Project Path="tests/NotificationService.UnitTests/NotificationService.UnitTests.csproj" />
+  </Folder>
+  <Project Path="NotificationService.Api/NotificationService.Api.csproj" />
+  <Project Path="NotificationService.Application/NotificationService.Application.csproj" />
+  <Project Path="NotificationService.Infrastructure/NotificationService.Infrastructure.csproj" />
+</Solution>
