@@ -12,30 +12,37 @@
 }
 
 .background[data-highlighted='true'] {
-  animation: background-fade 2s ease-out;
+  animation: background-fade 2.5s ease-in;
 }
 
 .ring[data-highlighted='true'] {
-  animation: ring-fade 2s ease-out;
+  animation: ring-fade 2.5s ease-in;
 }
 
+/* Full strength for the first third, so the change is noticed, then a fade. */
 @keyframes background-fade {
-  from {
-    background: var(--color-primary-soft);
+  0%,
+  30% {
+    background: var(--color-chart-band);
   }
 
-  to {
+  100% {
     background: transparent;
   }
 }
 
 @keyframes ring-fade {
-  from {
-    box-shadow: 0 0 0 3px var(--color-motion-soft);
+  0%,
+  30% {
+    box-shadow:
+      0 0 0 2px var(--color-surface),
+      0 0 0 4px var(--color-motion);
   }
 
-  to {
-    box-shadow: 0 0 0 3px transparent;
+  100% {
+    box-shadow:
+      0 0 0 2px transparent,
+      0 0 0 4px transparent;
   }
 }
 
