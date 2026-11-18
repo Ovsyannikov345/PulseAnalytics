@@ -14,6 +14,9 @@ public static class ObservabilityExtensions
 
     private const string RuntimeMeterName = "System.Runtime";
 
+    // SignalR connection metrics (signalr.server.active_connections, signalr.server.connection.duration).
+    private const string SignalRConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
+
     public static IServiceCollection AddObservability(this IServiceCollection services, IConfiguration configuration)
     {
         var openTelemetrySettings = configuration.GetSection(OpenTelemetrySettings.SectionName).Get<OpenTelemetrySettings>();
@@ -34,6 +37,7 @@ public static class ObservabilityExtensions
             .WithMetrics(metrics => metrics
                 .AddMeter(NotificationServiceTelemetry.ScopeName)
                 .AddMeter(RuntimeMeterName)
+                .AddMeter(SignalRConnectionsMeterName)
                 .AddAspNetCoreInstrumentation()
                 .AddOtlpExporter((exporterOptions, readerOptions) =>
                 {

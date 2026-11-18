@@ -64,8 +64,9 @@ public sealed class ObservabilityExtensionsTests
     [InlineData("PulseAnalytics.NotificationService", true)]
     [InlineData("System.Runtime", true)]
     [InlineData("Microsoft.AspNetCore.Hosting", true)]
+    [InlineData("Microsoft.AspNetCore.Http.Connections", true)]
     [InlineData("PulseAnalytics.DataProcessor", false)]
-    public void AddObservability_OtlpEndpointConfigured_ExportsServiceRuntimeAndHttpMeters(string meterName, bool isExported)
+    public void AddObservability_OtlpEndpointConfigured_ExportsServiceRuntimeHttpAndSignalRMeters(string meterName, bool isExported)
     {
         // Arrange
         using var serviceProvider = BuildServiceProvider(OtlpEndpoint);

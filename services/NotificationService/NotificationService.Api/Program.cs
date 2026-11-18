@@ -1,5 +1,6 @@
 using NotificationService.Api;
 using NotificationService.Api.HealthCheck;
+using NotificationService.Api.Hubs.Readings;
 using NotificationService.Api.Observability;
 using NotificationService.Infrastructure;
 using Serilog;
@@ -18,7 +19,8 @@ try
     builder.Services
         .AddSerilogLogging(configuration)
         .AddObservability(configuration)
-        .AddInfrastructureServices();
+        .AddInfrastructureServices()
+        .AddReadingsHub();
 
     builder.Services.AddHealthChecks();
 
@@ -38,6 +40,8 @@ try
     });
 
     app.MapHealthChecks(HealthCheckConstants.EndpointPath);
+
+    app.MapHub<ReadingsHub>(ReadingsHub.Route);
 
     await app.RunAsync();
 }
