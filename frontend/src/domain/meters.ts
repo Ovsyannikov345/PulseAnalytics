@@ -3,7 +3,10 @@ import type { MeterLocation, MeterType } from '../graphql/generated/enums';
 interface EnumNames {
   /** Shown in the UI. */
   label: string;
-  /** The C# enum name the REST export binds (`AirQuality`), unlike GraphQL's `AIR_QUALITY`. */
+  /**
+   * The C# enum name (`AirQuality`, unlike GraphQL's `AIR_QUALITY`): bound by the REST export and
+   * sent by the readings hub.
+   */
   restName: string;
 }
 
@@ -44,4 +47,14 @@ export function meterLocationLabel(location: MeterLocation): string {
 
 export function meterLocationRestName(location: MeterLocation): string {
   return meterLocationNames[location].restName;
+}
+
+/** The type for a C# enum name, or `undefined` for a name that isn't one. */
+export function meterTypeFromRestName(restName: string): MeterType | undefined {
+  return meterTypes.find((type) => meterTypeNames[type].restName === restName);
+}
+
+/** The location for a C# enum name, or `undefined` for a name that isn't one. */
+export function meterLocationFromRestName(restName: string): MeterLocation | undefined {
+  return meterLocations.find((location) => meterLocationNames[location].restName === restName);
 }
