@@ -142,7 +142,7 @@ public sealed class ReadingsHubTests(RabbitMqContainerFixture rabbitMq)
         await factory.DisposeAsync();
 
         // Assert
-        await queues.WaitUntilDeletedAsync(ct);
+        await Should.NotThrowAsync(() => queues.WaitUntilDeletedAsync(ct));
     }
 
     [Fact]
