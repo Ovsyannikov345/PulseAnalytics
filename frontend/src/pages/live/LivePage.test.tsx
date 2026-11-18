@@ -101,6 +101,39 @@ describe('LivePage', () => {
     expect(screen.getByText('Latest samples received at 14:30:02')).toBeInTheDocument();
   });
 
+  it('keeps a push that arrived before older stored values', async () => {
+    const hub = await renderLive([{ ...latest, delay: 100 }]);
+    await settle(() => {
+      hub.connection.connect();
+    });
+
+    act(() => {
+      hub.connection.push(hubMessage('Energy', 'OFFICE', pushed, { energy: 912.85 }));
+    });
+    expect(room('Office').getByText('912.85')).toBeInTheDocument();
+    expect(room('Kitchen').getByText('Waiting for the first sample')).toBeInTheDocument();
+
+    expect(await room('Kitchen').findByText('845.62')).toBeInTheDocument();
+    expect(room('Office').getByText('912.85')).not.toHaveAttribute('data-highlighted');
+    expect(screen.getByText('Latest samples received at 14:30:02')).toBeInTheDocument();
+  });
+
+  it('replaces a push with newer stored values', async () => {
+    const hub = await renderLive();
+    act(() => {
+      hub.connection.push(
+        hubMessage('Energy', 'OFFICE', '2026-11-15T11:29:32Z', { energy: 912.85 }),
+      );
+    });
+
+    await settle(() => {
+      hub.connection.connect();
+    });
+
+    expect(await room('Office').findByText('603.17')).toBeInTheDocument();
+    expect(screen.queryByText('912.85')).not.toBeInTheDocument();
+  });
+
   it('ignores a push older than the stored value', async () => {
     const hub = await renderConnected();
     await screen.findByText('603.17');
