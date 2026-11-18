@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using NotificationService.Api.Configuration;
 using NotificationService.Api.HealthCheck;
 using NotificationService.Application.Telemetry;
@@ -13,6 +13,10 @@ public static class ObservabilityExtensions
     private const int MetricExportIntervalInMilliseconds = 15_000;
 
     private const string RuntimeMeterName = "System.Runtime";
+
+    private const string RabbitMqSubscriberSourceName = "RabbitMQ.Client.Subscriber";
+
+    private const string SignalRConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
 
     public static IServiceCollection AddObservability(this IServiceCollection services, IConfiguration configuration)
     {
@@ -34,6 +38,7 @@ public static class ObservabilityExtensions
             .WithMetrics(metrics => metrics
                 .AddMeter(NotificationServiceTelemetry.ScopeName)
                 .AddMeter(RuntimeMeterName)
+                .AddMeter(SignalRConnectionsMeterName)
                 .AddAspNetCoreInstrumentation()
                 .AddOtlpExporter((exporterOptions, readerOptions) =>
                 {
@@ -42,6 +47,7 @@ public static class ObservabilityExtensions
                 }))
             .WithTracing(tracing => tracing
                 .AddSource(NotificationServiceTelemetry.ScopeName)
+                .AddSource(RabbitMqSubscriberSourceName)
                 .AddAspNetCoreInstrumentation(options => options.Filter = context => !context.IsHealthCheckRequest())
                 .AddOtlpExporter(exporterOptions => exporterOptions.Endpoint = otlpEndpoint));
 

@@ -1,0 +1,9 @@
+{
+  "type": "AirQuality",
+  "id": "019a91b2-4c6e-7d13-9a58-3e7f2b6c1d03",
+  "location": "LivingRoom",
+  "receivedAt": "2026-11-17T10:15:30.123+00:00",
+  "co2": 803,
+  "pm25": 25,
+  "humidity": 36
+}

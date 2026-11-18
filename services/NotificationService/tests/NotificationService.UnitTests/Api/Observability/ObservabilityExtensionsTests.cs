@@ -45,9 +45,11 @@ public sealed class ObservabilityExtensionsTests
 
     [Theory]
     [InlineData("PulseAnalytics.NotificationService", true)]
+    [InlineData("RabbitMQ.Client.Subscriber", true)]
+    [InlineData("RabbitMQ.Client.Publisher", false)]
     [InlineData("PulseAnalytics.DataProcessor", false)]
     [InlineData("Npgsql", false)]
-    public void AddObservability_OtlpEndpointConfigured_TracesServiceSource(string sourceName, bool isTraced)
+    public void AddObservability_OtlpEndpointConfigured_TracesServiceAndRabbitMqSubscriberSources(string sourceName, bool isTraced)
     {
         // Arrange
         using var serviceProvider = BuildServiceProvider(OtlpEndpoint);
@@ -64,8 +66,9 @@ public sealed class ObservabilityExtensionsTests
     [InlineData("PulseAnalytics.NotificationService", true)]
     [InlineData("System.Runtime", true)]
     [InlineData("Microsoft.AspNetCore.Hosting", true)]
+    [InlineData("Microsoft.AspNetCore.Http.Connections", true)]
     [InlineData("PulseAnalytics.DataProcessor", false)]
-    public void AddObservability_OtlpEndpointConfigured_ExportsServiceRuntimeAndHttpMeters(string meterName, bool isExported)
+    public void AddObservability_OtlpEndpointConfigured_ExportsServiceRuntimeHttpAndSignalRMeters(string meterName, bool isExported)
     {
         // Arrange
         using var serviceProvider = BuildServiceProvider(OtlpEndpoint);
