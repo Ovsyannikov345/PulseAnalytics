@@ -14,6 +14,8 @@ public static class ObservabilityExtensions
 
     private const string RuntimeMeterName = "System.Runtime";
 
+    private const string RabbitMqSubscriberSourceName = "RabbitMQ.Client.Subscriber";
+
     // SignalR connection metrics (signalr.server.active_connections, signalr.server.connection.duration).
     private const string SignalRConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
 
@@ -46,6 +48,7 @@ public static class ObservabilityExtensions
                 }))
             .WithTracing(tracing => tracing
                 .AddSource(NotificationServiceTelemetry.ScopeName)
+                .AddSource(RabbitMqSubscriberSourceName)
                 .AddAspNetCoreInstrumentation(options => options.Filter = context => !context.IsHealthCheckRequest())
                 .AddOtlpExporter(exporterOptions => exporterOptions.Endpoint = otlpEndpoint));
 

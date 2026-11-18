@@ -5,9 +5,9 @@ using Xunit;
 
 namespace NotificationService.IntegrationTests.Api;
 
-public sealed class HealthCheckTests : IAsyncDisposable
+public sealed class HealthCheckTests(RabbitMqContainerFixture rabbitMq) : IAsyncDisposable
 {
-    private readonly NotificationServiceApplicationFactory _factory = new();
+    private readonly NotificationServiceApplicationFactory _factory = new(rabbitMq);
 
     [Fact]
     public async Task Health_HostStarted_ReturnsHealthy()

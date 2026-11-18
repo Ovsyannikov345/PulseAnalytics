@@ -2,6 +2,7 @@ using NotificationService.Api;
 using NotificationService.Api.HealthCheck;
 using NotificationService.Api.Hubs.Readings;
 using NotificationService.Api.Observability;
+using NotificationService.Application;
 using NotificationService.Infrastructure;
 using Serilog;
 using Serilog.Events;
@@ -19,7 +20,8 @@ try
     builder.Services
         .AddSerilogLogging(configuration)
         .AddObservability(configuration)
-        .AddInfrastructureServices()
+        .AddInfrastructureServices(configuration)
+        .AddApplicationServices()
         .AddReadingsHub();
 
     builder.Services.AddHealthChecks();

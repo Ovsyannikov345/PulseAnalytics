@@ -2,6 +2,7 @@ using NotificationService.Api.HealthCheck;
 using NotificationService.Application.Telemetry;
 using Shouldly;
 using Xunit;
+using InfrastructureDependencyInjection = NotificationService.Infrastructure.DependencyInjection;
 
 namespace NotificationService.UnitTests.Architecture;
 
@@ -15,6 +16,8 @@ public sealed class LayerDependencyTests
 
     private const string SignalRAssemblyPrefix = "Microsoft.AspNetCore.SignalR";
 
+    private const string BrokerContractsAssemblyName = "DataProcessor.Contracts";
+
     // The broker is an Infrastructure detail: Api reaches it only through Application's interfaces.
     [Fact]
     public void ApiAssembly_DoesNotReference_RabbitMqClient()
@@ -24,6 +27,17 @@ public sealed class LayerDependencyTests
 
         // Assert
         apiReferences.ShouldNotContain(RabbitMqClientAssemblyName);
+    }
+
+    // Clients get the hub's own messages; the broker contract stays in Infrastructure.
+    [Fact]
+    public void ApiAssembly_DoesNotReference_BrokerContracts()
+    {
+        // Arrange
+        var apiReferences = ReferencedAssemblyNames(typeof(HealthCheckConstants));
+
+        // Assert
+        apiReferences.ShouldNotContain(BrokerContractsAssemblyName);
     }
 
     // Application holds the models, interfaces and telemetry shared by the outer layers, so it must not depend on them.
@@ -41,7 +55,7 @@ public sealed class LayerDependencyTests
     public void InfrastructureAssembly_DoesNotReference_ApiOrSignalR()
     {
         // Arrange
-        var infrastructureReferences = ReferencedAssemblyNames(typeof(Infrastructure.DependencyInjection));
+        var infrastructureReferences = ReferencedAssemblyNames(typeof(InfrastructureDependencyInjection));
 
         // Assert
         infrastructureReferences.ShouldNotContain(AssemblyName(typeof(HealthCheckConstants)));

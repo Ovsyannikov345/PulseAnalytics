@@ -1,5 +1,6 @@
 using NotificationService.Api.Configuration;
 using NotificationService.Api.Hubs.Readings;
+using NotificationService.Api.Logging;
 using NotificationService.Application.LiveReadings;
 using Serilog;
 
@@ -33,7 +34,8 @@ public static class DependencyInjection
                 loggerConfiguration
                     .ReadFrom.Configuration(configuration)
                     .ReadFrom.Services(serviceProvider)
-                    .Enrich.FromLogContext();
+                    .Enrich.FromLogContext()
+                    .Enrich.With<CorrelationIdEnricher>();
 
                 if (!string.IsNullOrWhiteSpace(seqSettings?.ServerUrl))
                 {
