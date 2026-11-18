@@ -1,4 +1,4 @@
-using NotificationService.Api.Configuration;
+﻿using NotificationService.Api.Configuration;
 using NotificationService.Api.Hubs.Readings;
 using NotificationService.Api.Logging;
 using NotificationService.Application.LiveReadings;

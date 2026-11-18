@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using NotificationService.Api.Configuration;
 using NotificationService.Api.HealthCheck;
 using NotificationService.Application.Telemetry;
@@ -16,7 +16,6 @@ public static class ObservabilityExtensions
 
     private const string RabbitMqSubscriberSourceName = "RabbitMQ.Client.Subscriber";
 
-    // SignalR connection metrics (signalr.server.active_connections, signalr.server.connection.duration).
     private const string SignalRConnectionsMeterName = "Microsoft.AspNetCore.Http.Connections";
 
     public static IServiceCollection AddObservability(this IServiceCollection services, IConfiguration configuration)

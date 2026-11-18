@@ -4,9 +4,6 @@ internal static class RabbitMqTopology
 {
     public static class Exchanges
     {
-        /// <summary>
-        /// Declared by the data processor, which publishes to it after storing a reading.
-        /// </summary>
         public static class StoredReadingsExchange
         {
             public const string Name = "pulse.meter-readings.stored";
@@ -38,9 +35,6 @@ internal static class RabbitMqTopology
     {
         public const string MessageTtl = "x-message-ttl";
 
-        /// <summary>
-        /// Events waiting longer than this are dropped instead of being pushed late: a newer reading follows anyway.
-        /// </summary>
         public const int MessageTtlInMilliseconds = 30_000;
     }
 

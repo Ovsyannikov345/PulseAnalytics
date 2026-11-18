@@ -1,11 +1,18 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.SignalR;
 
 namespace NotificationService.Api.Hubs.Readings;
 
-/// <summary>
-/// Pushes stored readings to every connected client. Server-to-client only: clients connect and listen.
-/// </summary>
 public sealed class ReadingsHub : Hub<IReadingsClient>
 {
     public const string Route = "/hubs/readings";
+}
+
+internal static class ReadingsHubJsonOptions
+{
+    public static void Configure(JsonSerializerOptions options)
+    {
+        options.Converters.Add(new JsonStringEnumConverter());
+    }
 }
