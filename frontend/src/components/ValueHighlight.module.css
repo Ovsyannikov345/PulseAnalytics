@@ -1,0 +1,47 @@
+/* Inline-block keeps the space between a number and its unit, which a flex container drops. */
+.background {
+  display: inline-block;
+  margin: -2px -6px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.ring {
+  display: inline-flex;
+  border-radius: var(--radius-pill);
+}
+
+.background[data-highlighted='true'] {
+  animation: background-fade 2s ease-out;
+}
+
+.ring[data-highlighted='true'] {
+  animation: ring-fade 2s ease-out;
+}
+
+@keyframes background-fade {
+  from {
+    background: var(--color-primary-soft);
+  }
+
+  to {
+    background: transparent;
+  }
+}
+
+@keyframes ring-fade {
+  from {
+    box-shadow: 0 0 0 3px var(--color-motion-soft);
+  }
+
+  to {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .background[data-highlighted='true'],
+  .ring[data-highlighted='true'] {
+    animation: none;
+  }
+}

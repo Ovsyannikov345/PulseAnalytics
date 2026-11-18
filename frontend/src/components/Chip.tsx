@@ -4,7 +4,8 @@ import styles from './Chip.module.css';
 import { cx } from './cx';
 
 interface ChipProps {
-  variant: 'motion' | 'neutral' | 'warning';
+  /** `waiting`: a dashed outline for a value that hasn't arrived yet. */
+  variant: 'motion' | 'neutral' | 'warning' | 'waiting';
   children: ReactNode;
 }
 

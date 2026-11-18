@@ -30,6 +30,7 @@
   --color-chart-light: #86b6ef;
   --color-chart-band: #cde2fb;
   --color-motion: #6250d6;
+  --color-motion-soft: #d9d3fb;
   /* One per location, in gateway order (Kitchen … Corridor), from the Analytics board. */
   --color-series-1: #2a78d6;
   --color-series-2: #eb6834;
@@ -57,6 +58,11 @@
   --color-error-border: #efb8b8;
   --color-error-dark: #7a1f1f;
   --color-progress: #2a78d6;
+  /* Live connection status, from the Live boards. */
+  --color-success: #1f8a4c;
+  --color-success-bg: #e7f4ec;
+  --color-success-border: #a9d8bb;
+  --color-success-text: #14532d;
 
   /* Type */
   --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;

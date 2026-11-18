@@ -11,10 +11,13 @@ describe('Chip', () => {
     expect(container.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('shows a neutral label without an icon', () => {
-    const { container } = render(<Chip variant="neutral">No motion</Chip>);
+  it.each([
+    ['neutral', 'No motion'],
+    ['waiting', 'Motion: waiting'],
+  ] as const)('shows a %s label without an icon', (variant, label) => {
+    const { container } = render(<Chip variant={variant}>{label}</Chip>);
 
-    expect(container.firstElementChild).toHaveTextContent('No motion');
+    expect(container.firstElementChild).toHaveTextContent(label);
     expect(container.querySelector('svg')).toBeNull();
   });
 });

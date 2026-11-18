@@ -7,6 +7,7 @@ import styles from './AppLayout.module.css';
 
 const navItems = [
   { to: '/', label: 'Overview', end: true },
+  { to: '/live', label: 'Live', end: false },
   { to: '/analytics', label: 'Analytics', end: false },
   { to: '/readings', label: 'Readings', end: false },
 ] as const;

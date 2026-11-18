@@ -1,6 +1,7 @@
 import type { RouteObject } from 'react-router';
 
 import { AnalyticsPage } from '../pages/analytics/AnalyticsPage';
+import { LivePage } from '../pages/live/LivePage';
 import { NotFoundPage } from '../pages/not-found/NotFoundPage';
 import { OverviewPage } from '../pages/overview/OverviewPage';
 import { ReadingsPage } from '../pages/readings/ReadingsPage';
@@ -11,6 +12,7 @@ export const routes: RouteObject[] = [
     element: <AppLayout />,
     children: [
       { index: true, element: <OverviewPage /> },
+      { path: 'live', element: <LivePage /> },
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'readings', element: <ReadingsPage /> },
       { path: '*', element: <NotFoundPage /> },

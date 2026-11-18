@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 
+import { ValueHighlight } from '../ValueHighlight';
 import { formatMeterValue } from './formatMeterValue';
 import styles from './MetricList.module.css';
 
@@ -13,10 +14,23 @@ interface MetricRowProps {
   value: number | null;
   unit: string;
   scaleMax: number;
+  /** Highlights the value briefly when it changes (Live page). */
+  highlightChanges?: boolean;
 }
 
-export function MetricRow({ label, value, unit, scaleMax }: Readonly<MetricRowProps>) {
+export function MetricRow({
+  label,
+  value,
+  unit,
+  scaleMax,
+  highlightChanges = false,
+}: Readonly<MetricRowProps>) {
   const share = value === null ? 0 : Math.min(1, Math.max(0, value / scaleMax));
+  const number = (
+    <>
+      {formatMeterValue(value)} <span className={styles.unit}>{unit}</span>
+    </>
+  );
 
   return (
     <div className={styles.metric}>
@@ -26,7 +40,7 @@ export function MetricRow({ label, value, unit, scaleMax }: Readonly<MetricRowPr
           <span className={styles.barFill} style={{ width: `${String(share * 100)}%` }} />
         </span>
         <span className={styles.number}>
-          {formatMeterValue(value)} <span className={styles.unit}>{unit}</span>
+          {highlightChanges ? <ValueHighlight value={value}>{number}</ValueHighlight> : number}
         </span>
       </dd>
     </div>

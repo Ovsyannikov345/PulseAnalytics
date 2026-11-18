@@ -122,6 +122,36 @@ export type AnalyticsMotionSummaryQuery = {
   }>;
 };
 
+export type LiveLatestReadingsQueryVariables = Exact<{ [key: string]: never }>;
+
+export type LiveLatestReadingsQuery = {
+  latestReadings: Array<
+    | {
+        __typename: 'AirQualityReading';
+        co2: number;
+        pm25: number;
+        humidity: number;
+        id: string;
+        location: MeterLocation;
+        receivedAt: string;
+      }
+    | {
+        __typename: 'EnergyReading';
+        energy: number;
+        id: string;
+        location: MeterLocation;
+        receivedAt: string;
+      }
+    | {
+        __typename: 'MotionReading';
+        motionDetected: boolean;
+        id: string;
+        location: MeterLocation;
+        receivedAt: string;
+      }
+  >;
+};
+
 export type OverviewEnergySparklinesQueryVariables = Exact<{
   from: string;
   to: string;
@@ -924,6 +954,72 @@ export const AnalyticsMotionSummaryDocument = {
     },
   ],
 } as unknown as DocumentNode<AnalyticsMotionSummaryQuery, AnalyticsMotionSummaryQueryVariables>;
+export const LiveLatestReadingsDocument = {
+  kind: 'Document',
+  definitions: [
+    {
+      kind: 'OperationDefinition',
+      operation: 'query',
+      name: { kind: 'Name', value: 'LiveLatestReadings' },
+      selectionSet: {
+        kind: 'SelectionSet',
+        selections: [
+          {
+            kind: 'Field',
+            name: { kind: 'Name', value: 'latestReadings' },
+            selectionSet: {
+              kind: 'SelectionSet',
+              selections: [
+                { kind: 'Field', name: { kind: 'Name', value: 'id' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'location' } },
+                { kind: 'Field', name: { kind: 'Name', value: 'receivedAt' } },
+                {
+                  kind: 'InlineFragment',
+                  typeCondition: {
+                    kind: 'NamedType',
+                    name: { kind: 'Name', value: 'EnergyReading' },
+                  },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [{ kind: 'Field', name: { kind: 'Name', value: 'energy' } }],
+                  },
+                },
+                {
+                  kind: 'InlineFragment',
+                  typeCondition: {
+                    kind: 'NamedType',
+                    name: { kind: 'Name', value: 'AirQualityReading' },
+                  },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'co2' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'pm25' } },
+                      { kind: 'Field', name: { kind: 'Name', value: 'humidity' } },
+                    ],
+                  },
+                },
+                {
+                  kind: 'InlineFragment',
+                  typeCondition: {
+                    kind: 'NamedType',
+                    name: { kind: 'Name', value: 'MotionReading' },
+                  },
+                  selectionSet: {
+                    kind: 'SelectionSet',
+                    selections: [
+                      { kind: 'Field', name: { kind: 'Name', value: 'motionDetected' } },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ],
+} as unknown as DocumentNode<LiveLatestReadingsQuery, LiveLatestReadingsQueryVariables>;
 export const OverviewEnergySparklinesDocument = {
   kind: 'Document',
   definitions: [
