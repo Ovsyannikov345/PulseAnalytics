@@ -194,6 +194,31 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  notification-service:
+    image: ilyaovsyannikov/pulse-analytics-notification-service:${NOTIFICATION_SERVICE_TAG:-latest}
+    environment:
+      RabbitMq__Host: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER:?Set RABBITMQ_USER in deploy/.env}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in deploy/.env}
+      Seq__ServerUrl: http://seq:5341
+      Seq__ApiKey: ${SEQ_API_KEY:-}
+      OpenTelemetry__OtlpEndpoint: http://otel-collector:4317
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-5104}:8080"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q ' 200 ' <&3"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      seq:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+
   frontend:
     image: ilyaovsyannikov/pulse-analytics-frontend:${FRONTEND_TAG:-latest}
     environment:

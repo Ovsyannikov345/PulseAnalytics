@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<UserSecretsId>b2ad19b6-4bb2-4989-aba4-0473b3fdfcec</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+		<PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+		<PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+		<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\NotificationService.Application\NotificationService.Application.csproj" />
+		<ProjectReference Include="..\NotificationService.Infrastructure\NotificationService.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<InternalsVisibleTo Include="NotificationService.UnitTests" />
+		<InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+	</ItemGroup>
+
+</Project>
