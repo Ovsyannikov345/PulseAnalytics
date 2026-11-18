@@ -7,6 +7,7 @@ on:
     paths:
       - frontend/**
       - services/ApiGateway/ApiGateway.Api/GraphQL/schema.graphql
+      - services/NotificationService/tests/NotificationService.UnitTests/Api/Hubs/Readings/Snapshots/**
       - .github/workflows/frontend.yml
       - .github/workflows/_docker-image.yml
   push:
@@ -14,6 +15,7 @@ on:
     paths:
       - frontend/**
       - services/ApiGateway/ApiGateway.Api/GraphQL/schema.graphql
+      - services/NotificationService/tests/NotificationService.UnitTests/Api/Hubs/Readings/Snapshots/**
       - .github/workflows/frontend.yml
       - .github/workflows/_docker-image.yml
 

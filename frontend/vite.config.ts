@@ -1,4 +1,5 @@
 import react from '@vitejs/plugin-react';
+import { searchForWorkspaceRoot } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 // The dev server proxies the API like the image's nginx does
@@ -20,6 +21,10 @@ export default defineConfig({
               name: 'apollo',
               test: /[\\/]node_modules[\\/](@apollo|@wry|graphql|optimism|rxjs|tslib|@graphql-typed-document-node)[\\/]/,
             },
+            {
+              name: 'signalr',
+              test: /[\\/]node_modules[\\/]@microsoft[\\/]signalr[\\/]/,
+            },
             // Catch-all last: on equal priority the earlier group wins.
             { name: 'vendor', test: /[\\/]node_modules[\\/]/ },
           ],
@@ -28,6 +33,13 @@ export default defineConfig({
     },
   },
   server: {
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        // The readings hub's message examples, which the parser tests read
+        '../services/NotificationService/tests/NotificationService.UnitTests/Api/Hubs/Readings/Snapshots',
+      ],
+    },
     proxy: {
       '/graphql': apiGatewayUrl,
       '/api': apiGatewayUrl,
