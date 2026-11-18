@@ -1,4 +1,6 @@
-﻿using RabbitMQ.Client;
+﻿using System.Net.Http.Headers;
+using System.Text;
+using RabbitMQ.Client;
 using Testcontainers.RabbitMq;
 using Xunit;
 
@@ -13,7 +15,12 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
 
     private const int AmqpPort = 5672;
 
-    private readonly RabbitMqContainer _container = new RabbitMqBuilder(Image).Build();
+    // The service's queues are exclusive to its connection, so tests inspect them through the management API.
+    private const int ManagementPort = 15672;
+
+    private readonly RabbitMqContainer _container = new RabbitMqBuilder(Image)
+        .WithPortBinding(ManagementPort, assignRandomHostPort: true)
+        .Build();
 
     public string Host => _container.Hostname;
 
@@ -41,5 +48,17 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
         };
 
         return await factory.CreateConnectionAsync(ct);
+    }
+
+    public HttpClient CreateManagementClient()
+    {
+        var credentials = Convert.ToBase64String(
+            Encoding.UTF8.GetBytes($"{RabbitMqBuilder.DefaultUsername}:{RabbitMqBuilder.DefaultPassword}"));
+
+        return new HttpClient
+        {
+            BaseAddress = new Uri($"http://{Host}:{_container.GetMappedPublicPort(ManagementPort)}/api/"),
+            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Basic", credentials) }
+        };
     }
 }

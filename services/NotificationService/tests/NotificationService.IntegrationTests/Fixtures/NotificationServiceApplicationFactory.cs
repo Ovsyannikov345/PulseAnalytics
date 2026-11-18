@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Logging;
 using Testcontainers.RabbitMq;
 
 namespace NotificationService.IntegrationTests.Fixtures;
@@ -18,6 +19,9 @@ public sealed class NotificationServiceApplicationFactory(
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(EnvironmentName);
+
+        // Lets tests check what the background consumers report (see FakeLogCollector).
+        builder.ConfigureLogging(logging => logging.AddFakeLogging());
 
         foreach (var (key, value) in DefaultSettings())
         {
