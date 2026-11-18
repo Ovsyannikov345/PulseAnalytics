@@ -2,8 +2,9 @@ import react from '@vitejs/plugin-react';
 import { searchForWorkspaceRoot } from 'vite';
 import { defineConfig } from 'vitest/config';
 
-// The dev server proxies the API like the image's nginx does
+// The dev server proxies the API and the readings hub like the image's nginx does
 const apiGatewayUrl = process.env.API_GATEWAY_URL ?? 'http://localhost:5103';
+const notificationServiceUrl = process.env.NOTIFICATION_SERVICE_URL ?? 'http://localhost:5104';
 
 export default defineConfig({
   plugins: [react()],
@@ -43,6 +44,7 @@ export default defineConfig({
     proxy: {
       '/graphql': apiGatewayUrl,
       '/api': apiGatewayUrl,
+      '/hubs': { target: notificationServiceUrl, ws: true },
     },
   },
   test: {
