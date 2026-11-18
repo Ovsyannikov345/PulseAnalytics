@@ -4,7 +4,6 @@ using NotificationService.Api.Hubs.Readings;
 using NotificationService.Api.Hubs.Readings.Messages;
 using NotificationService.Application.LiveReadings.Enums;
 using NotificationService.Application.LiveReadings.Models;
-using Shouldly;
 using Xunit;
 
 namespace NotificationService.UnitTests.Api.Hubs.Readings;
@@ -37,29 +36,28 @@ public sealed class SignalRReadingsNotifierTests
         await _sut.NotifyReadingStoredAsync(Reading, TestContext.Current.CancellationToken);
 
         // Assert
-        A.CallTo(() => _allClients.ReadingStored(new EnergyLiveReading
-            {
-                Id = Reading.Id,
-                Location = Reading.Location,
-                ReceivedAt = Reading.ReceivedAt,
-                Energy = Reading.Energy
-            }))
+        A.CallTo(() => _allClients.ReadingStored(
+                new EnergyLiveReading
+                {
+                    Id = Reading.Id,
+                    Location = Reading.Location,
+                    ReceivedAt = Reading.ReceivedAt,
+                    Energy = Reading.Energy
+                },
+                A<CancellationToken>._))
             .MustHaveHappenedOnceExactly();
     }
 
     [Fact]
-    public async Task NotifyReadingStoredAsync_CancelledWhileSending_StopsWaiting()
+    public async Task NotifyReadingStoredAsync_Token_PassesItToTheSend()
     {
         // Arrange
-        var send = new TaskCompletionSource();
-        A.CallTo(() => _allClients.ReadingStored(A<LiveReading>._)).Returns(send.Task);
         using var cts = new CancellationTokenSource();
 
         // Act
-        var notifying = _sut.NotifyReadingStoredAsync(Reading, cts.Token);
-        await cts.CancelAsync();
+        await _sut.NotifyReadingStoredAsync(Reading, cts.Token);
 
         // Assert
-        await Should.ThrowAsync<OperationCanceledException>(notifying);
+        A.CallTo(() => _allClients.ReadingStored(A<LiveReading>._, cts.Token)).MustHaveHappenedOnceExactly();
     }
 }

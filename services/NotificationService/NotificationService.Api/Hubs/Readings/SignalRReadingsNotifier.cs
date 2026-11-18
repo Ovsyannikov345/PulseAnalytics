@@ -9,6 +9,6 @@ internal sealed class SignalRReadingsNotifier(IHubContext<ReadingsHub, IReadings
 {
     public Task NotifyReadingStoredAsync(LiveReadingModel reading, CancellationToken ct)
     {
-        return hubContext.Clients.All.ReadingStored(reading.ToMessage()).WaitAsync(ct);
+        return hubContext.Clients.All.ReadingStored(reading.ToMessage(), ct);
     }
 }
