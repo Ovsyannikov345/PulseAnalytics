@@ -15,9 +15,22 @@ public sealed class NotificationServiceApplicationFactory(IReadOnlyDictionary<st
     {
         builder.UseEnvironment(EnvironmentName);
 
+        foreach (var (key, value) in DefaultSettings())
+        {
+            builder.UseSetting(key, value);
+        }
+
         foreach (var (key, value) in overrides ?? new Dictionary<string, string?>())
         {
             builder.UseSetting(key, value);
         }
+    }
+
+    private static Dictionary<string, string?> DefaultSettings()
+    {
+        return new Dictionary<string, string?>
+        {
+            ["Serilog:MinimumLevel:Default"] = "Warning"
+        };
     }
 }

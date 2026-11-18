@@ -1,14 +1,52 @@
+using NotificationService.Api;
 using NotificationService.Api.HealthCheck;
+using NotificationService.Api.Observability;
 using NotificationService.Infrastructure;
+using Serilog;
+using Serilog.Events;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Services.AddInfrastructureServices();
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHealthChecks();
+    var configuration = builder.Configuration;
 
-var app = builder.Build();
+    builder.Services
+        .AddSerilogLogging(configuration)
+        .AddObservability(configuration)
+        .AddInfrastructureServices();
 
-app.MapHealthChecks(HealthCheckConstants.EndpointPath);
+    builder.Services.AddHealthChecks();
 
-await app.RunAsync();
+    var app = builder.Build();
+
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.GetLevel = (context, _, exception) =>
+        {
+            if (exception is not null || context.Response.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                return LogEventLevel.Error;
+            }
+
+            return context.IsHealthCheckRequest() ? LogEventLevel.Verbose : LogEventLevel.Information;
+        };
+    });
+
+    app.MapHealthChecks(HealthCheckConstants.EndpointPath);
+
+    await app.RunAsync();
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Notification service terminated unexpectedly");
+    Environment.ExitCode = 1;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
