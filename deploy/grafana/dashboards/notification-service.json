@@ -1,0 +1,431 @@
+{
+  "uid": "notification-service",
+  "title": "Notification Service",
+  "description": "Consuming stored reading events from RabbitMQ, pushing them to browsers over SignalR and runtime health of the notification-service.",
+  "tags": ["pulse-analytics", "notification-service"],
+  "timezone": "browser",
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "schemaVersion": 41,
+  "version": 1,
+  "templating": { "list": [] },
+  "annotations": { "list": [] },
+  "links": [
+    { "type": "dashboards", "title": "Pulse Analytics", "tags": ["pulse-analytics"], "asDropdown": true, "includeVars": false, "keepTime": true }
+  ],
+  "panels": [
+    {
+      "type": "row",
+      "title": "Broadcasting",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "panels": []
+    },
+    {
+      "type": "stat",
+      "title": "Acked messages",
+      "description": "Share of consumed stored events in the selected range that were pushed to the clients and acked.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "decimals": 1,
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.9 },
+              { "color": "green", "value": 0.99 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(notification_service_message_processing_duration_seconds_count{job=\"notification-service\", app_outcome=\"acked\"}[$__range])) / sum(increase(notification_service_message_processing_duration_seconds_count{job=\"notification-service\"}[$__range]))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Readings pushed",
+      "description": "Readings sent to all connected clients in the selected range (also counted while no client is connected).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(notification_service_readings_broadcast_total{job=\"notification-service\"}[$__range])) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "End-to-end delay p95",
+      "description": "95th percentile in the selected range of the time from the ingestor receiving a reading to its push to the clients.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "orange", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (increase(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[$__range])))",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Connected clients",
+      "description": "SignalR connections open now (one per browser tab on the Live page).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(signalr_server_active_connections{job=\"notification-service\"}) or vector(0)",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages per minute by outcome",
+      "description": "acked = pushed to the clients; rejected = nacked without requeue (unparsable body, unknown location, failed push); requeued = nacked back to the queue because the service was stopping.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "acked" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "rejected" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "requeued" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_outcome) (rate(notification_service_message_processing_duration_seconds_count{job=\"notification-service\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_outcome}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Readings pushed per minute by reading type",
+      "description": "About 72 per minute while WeakApp answers every poll (18 meters every 15 s).",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (app_reading_type) (rate(notification_service_readings_broadcast_total{job=\"notification-service\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{app_reading_type}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Message processing duration",
+      "description": "From delivery to the ack/nack decision: parsing, mapping and handing the push to SignalR. Buckets start at 0.1 ms; the average is exact.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(notification_service_message_processing_duration_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_service_message_processing_duration_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(notification_service_message_processing_duration_seconds_sum{job=\"notification-service\"}[5m])) / sum(rate(notification_service_message_processing_duration_seconds_count{job=\"notification-service\"}[5m]))",
+          "legendFormat": "average"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "End-to-end delay",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "End-to-end delay",
+      "description": "From the ingestor receiving a reading to its push to the clients: ingestor publish, processor validation and insert, two broker hops and the push. Buckets run from 5 ms to 30 s, the queues' message TTL; older events are dropped by the broker and never pushed. The average is exact.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "p99"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(rate(notification_service_reading_delay_seconds_sum{job=\"notification-service\"}[5m])) / sum(rate(notification_service_reading_delay_seconds_count{job=\"notification-service\"}[5m]))",
+          "legendFormat": "average"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "End-to-end delay p95 by reading type",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le, app_reading_type) (rate(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[5m])))",
+          "legendFormat": "{{app_reading_type}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "SignalR connections",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Connected clients by transport",
+      "description": "Open SignalR connections. Browsers behind nginx use web_sockets; long_polling or server_sent_events means the WebSocket upgrade failed on the way.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (signalr_transport) (signalr_server_active_connections{job=\"notification-service\"})",
+          "legendFormat": "{{signalr_transport}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Connections closed per minute by status",
+      "description": "normal_closure = the client left (page closed or navigated away); timeout = no message or ping from the client for 30 s; app_shutdown = the service was stopping.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 23 },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "normal_closure" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "timeout" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "app_shutdown" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (signalr_connection_status) (rate(signalr_server_connection_duration_seconds_count{job=\"notification-service\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{signalr_connection_status}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Average connection duration",
+      "description": "Average duration of the connections closed in the preceding 30 minutes. An average, not percentiles: the duration histogram's buckets end at 300 s, and Live page connections usually last longer.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(signalr_server_connection_duration_seconds_sum{job=\"notification-service\"}[30m])) / (sum(increase(signalr_server_connection_duration_seconds_count{job=\"notification-service\"}[30m])) > 0)",
+          "legendFormat": "average"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Hub requests per minute by route and status",
+      "description": "POST /hubs/readings/negotiate opens a connection; GET /hubs/readings with 101 is the WebSocket upgrade, counted when the connection closes. /health is left out.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 23 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (http_request_method, http_route, http_response_status_code) (rate(http_server_request_duration_seconds_count{job=\"notification-service\", http_route!=\"/health\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{http_request_method}} {{http_route}} {{http_response_status_code}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "RabbitMQ queues",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 31 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Messages waiting per queue",
+      "description": "One exclusive queue per reading type and running instance (legend: type and the end of the instance id), deleted when the instance stops. ready = waiting for the consumer; unacked = delivered and not yet acked or nacked. Events older than 30 s are dropped by the broker.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace(sum by (queue) (rabbitmq_detailed_queue_messages_ready{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.stored\\\\..+\\\\.notify\\\\..+\"}), \"notify_queue\", \"$1 …$2\", \"queue\", \"pulse\\\\.meter-readings\\\\.stored\\\\.(.+)\\\\.notify\\\\..*([0-9a-f]{12})\")",
+          "legendFormat": "{{notify_queue}} ready"
+        },
+        {
+          "refId": "B",
+          "expr": "label_replace(sum by (queue) (rabbitmq_detailed_queue_messages_unacked{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.stored\\\\..+\\\\.notify\\\\..+\"}), \"notify_queue\", \"$1 …$2\", \"queue\", \"pulse\\\\.meter-readings\\\\.stored\\\\.(.+)\\\\.notify\\\\..*([0-9a-f]{12})\")",
+          "legendFormat": "{{notify_queue}} unacked"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Consumers per queue",
+      "description": "1 per queue while its instance consumes. A queue disappears with its instance, so after a restart the old series end and new ones start.",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 32 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "label_replace(sum by (queue) (rabbitmq_detailed_queue_consumers{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.stored\\\\..+\\\\.notify\\\\..+\"}), \"notify_queue\", \"$1 …$2\", \"queue\", \"pulse\\\\.meter-readings\\\\.stored\\\\.(.+)\\\\.notify\\\\..*([0-9a-f]{12})\")",
+          "legendFormat": "{{notify_queue}}"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Runtime",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "CPU",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "custom": { "fillOpacity": 20, "lineWidth": 1, "stacking": { "mode": "normal", "group": "A" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (cpu_mode) (rate(dotnet_process_cpu_time_seconds_total{job=\"notification-service\"}[$__rate_interval])) / scalar(max(dotnet_process_cpu_count{job=\"notification-service\"}))",
+          "legendFormat": "{{cpu_mode}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Memory",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "bytes", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_process_memory_working_set_bytes{job=\"notification-service\"})", "legendFormat": "working set" },
+        { "refId": "B", "expr": "sum(dotnet_gc_last_collection_heap_size_bytes{job=\"notification-service\"})", "legendFormat": "GC heap" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "GC collections per minute",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "bars", "fillOpacity": 80, "stacking": { "mode": "normal", "group": "A" }, "lineWidth": 1 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by (gc_heap_generation) (rate(dotnet_gc_collections_total{job=\"notification-service\"}[$__rate_interval])) * 60",
+          "legendFormat": "{{gc_heap_generation}}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Thread pool and exceptions",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 41 },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 0, "lineWidth": 2 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        { "refId": "A", "expr": "sum(dotnet_thread_pool_thread_count_total{job=\"notification-service\"})", "legendFormat": "thread pool threads" },
+        { "refId": "B", "expr": "sum(dotnet_thread_pool_queue_length_total{job=\"notification-service\"})", "legendFormat": "thread pool queue" },
+        { "refId": "C", "expr": "sum(rate(dotnet_exceptions_total{job=\"notification-service\"}[$__rate_interval])) * 60", "legendFormat": "exceptions / min" }
+      ]
+    }
+  ]
+}
