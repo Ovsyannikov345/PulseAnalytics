@@ -1,3 +1,9 @@
+# WebSocket upgrades for the readings hub; other requests keep an empty Connection header.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      '';
+}
+
 server {
     listen 8080;
     server_name _;
@@ -14,6 +20,7 @@ server {
 
     resolver ${NGINX_RESOLVER} valid=10s ipv6=off;
     set $api_gateway ${API_GATEWAY_URL};
+    set $notification_service ${NOTIFICATION_SERVICE_URL};
 
     proxy_http_version 1.1;
     proxy_set_header Connection "";
@@ -40,6 +47,20 @@ server {
     location /api/ {
         proxy_buffering off;
         proxy_pass $api_gateway;
+    }
+
+    location /hubs/ {
+        # A location's own proxy_set_header replaces all inherited ones, so they are repeated.
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        # The hub pings every 15 s; this only ends connections that went silent.
+        proxy_read_timeout 1h;
+        proxy_pass $notification_service;
     }
 
     location /assets/ {

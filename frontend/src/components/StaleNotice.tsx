@@ -1,4 +1,4 @@
-import { formatElapsed, formatTime } from '../../domain/formatting';
+import { formatElapsed, formatTime } from '../domain/formatting';
 import styles from './StaleNotice.module.css';
 
 interface StaleNoticeProps {

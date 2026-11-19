@@ -1,0 +1,18 @@
+query LiveLatestReadings {
+  latestReadings {
+    id
+    location
+    receivedAt
+    ... on EnergyReading {
+      energy
+    }
+    ... on AirQualityReading {
+      co2
+      pm25
+      humidity
+    }
+    ... on MotionReading {
+      motionDetected
+    }
+  }
+}

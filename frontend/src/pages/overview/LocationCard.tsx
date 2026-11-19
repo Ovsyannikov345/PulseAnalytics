@@ -2,48 +2,15 @@ import { Link } from 'react-router';
 
 import { Sparkline } from '../../components/charts/Sparkline';
 import { Chip } from '../../components/Chip';
+import { AirQualityWarnings } from '../../components/meters/AirQualityWarnings';
+import { formatMeterValue } from '../../components/meters/formatMeterValue';
+import { MetricList, MetricRow } from '../../components/meters/MetricList';
 import { Skeleton } from '../../components/states/Skeleton';
-import { formatNumber } from '../../domain/formatting';
 import { meterLocationLabel } from '../../domain/meters';
-import {
-  CO2_WARNING_PPM,
-  isCo2High,
-  isPm25High,
-  PM25_WARNING_UG_PER_M3,
-} from '../../domain/thresholds';
 import type { WidgetQuery } from '../../graphql/widgetQuery';
 import type { EnergySparklines } from './energySparklines';
 import type { LocationValues } from './latestValues';
 import styles from './LocationCard.module.css';
-
-function formatValue(value: number | null, fractionDigits = 0): string {
-  return value === null ? '—' : formatNumber(value, fractionDigits);
-}
-
-interface MetricProps {
-  label: string;
-  value: number | null;
-  unit: string;
-  scaleMax: number;
-}
-
-function Metric({ label, value, unit, scaleMax }: Readonly<MetricProps>) {
-  const share = value === null ? 0 : Math.min(1, Math.max(0, value / scaleMax));
-
-  return (
-    <div className={styles.metric}>
-      <dt className={styles.metricLabel}>{label}</dt>
-      <dd className={styles.metricValue}>
-        <span aria-hidden="true" className={styles.bar}>
-          <span className={styles.barFill} style={{ width: `${String(share * 100)}%` }} />
-        </span>
-        <span className={styles.number}>
-          {formatValue(value)} <span className={styles.unit}>{unit}</span>
-        </span>
-      </dd>
-    </div>
-  );
-}
 
 function Trend({
   trend,
@@ -75,15 +42,6 @@ interface LocationCardProps {
 }
 
 export function LocationCard({ values, trend }: Readonly<LocationCardProps>) {
-  const warnings = [
-    values.airQuality && isCo2High(values.airQuality.co2)
-      ? `CO₂ above ${formatNumber(CO2_WARNING_PPM)} ppm`
-      : null,
-    values.airQuality && isPm25High(values.airQuality.pm25)
-      ? `PM2.5 above ${formatNumber(PM25_WARNING_UG_PER_M3)} µg/m³`
-      : null,
-  ].filter((warning) => warning !== null);
-
   return (
     <article className={styles.card}>
       <div className={styles.top}>
@@ -98,7 +56,7 @@ export function LocationCard({ values, trend }: Readonly<LocationCardProps>) {
       <div className={styles.energyRow}>
         <div className={styles.energy}>
           <span className={styles.energyLabel}>Energy</span>
-          <span className={styles.energyValue}>{formatValue(values.energy, 2)}</span>
+          <span className={styles.energyValue}>{formatMeterValue(values.energy, 2)}</span>
         </div>
         <div className={styles.trend}>
           <Trend
@@ -108,25 +66,22 @@ export function LocationCard({ values, trend }: Readonly<LocationCardProps>) {
           <span className={styles.trendCaption}>5-min average, last 2 h</span>
         </div>
       </div>
-      <dl className={styles.metrics}>
-        <Metric label="CO₂" value={values.airQuality?.co2 ?? null} unit="ppm" scaleMax={2000} />
-        <Metric label="PM2.5" value={values.airQuality?.pm25 ?? null} unit="µg/m³" scaleMax={100} />
-        <Metric
+      <MetricList>
+        <MetricRow label="CO₂" value={values.airQuality?.co2 ?? null} unit="ppm" scaleMax={2000} />
+        <MetricRow
+          label="PM2.5"
+          value={values.airQuality?.pm25 ?? null}
+          unit="µg/m³"
+          scaleMax={100}
+        />
+        <MetricRow
           label="Humidity"
           value={values.airQuality?.humidity ?? null}
           unit="%"
           scaleMax={100}
         />
-      </dl>
-      {warnings.length > 0 ? (
-        <div className={styles.warnings}>
-          {warnings.map((warning) => (
-            <Chip key={warning} variant="warning">
-              {warning}
-            </Chip>
-          ))}
-        </div>
-      ) : null}
+      </MetricList>
+      <AirQualityWarnings airQuality={values.airQuality} />
     </article>
   );
 }

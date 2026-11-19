@@ -35,6 +35,13 @@
   font-weight: var(--font-weight-medium);
 }
 
+.waiting {
+  padding: 3px 10px;
+  border: 1px dashed var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
 .warning {
   border-radius: var(--radius-sm);
   background: var(--color-warning-bg);

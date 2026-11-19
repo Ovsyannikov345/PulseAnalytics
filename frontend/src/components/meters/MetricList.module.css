@@ -1,0 +1,87 @@
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-divider);
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  font-size: var(--font-size-md);
+}
+
+.metricLabel {
+  color: var(--color-text-secondary);
+}
+
+.metricValue {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-surface-muted);
+}
+
+.barFill {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-chart);
+}
+
+.number {
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-semibold);
+  text-align: right;
+}
+
+.unit {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-regular);
+}
+
+@media (max-width: 640px) {
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding-top: 10px;
+  }
+
+  .metric {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .metricLabel {
+    font-size: var(--font-size-sm);
+  }
+
+  .metricValue {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bar {
+    display: none;
+  }
+
+  .number {
+    font-size: var(--font-size-base);
+    text-align: left;
+  }
+
+  .unit {
+    font-size: var(--font-size-sm);
+  }
+}

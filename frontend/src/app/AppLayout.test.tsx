@@ -20,6 +20,7 @@ describe('AppLayout', () => {
 
   it.each([
     ['/', 'Overview'],
+    ['/live', 'Live'],
     ['/analytics', 'Analytics'],
     ['/readings', 'Readings'],
   ])('marks only the current page in the nav on %s', async (path, page) => {

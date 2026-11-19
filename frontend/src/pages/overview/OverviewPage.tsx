@@ -2,6 +2,7 @@ import { useQuery } from '@apollo/client/react';
 import { useMemo } from 'react';
 
 import { PageHeader } from '../../components/PageHeader';
+import { StaleNotice } from '../../components/StaleNotice';
 import { PageError } from '../../components/states/PageError';
 import { Skeleton } from '../../components/states/Skeleton';
 import { expectedSamples, POLL_PERIOD_MS } from '../../domain/expectedSamples';
@@ -26,7 +27,6 @@ import { COVERAGE_BUCKET, toIngestionCoverage } from './ingestionCoverage';
 import { summarizeLatest } from './latestValues';
 import { LocationsSection } from './LocationsSection';
 import styles from './OverviewPage.module.css';
-import { StaleNotice } from './StaleNotice';
 import { SummaryTiles } from './SummaryTiles';
 import { REFRESH_INTERVAL_MS, useOverviewRefresh } from './useOverviewRefresh';
 

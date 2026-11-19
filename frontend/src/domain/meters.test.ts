@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import {
   METER_COUNT,
   METERS_PER_TYPE,
+  meterLocationFromRestName,
   meterLocationLabel,
   meterLocationRestName,
   meterLocations,
+  meterTypeFromRestName,
   meterTypeLabel,
   meterTypeRestName,
   meterTypes,
@@ -36,6 +38,7 @@ describe('meters', () => {
   ] as const)('names the type %s "%s" and %s for REST', (type, label, restName) => {
     expect(meterTypeLabel(type)).toBe(label);
     expect(meterTypeRestName(type)).toBe(restName);
+    expect(meterTypeFromRestName(restName)).toBe(type);
   });
 
   it.each([
@@ -48,5 +51,14 @@ describe('meters', () => {
   ] as const)('names the location %s "%s" and %s for REST', (location, label, restName) => {
     expect(meterLocationLabel(location)).toBe(label);
     expect(meterLocationRestName(location)).toBe(restName);
+    expect(meterLocationFromRestName(restName)).toBe(location);
   });
+
+  it.each(['AIR_QUALITY', 'airQuality', 'Living Room', 'toString', ''])(
+    'finds no type or location for the name "%s"',
+    (name) => {
+      expect(meterTypeFromRestName(name)).toBeUndefined();
+      expect(meterLocationFromRestName(name)).toBeUndefined();
+    },
+  );
 });
