@@ -61,7 +61,7 @@
       "description": "Readings sent to all connected clients in the selected range (also counted while no client is connected).",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
-      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "green" } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "auto" },
       "targets": [
         {
@@ -163,7 +163,7 @@
     {
       "type": "timeseries",
       "title": "Message processing duration",
-      "description": "From delivery to the ack/nack decision: parsing, mapping and handing the push to SignalR.",
+      "description": "From delivery to the ack/nack decision: parsing, mapping and handing the push to SignalR. Buckets start at 0.1 ms; the average is exact.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
       "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
@@ -178,6 +178,11 @@
           "refId": "B",
           "expr": "histogram_quantile(0.95, sum by (le) (rate(notification_service_message_processing_duration_seconds_bucket{job=\"notification-service\"}[5m])))",
           "legendFormat": "p95"
+        },
+        {
+          "refId": "C",
+          "expr": "sum(rate(notification_service_message_processing_duration_seconds_sum{job=\"notification-service\"}[5m])) / sum(rate(notification_service_message_processing_duration_seconds_count{job=\"notification-service\"}[5m]))",
+          "legendFormat": "average"
         }
       ]
     },
@@ -191,7 +196,7 @@
     {
       "type": "timeseries",
       "title": "End-to-end delay",
-      "description": "From the ingestor receiving a reading to its push to the clients: ingestor publish, processor validation and insert, two broker hops and the push. Buckets end at 30 s, the queues' message TTL; older events are dropped by the broker and never pushed.",
+      "description": "From the ingestor receiving a reading to its push to the clients: ingestor publish, processor validation and insert, two broker hops and the push. Buckets run from 5 ms to 30 s, the queues' message TTL; older events are dropped by the broker and never pushed. The average is exact.",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
       "fieldConfig": { "defaults": { "unit": "s", "min": 0, "custom": { "fillOpacity": 10, "lineWidth": 2 } }, "overrides": [] },
@@ -211,6 +216,11 @@
           "refId": "C",
           "expr": "histogram_quantile(0.99, sum by (le) (rate(notification_service_reading_delay_seconds_bucket{job=\"notification-service\"}[5m])))",
           "legendFormat": "p99"
+        },
+        {
+          "refId": "D",
+          "expr": "sum(rate(notification_service_reading_delay_seconds_sum{job=\"notification-service\"}[5m])) / sum(rate(notification_service_reading_delay_seconds_count{job=\"notification-service\"}[5m]))",
+          "legendFormat": "average"
         }
       ]
     },

@@ -53,6 +53,20 @@ public sealed class MetricsServiceTests : IDisposable
     }
 
     [Fact]
+    public void RecordMessageProcessed_AnyMessage_AdvisesBucketsFromATenthOfAMillisecond()
+    {
+        // Arrange
+        using var collector = Collect<double>(MetricsService.MessageProcessingDurationName);
+
+        // Act
+        _sut.RecordMessageProcessed("MotionReadingStored", TimeSpan.FromMilliseconds(1), ConsumeOutcome.Acked);
+
+        // Assert
+        collector.Instrument.ShouldBeOfType<Histogram<double>>().Advice.ShouldNotBeNull().HistogramBucketBoundaries
+            .ShouldBe([0.0001, 0.00025, 0.0005, 0.001, 0.0025, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5]);
+    }
+
+    [Fact]
     public void RecordMessageProcessed_UnknownOutcome_Throws()
     {
         // Act & Assert
@@ -93,6 +107,20 @@ public sealed class MetricsServiceTests : IDisposable
         var measurement = collector.GetMeasurementSnapshot().ShouldHaveSingleItem();
         measurement.Value.ShouldBe(1.5);
         measurement.Tags["app.reading.type"].ShouldBe("energy");
+    }
+
+    [Fact]
+    public void RecordBroadcast_AnyReading_AdvisesDelayBucketsFromFiveMilliseconds()
+    {
+        // Arrange
+        using var collector = Collect<double>(MetricsService.ReadingDelayName);
+
+        // Act
+        _sut.RecordBroadcast(MeterType.Energy, TimeSpan.FromMilliseconds(20));
+
+        // Assert
+        collector.Instrument.ShouldBeOfType<Histogram<double>>().Advice.ShouldNotBeNull().HistogramBucketBoundaries
+            .ShouldBe([0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30]);
     }
 
     [Fact]
