@@ -344,12 +344,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_ready{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_ready{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.[^.]+\\\\.process\"})",
           "legendFormat": "{{queue}} ready"
         },
         {
           "refId": "B",
-          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_unacked{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_messages_unacked{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.[^.]+\\\\.process\"})",
           "legendFormat": "{{queue}} unacked"
         }
       ]
@@ -365,7 +365,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (queue) (rabbitmq_detailed_queue_consumers{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\..*\"})",
+          "expr": "sum by (queue) (rabbitmq_detailed_queue_consumers{job=\"rabbitmq-queues\", queue=~\"pulse\\\\.meter-readings\\\\.[^.]+\\\\.process\"})",
           "legendFormat": "{{queue}}"
         }
       ]
