@@ -24,7 +24,7 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
         TotalTimeoutInSeconds = 20,
         AttemptTimeoutInSeconds = 5,
         MaxRetryAttempts = 2,
-        RetryBaseDelayInSeconds = 1
+        RetryBaseDelayInSeconds = 1,
     };
 
     private readonly HttpMessageHandler _handler = A.Fake<HttpMessageHandler>();

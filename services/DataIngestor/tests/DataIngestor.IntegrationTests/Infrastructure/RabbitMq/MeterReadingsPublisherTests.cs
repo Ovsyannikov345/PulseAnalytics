@@ -86,7 +86,7 @@ public sealed class MeterReadingsPublisherTests(RabbitMqContainerFixture rabbitM
             ReceivedAt = MeterReadings.ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 

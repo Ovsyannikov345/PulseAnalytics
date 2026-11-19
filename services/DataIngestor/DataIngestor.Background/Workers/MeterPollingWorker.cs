@@ -63,6 +63,13 @@ internal sealed class MeterPollingWorker(
         }
     }
 
+    private static async Task<Result> DoWorkAsync(AsyncServiceScope serviceScope, CancellationToken ct)
+    {
+        var metersService = serviceScope.ServiceProvider.GetRequiredService<IExternalMetersService>();
+
+        return await metersService.IngestReadingsAsync(ct);
+    }
+
     private async Task PollAsync(CancellationToken stoppingToken)
     {
         CorrelationContext.CorrelationId = Guid.CreateVersion7(timeProvider.GetUtcNow());
@@ -104,13 +111,6 @@ internal sealed class MeterPollingWorker(
         {
             CorrelationContext.Reset();
         }
-    }
-
-    private static async Task<Result> DoWorkAsync(AsyncServiceScope serviceScope, CancellationToken ct)
-    {
-        var metersService = serviceScope.ServiceProvider.GetRequiredService<IExternalMetersService>();
-
-        return await metersService.IngestReadingsAsync(ct);
     }
 }
 

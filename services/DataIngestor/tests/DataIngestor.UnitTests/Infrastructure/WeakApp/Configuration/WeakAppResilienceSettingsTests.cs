@@ -12,7 +12,7 @@ public sealed class WeakAppResilienceSettingsTests
         TotalTimeoutInSeconds = 20,
         AttemptTimeoutInSeconds = 5,
         MaxRetryAttempts = 2,
-        RetryBaseDelayInSeconds = 1
+        RetryBaseDelayInSeconds = 1,
     };
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class WeakAppResilienceSettingsTests
         var settings = ValidSettings with
         {
             AttemptTimeoutInSeconds = attemptTimeoutInSeconds,
-            TotalTimeoutInSeconds = totalTimeoutInSeconds
+            TotalTimeoutInSeconds = totalTimeoutInSeconds,
         };
 
         // Act
@@ -98,7 +98,7 @@ public sealed class WeakAppResilienceSettingsTests
         results.ShouldHaveSingleItem().MemberNames.ShouldBe(
         [
             nameof(WeakAppResilienceSettings.AttemptTimeoutInSeconds),
-            nameof(WeakAppResilienceSettings.TotalTimeoutInSeconds)
+            nameof(WeakAppResilienceSettings.TotalTimeoutInSeconds),
         ]);
     }
 }

@@ -4,5 +4,5 @@ public enum FetchOutcome
 {
     Succeeded = 1,
     Empty = 2,
-    Failed = 3
+    Failed = 3,
 }

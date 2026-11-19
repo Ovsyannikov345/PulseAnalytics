@@ -36,7 +36,7 @@ internal static class HttpMessageHandlerFakeExtensions
             .ReturnsLazily(call => Task.FromResult(new HttpResponseMessage(statusCode)
             {
                 Content = createContent(),
-                RequestMessage = call.GetArgument<HttpRequestMessage>(0)
+                RequestMessage = call.GetArgument<HttpRequestMessage>(0),
             }));
     }
 

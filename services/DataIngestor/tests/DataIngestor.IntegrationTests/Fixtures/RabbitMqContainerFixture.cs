@@ -37,7 +37,7 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
             Port = Port,
             UserName = RabbitMqBuilder.DefaultUsername,
             Password = RabbitMqBuilder.DefaultPassword,
-            ClientProvidedName = "pulse-analytics.data-ingestor.integration-tests"
+            ClientProvidedName = "pulse-analytics.data-ingestor.integration-tests",
         };
 
         return await factory.CreateConnectionAsync(ct);

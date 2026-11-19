@@ -101,7 +101,7 @@ internal sealed class MetricsService : IMetricsService
         {
             PollOutcome.Succeeded => "succeeded",
             PollOutcome.Failed => "failed",
-            _ => throw new UnreachableException($"No tag value for poll outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for poll outcome {outcome}"),
         };
     }
 
@@ -112,7 +112,7 @@ internal sealed class MetricsService : IMetricsService
             FetchOutcome.Succeeded => "succeeded",
             FetchOutcome.Empty => "empty",
             FetchOutcome.Failed => "failed",
-            _ => throw new UnreachableException($"No tag value for fetch outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for fetch outcome {outcome}"),
         };
     }
 
@@ -126,7 +126,7 @@ internal sealed class MetricsService : IMetricsService
             PublishOutcome.Nacked => "nacked",
             PublishOutcome.Failed => "failed",
             PublishOutcome.Skipped => "skipped",
-            _ => throw new UnreachableException($"No tag value for publish outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for publish outcome {outcome}"),
         };
     }
 
@@ -137,7 +137,7 @@ internal sealed class MetricsService : IMetricsService
             MeterType.AirQuality => "air_quality",
             MeterType.Energy => "energy",
             MeterType.Motion => "motion",
-            _ => throw new UnreachableException($"No tag value for meter type {meterType}")
+            _ => throw new UnreachableException($"No tag value for meter type {meterType}"),
         };
     }
 }

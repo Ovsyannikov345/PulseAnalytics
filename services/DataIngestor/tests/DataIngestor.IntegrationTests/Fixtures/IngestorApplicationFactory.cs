@@ -51,7 +51,7 @@ public sealed class IngestorApplicationFactory(
             ["RabbitMq:PublishTimeoutInSeconds"] = "5",
 
             ["MeterPollingWorker:StartupDelayInSeconds"] = "300",
-            ["MeterPollingWorker:PollingPeriodInSeconds"] = "3600"
+            ["MeterPollingWorker:PollingPeriodInSeconds"] = "3600",
         };
     }
 }

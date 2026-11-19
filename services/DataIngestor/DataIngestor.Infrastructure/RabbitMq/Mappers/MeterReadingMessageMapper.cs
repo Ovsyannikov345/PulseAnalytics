@@ -17,7 +17,7 @@ internal static class MeterReadingMessageMapper
             AirQualityPayload => nameof(AirQualityReadingReceived),
 
             _ => throw new UnreachableException(
-                $"No message type for reading payload type {reading.Payload.GetType().Name}")
+                $"No message type for reading payload type {reading.Payload.GetType().Name}"),
         };
     }
 
@@ -33,7 +33,7 @@ internal static class MeterReadingMessageMapper
                     MessageId = messageId,
                     Location = reading.Name,
                     ReceivedAt = reading.ReceivedAt,
-                    MotionDetected = motion.MotionDetected
+                    MotionDetected = motion.MotionDetected,
                 },
                 MeterReadingsTopology.RoutingKeys.MotionReadingReceived),
 
@@ -43,7 +43,7 @@ internal static class MeterReadingMessageMapper
                     MessageId = messageId,
                     Location = reading.Name,
                     ReceivedAt = reading.ReceivedAt,
-                    Energy = energy.Energy
+                    Energy = energy.Energy,
                 },
                 MeterReadingsTopology.RoutingKeys.EnergyReadingReceived),
 
@@ -55,12 +55,12 @@ internal static class MeterReadingMessageMapper
                     ReceivedAt = reading.ReceivedAt,
                     Co2 = airQuality.Co2,
                     Pm25 = airQuality.Pm25,
-                    Humidity = airQuality.Humidity
+                    Humidity = airQuality.Humidity,
                 },
                 MeterReadingsTopology.RoutingKeys.AirQualityReadingReceived),
 
             _ => throw new UnreachableException(
-                $"No message mapping for reading payload type {reading.Payload.GetType().Name}")
+                $"No message mapping for reading payload type {reading.Payload.GetType().Name}"),
         };
     }
 

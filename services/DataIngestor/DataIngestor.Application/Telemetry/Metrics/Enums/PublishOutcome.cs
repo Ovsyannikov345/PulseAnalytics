@@ -7,5 +7,5 @@ public enum PublishOutcome
     Returned = 3,
     Nacked = 4,
     Failed = 5,
-    Skipped = 6
+    Skipped = 6,
 }

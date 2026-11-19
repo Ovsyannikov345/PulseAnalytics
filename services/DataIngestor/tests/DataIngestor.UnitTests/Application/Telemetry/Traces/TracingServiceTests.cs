@@ -20,7 +20,7 @@ public sealed class TracingServiceTests : IDisposable
         {
             ShouldListenTo = source => source.Name == IngestorTelemetry.ScopeName,
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStarted = _startedActivities.Enqueue
+            ActivityStarted = _startedActivities.Enqueue,
         };
         ActivitySource.AddActivityListener(_listener);
     }
@@ -58,7 +58,7 @@ public sealed class TracingServiceTests : IDisposable
         using var parentListener = new ActivityListener
         {
             ShouldListenTo = source => ReferenceEquals(source, parentSource),
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
         };
         ActivitySource.AddActivityListener(parentListener);
         using var parent = parentSource.StartActivity("parent");

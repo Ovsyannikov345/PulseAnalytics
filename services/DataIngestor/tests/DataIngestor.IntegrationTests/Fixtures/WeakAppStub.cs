@@ -31,7 +31,7 @@ public sealed class WeakAppStub : IDisposable
         .. _server.LogEntries
             .Select(entry => entry.RequestMessage)
             .OfType<IRequestMessage>()
-            .Where(request => request.Path == MetersPath)
+            .Where(request => request.Path == MetersPath),
     ];
 
     public static IResponseBuilder Readings(string json = AllReadingsJson)

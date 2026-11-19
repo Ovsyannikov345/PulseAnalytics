@@ -54,7 +54,7 @@ public sealed class MeterReadingsPublisherTests
             UserName = "ingestor",
             Password = "secret",
             ClientProvidedName = "pulse-analytics.data-ingestor",
-            PublishTimeoutInSeconds = PublishTimeoutInSeconds
+            PublishTimeoutInSeconds = PublishTimeoutInSeconds,
         };
 
         _sut = new MeterReadingsPublisher(_connectionProvider, Options.Create(settings), _timeProvider, _metrics, _logger);
@@ -110,7 +110,7 @@ public sealed class MeterReadingsPublisherTests
         [
             "meter-reading.air-quality.received",
             "meter-reading.motion.received",
-            "meter-reading.energy.received"
+            "meter-reading.energy.received",
         ]);
     }
 
@@ -171,7 +171,7 @@ public sealed class MeterReadingsPublisherTests
             ReceivedAt = MeterReadings.ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 
@@ -470,7 +470,7 @@ public sealed class MeterReadingsPublisherTests
         [
             ("MotionReadingReceived", PublishOutcome.Confirmed),
             ("EnergyReadingReceived", PublishOutcome.Confirmed),
-            ("AirQualityReadingReceived", PublishOutcome.Confirmed)
+            ("AirQualityReadingReceived", PublishOutcome.Confirmed),
         ]);
     }
 
@@ -547,7 +547,7 @@ public sealed class MeterReadingsPublisherTests
         [
             ("MotionReadingReceived", PublishOutcome.Failed),
             ("EnergyReadingReceived", PublishOutcome.Skipped),
-            ("AirQualityReadingReceived", PublishOutcome.Skipped)
+            ("AirQualityReadingReceived", PublishOutcome.Skipped),
         ]);
     }
 
@@ -589,7 +589,7 @@ public sealed class MeterReadingsPublisherTests
         [
             .. Fake.GetCalls(_metrics)
                 .Where(call => call.Method.Name == nameof(IMetricsService.RecordPublish))
-                .Select(call => (call.GetArgument<string>(0)!, call.GetArgument<PublishOutcome>(1)))
+                .Select(call => (call.GetArgument<string>(0)!, call.GetArgument<PublishOutcome>(1))),
         ];
     }
 

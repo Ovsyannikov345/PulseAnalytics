@@ -3,5 +3,5 @@
 public enum PollOutcome
 {
     Succeeded = 1,
-    Failed = 2
+    Failed = 2,
 }
