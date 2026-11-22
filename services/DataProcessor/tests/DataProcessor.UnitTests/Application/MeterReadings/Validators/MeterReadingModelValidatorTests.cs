@@ -18,7 +18,7 @@ public sealed class MeterReadingModelValidatorTests
         DeduplicationKey = Guid.Parse("0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21"),
         Location = MeterLocation.Garage,
         ReceivedAt = Now,
-        MotionDetected = true
+        MotionDetected = true,
     };
 
     private readonly MotionReadingModelValidator _sut = new(new FakeTimeProvider(Now));

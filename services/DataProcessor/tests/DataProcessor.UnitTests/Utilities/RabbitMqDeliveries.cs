@@ -20,7 +20,7 @@ internal static class RabbitMqDeliveries
             MessageId = MessageId,
             Type = MessageType,
             ContentType = "application/json",
-            CorrelationId = correlationId ?? Guid.CreateVersion7().ToString()
+            CorrelationId = correlationId ?? Guid.CreateVersion7().ToString(),
         };
     }
 

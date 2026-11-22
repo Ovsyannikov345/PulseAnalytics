@@ -47,7 +47,7 @@ public sealed class ProcessorApplicationFactory(
             ["RabbitMq:UserName"] = RabbitMqBuilder.DefaultUsername,
             ["RabbitMq:Password"] = RabbitMqBuilder.DefaultPassword,
 
-            ["Database:ConnectionString"] = postgreSql.ConnectionString
+            ["Database:ConnectionString"] = postgreSql.ConnectionString,
         };
     }
 }

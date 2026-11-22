@@ -14,7 +14,7 @@ internal static class MeterReadingMessageMapper
         ["Bedroom"] = MeterLocation.Bedroom,
         ["Garage"] = MeterLocation.Garage,
         ["Office"] = MeterLocation.Office,
-        ["Corridor"] = MeterLocation.Corridor
+        ["Corridor"] = MeterLocation.Corridor,
     };
 
     public static Result<MeterReadingModel> ToModel(MotionReadingReceived message)
@@ -31,7 +31,7 @@ internal static class MeterReadingMessageMapper
             DeduplicationKey = message.MessageId,
             Location = location,
             ReceivedAt = message.ReceivedAt,
-            MotionDetected = message.MotionDetected
+            MotionDetected = message.MotionDetected,
         });
     }
 
@@ -49,7 +49,7 @@ internal static class MeterReadingMessageMapper
             DeduplicationKey = message.MessageId,
             Location = location,
             ReceivedAt = message.ReceivedAt,
-            Energy = message.Energy
+            Energy = message.Energy,
         });
     }
 
@@ -69,7 +69,7 @@ internal static class MeterReadingMessageMapper
             ReceivedAt = message.ReceivedAt,
             Co2 = message.Co2,
             Pm25 = message.Pm25,
-            Humidity = message.Humidity
+            Humidity = message.Humidity,
         });
     }
 

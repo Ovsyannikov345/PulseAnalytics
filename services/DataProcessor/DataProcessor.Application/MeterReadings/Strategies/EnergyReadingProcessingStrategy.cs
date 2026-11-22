@@ -34,7 +34,7 @@ internal sealed class EnergyReadingProcessingStrategy(
     {
         return new EnergyPayload
         {
-            Energy = model.Energy
+            Energy = model.Energy,
         };
     }
 }

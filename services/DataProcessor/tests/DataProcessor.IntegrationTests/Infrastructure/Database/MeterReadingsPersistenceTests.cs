@@ -113,7 +113,7 @@ public sealed class MeterReadingsPersistenceTests(RabbitMqContainerFixture rabbi
             ReceivedAt = MeterReadingEvents.ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
     }
 
@@ -125,7 +125,7 @@ public sealed class MeterReadingsPersistenceTests(RabbitMqContainerFixture rabbi
             Type = MeterType.Motion,
             Location = MeterLocation.Garage,
             ReceivedAt = MeterReadingEvents.ReceivedAt,
-            Payload = new MotionPayload { MotionDetected = true }
+            Payload = new MotionPayload { MotionDetected = true },
         };
     }
 

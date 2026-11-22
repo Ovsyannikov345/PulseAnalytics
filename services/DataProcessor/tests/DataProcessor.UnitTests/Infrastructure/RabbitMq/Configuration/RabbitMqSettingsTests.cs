@@ -15,7 +15,7 @@ public sealed class RabbitMqSettingsTests
         UserName = "processor",
         Password = "secret",
         ClientProvidedName = "pulse-analytics.data-processor",
-        PublishTimeoutInSeconds = 5
+        PublishTimeoutInSeconds = 5,
     };
 
     [Fact]

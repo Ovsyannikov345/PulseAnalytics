@@ -4,5 +4,5 @@ public enum ConsumeOutcome
 {
     Acked = 1,
     Rejected = 2,
-    Requeued = 3
+    Requeued = 3,
 }

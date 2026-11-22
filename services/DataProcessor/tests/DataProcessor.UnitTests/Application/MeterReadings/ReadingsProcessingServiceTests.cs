@@ -76,7 +76,7 @@ public sealed class ReadingsProcessingServiceTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
 
         // Act
@@ -110,7 +110,7 @@ public sealed class ReadingsProcessingServiceTests
             DeduplicationKey = Guid.CreateVersion7(),
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
     }
 }

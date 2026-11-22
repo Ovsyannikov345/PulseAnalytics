@@ -15,7 +15,7 @@ public sealed class ReadingPayloadSerializerTests
     {
         Motion,
         Energy,
-        AirQuality
+        AirQuality,
     }
 
     [Theory]
@@ -72,7 +72,7 @@ public sealed class ReadingPayloadSerializerTests
         {
             PayloadKind.Motion => new MotionPayload { MotionDetected = true },
             PayloadKind.Energy => new EnergyPayload { Energy = 845.62 },
-            _ => new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }
+            _ => new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 },
         };
     }
 }

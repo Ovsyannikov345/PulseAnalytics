@@ -68,7 +68,7 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
     {
         Motion,
         Energy,
-        AirQuality
+        AirQuality,
     }
 
     // Stops the consumer even when a test failed before stopping it, so its background task
@@ -328,7 +328,7 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
         {
             ReadingType.Motion => $$"""{{{commonFields}},"motionDetected":true}""",
             ReadingType.Energy => $$"""{{{commonFields}},"energy":845.62}""",
-            _ => $$"""{{{commonFields}},"co2":803,"pm25":25,"humidity":36}"""
+            _ => $$"""{{{commonFields}},"co2":803,"pm25":25,"humidity":36}""",
         };
     }
 
@@ -341,14 +341,14 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
                 DeduplicationKey = MessageId,
                 Location = MeterLocation.Kitchen,
                 ReceivedAt = ReceivedAt,
-                MotionDetected = true
+                MotionDetected = true,
             },
             ReadingType.Energy => new EnergyReadingModel
             {
                 DeduplicationKey = MessageId,
                 Location = MeterLocation.Kitchen,
                 ReceivedAt = ReceivedAt,
-                Energy = 845.62
+                Energy = 845.62,
             },
             _ => new AirQualityReadingModel
             {
@@ -357,8 +357,8 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
                 ReceivedAt = ReceivedAt,
                 Co2 = 803,
                 Pm25 = 25,
-                Humidity = 36
-            }
+                Humidity = 36,
+            },
         };
     }
 
@@ -395,7 +395,7 @@ public sealed class MeterReadingsConsumerTests : IAsyncDisposable
                 TimeProvider.System,
                 _metrics,
                 _tracing,
-                new FakeLogger<AirQualityReadingsConsumer>(_logCollector))
+                new FakeLogger<AirQualityReadingsConsumer>(_logCollector)),
         };
 
         return _sut;

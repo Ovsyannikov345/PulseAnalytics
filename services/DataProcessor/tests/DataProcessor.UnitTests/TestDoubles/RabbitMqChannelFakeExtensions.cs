@@ -58,7 +58,7 @@ internal static class RabbitMqChannelFakeExtensions
                     call.GetArgument<string>(1)!,
                     call.GetArgument<bool>(2),
                     call.GetArgument<BasicProperties>(3)!,
-                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray()))
+                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray())),
         ];
     }
 
@@ -114,7 +114,7 @@ internal static class RabbitMqChannelFakeExtensions
         [
             .. Fake.GetCalls(channel)
                 .Where(call => call.Method.Name == BasicConsumeAsyncMethodName)
-                .Select(call => call.GetArgument<IAsyncBasicConsumer>(6)!)
+                .Select(call => call.GetArgument<IAsyncBasicConsumer>(6)!),
         ];
     }
 }

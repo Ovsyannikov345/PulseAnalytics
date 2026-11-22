@@ -46,7 +46,7 @@ public sealed class ReadingProcessingStrategiesTests
     {
         Motion,
         Energy,
-        AirQuality
+        AirQuality,
     }
 
     [Theory]
@@ -186,7 +186,7 @@ public sealed class ReadingProcessingStrategiesTests
         ValidationReturns(new ValidationResult(
         [
             new ValidationFailure("ReceivedAt", "'Received At' must not be in the future."),
-            new ValidationFailure("Location", "'Location' has a range of values which does not include '99'.")
+            new ValidationFailure("Location", "'Location' has a range of values which does not include '99'."),
         ]));
 
         // Act
@@ -205,7 +205,7 @@ public sealed class ReadingProcessingStrategiesTests
         // Arrange
         ValidationReturns(new ValidationResult(
         [
-            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+            new ValidationFailure("Energy", "'Energy' must be a finite number."),
         ]));
 
         // Act
@@ -272,7 +272,7 @@ public sealed class ReadingProcessingStrategiesTests
         // Arrange
         ValidationReturns(new ValidationResult(
         [
-            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+            new ValidationFailure("Energy", "'Energy' must be a finite number."),
         ]));
 
         // Act
@@ -379,7 +379,7 @@ public sealed class ReadingProcessingStrategiesTests
         // Arrange
         ValidationReturns(new ValidationResult(
         [
-            new ValidationFailure("Energy", "'Energy' must be a finite number.")
+            new ValidationFailure("Energy", "'Energy' must be a finite number."),
         ]));
 
         // Act
@@ -413,14 +413,14 @@ public sealed class ReadingProcessingStrategiesTests
                 DeduplicationKey = DeduplicationKey,
                 Location = MeterLocation.Garage,
                 ReceivedAt = ReceivedAt,
-                MotionDetected = true
+                MotionDetected = true,
             },
             StrategyKind.Energy => new EnergyReadingModel
             {
                 DeduplicationKey = DeduplicationKey,
                 Location = MeterLocation.Office,
                 ReceivedAt = ReceivedAt,
-                Energy = 845.62
+                Energy = 845.62,
             },
             _ => new AirQualityReadingModel
             {
@@ -429,8 +429,8 @@ public sealed class ReadingProcessingStrategiesTests
                 ReceivedAt = ReceivedAt,
                 Co2 = 803,
                 Pm25 = 25,
-                Humidity = 36
-            }
+                Humidity = 36,
+            },
         };
     }
 
@@ -442,7 +442,7 @@ public sealed class ReadingProcessingStrategiesTests
             Type = MeterType.Energy,
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Payload = new EnergyPayload { Energy = 845.62 }
+            Payload = new EnergyPayload { Energy = 845.62 },
         };
     }
 
@@ -467,7 +467,7 @@ public sealed class ReadingProcessingStrategiesTests
                 _airQualityValidator,
                 _storedReadingsPublisher,
                 _metrics,
-                new FakeLogger<AirQualityReadingProcessingStrategy>(_logCollector))
+                new FakeLogger<AirQualityReadingProcessingStrategy>(_logCollector)),
         };
     }
 

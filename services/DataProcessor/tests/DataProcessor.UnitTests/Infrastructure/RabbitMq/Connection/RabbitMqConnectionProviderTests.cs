@@ -32,7 +32,7 @@ public sealed class RabbitMqConnectionProviderTests
             VirtualHost = "/",
             UserName = "processor",
             Password = "secret",
-            ClientProvidedName = "pulse-analytics.data-processor"
+            ClientProvidedName = "pulse-analytics.data-processor",
         };
 
         _sut = new RabbitMqConnectionProvider(_connectionFactory, Options.Create(settings), _logger);

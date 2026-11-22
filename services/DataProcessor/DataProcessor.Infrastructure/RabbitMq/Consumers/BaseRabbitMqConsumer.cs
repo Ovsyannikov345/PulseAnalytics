@@ -205,7 +205,7 @@ internal abstract class BaseRabbitMqConsumer(
                 new ReceivedMessage
                 {
                     BasicProperties = message.BasicProperties,
-                    Body = message.Body
+                    Body = message.Body,
                 },
                 ct);
 

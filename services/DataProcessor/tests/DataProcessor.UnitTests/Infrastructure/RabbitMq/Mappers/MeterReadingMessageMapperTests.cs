@@ -22,7 +22,7 @@ public sealed class MeterReadingMessageMapperTests
             MessageId = MessageId,
             Location = "Garage",
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         };
 
         // Act
@@ -35,7 +35,7 @@ public sealed class MeterReadingMessageMapperTests
             DeduplicationKey = MessageId,
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         });
     }
 
@@ -48,7 +48,7 @@ public sealed class MeterReadingMessageMapperTests
             MessageId = MessageId,
             Location = "Office",
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
 
         // Act
@@ -61,7 +61,7 @@ public sealed class MeterReadingMessageMapperTests
             DeduplicationKey = MessageId,
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         });
     }
 
@@ -76,7 +76,7 @@ public sealed class MeterReadingMessageMapperTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
 
         // Act
@@ -91,7 +91,7 @@ public sealed class MeterReadingMessageMapperTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 
@@ -134,7 +134,7 @@ public sealed class MeterReadingMessageMapperTests
             MessageId = MessageId,
             Location = location,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
     }
 }

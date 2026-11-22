@@ -36,5 +36,5 @@ public enum MeterLocation
     /// <summary>
     /// Corridor.
     /// </summary>
-    Corridor = 6
+    Corridor = 6,
 }

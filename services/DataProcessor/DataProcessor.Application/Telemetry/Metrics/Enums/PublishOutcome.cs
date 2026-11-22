@@ -6,5 +6,5 @@ public enum PublishOutcome
     TimedOut = 2,
     Nacked = 3,
     Failed = 4,
-    Skipped = 5
+    Skipped = 5,
 }

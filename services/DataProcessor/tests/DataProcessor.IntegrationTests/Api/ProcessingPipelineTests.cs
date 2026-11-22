@@ -44,7 +44,7 @@ public sealed class ProcessingPipelineTests(RabbitMqContainerFixture rabbitMq, P
                 (energy.MessageId, MeterType.Energy, MeterLocation.Office, MeterReadingEvents.ReceivedAt,
                     new EnergyPayload { Energy = 845.62 }),
                 (airQuality.MessageId, MeterType.AirQuality, MeterLocation.LivingRoom, MeterReadingEvents.ReceivedAt,
-                    new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 })
+                    new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }),
             ],
             ignoreOrder: true);
     }

@@ -60,7 +60,7 @@ public sealed class StoredReadingsPublisherTests : IAsyncDisposable
             UserName = "processor",
             Password = "secret",
             ClientProvidedName = "pulse-analytics.data-processor",
-            PublishTimeoutInSeconds = PublishTimeoutInSeconds
+            PublishTimeoutInSeconds = PublishTimeoutInSeconds,
         };
 
         _sut = new StoredReadingsPublisher(_connectionProvider, Options.Create(settings), _timeProvider, _metrics, _logger);
@@ -120,7 +120,7 @@ public sealed class StoredReadingsPublisherTests : IAsyncDisposable
         [
             "meter-reading.air-quality.stored",
             "meter-reading.motion.stored",
-            "meter-reading.energy.stored"
+            "meter-reading.energy.stored",
         ]);
     }
 
@@ -184,7 +184,7 @@ public sealed class StoredReadingsPublisherTests : IAsyncDisposable
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 
@@ -582,7 +582,7 @@ public sealed class StoredReadingsPublisherTests : IAsyncDisposable
             Type = type,
             Location = location,
             ReceivedAt = ReceivedAt,
-            Payload = payload
+            Payload = payload,
         };
     }
 
@@ -592,7 +592,7 @@ public sealed class StoredReadingsPublisherTests : IAsyncDisposable
         [
             .. Fake.GetCalls(_metrics)
                 .Where(call => call.Method.Name == nameof(IMetricsService.RecordPublish))
-                .Select(call => (call.GetArgument<string>(0)!, call.GetArgument<PublishOutcome>(1)))
+                .Select(call => (call.GetArgument<string>(0)!, call.GetArgument<PublishOutcome>(1))),
         ];
     }
 

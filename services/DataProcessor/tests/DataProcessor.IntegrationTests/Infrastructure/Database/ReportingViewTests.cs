@@ -56,7 +56,7 @@ public sealed class ReportingViewTests(RabbitMqContainerFixture rabbitMq, Postgr
             ("energy", "double precision"),
             ("co2", "integer"),
             ("pm25", "integer"),
-            ("humidity", "integer")
+            ("humidity", "integer"),
         ]);
     }
 
@@ -70,7 +70,7 @@ public sealed class ReportingViewTests(RabbitMqContainerFixture rabbitMq, Postgr
             DeduplicationKey = Guid.CreateVersion7(),
             Location = MeterLocation.Garage,
             ReceivedAt = MeterReadingEvents.ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         };
 
         // Act
@@ -98,7 +98,7 @@ public sealed class ReportingViewTests(RabbitMqContainerFixture rabbitMq, Postgr
             DeduplicationKey = Guid.CreateVersion7(),
             Location = MeterLocation.Office,
             ReceivedAt = MeterReadingEvents.ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
 
         // Act
@@ -128,7 +128,7 @@ public sealed class ReportingViewTests(RabbitMqContainerFixture rabbitMq, Postgr
             ReceivedAt = MeterReadingEvents.ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
 
         // Act

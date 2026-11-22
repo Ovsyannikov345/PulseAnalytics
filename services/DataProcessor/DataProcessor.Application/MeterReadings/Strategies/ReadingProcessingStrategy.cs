@@ -66,7 +66,7 @@ internal abstract class ReadingProcessingStrategy<TModel>(
             Type = MeterType,
             Location = typedModel.Location,
             ReceivedAt = typedModel.ReceivedAt,
-            Payload = CreatePayload(typedModel)
+            Payload = CreatePayload(typedModel),
         };
 
         dbContext.Add(reading);

@@ -38,6 +38,7 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
     private readonly Func<IChannel, CancellationToken, Task<Result>> _setupQueue = A.Fake<Func<IChannel, CancellationToken, Task<Result>>>();
     private readonly Func<ReceivedMessage, CancellationToken, Task<Result>> _processMessage =
         A.Fake<Func<ReceivedMessage, CancellationToken, Task<Result>>>();
+
     private readonly FakeLogger<DelegatingRabbitMqConsumer> _logger = new();
     private readonly FakeTimeProvider _timeProvider = new();
     private readonly IMetricsService _metrics = A.Fake<IMetricsService>();
@@ -79,7 +80,7 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
     {
         Succeeds,
         ReturnsFailure,
-        Throws
+        Throws,
     }
 
     // Stops the consumer even when a test failed before stopping it, so its background task
@@ -805,7 +806,7 @@ public sealed class BaseRabbitMqConsumerTests : IAsyncDisposable
                 {
                     ProcessingBehavior.Succeeds => Task.FromResult(Result.Succeed()),
                     ProcessingBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Reading has no location")),
-                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure")),
                 };
             });
     }

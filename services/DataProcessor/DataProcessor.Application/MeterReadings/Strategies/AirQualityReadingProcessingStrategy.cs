@@ -36,7 +36,7 @@ internal sealed class AirQualityReadingProcessingStrategy(
         {
             Co2 = model.Co2,
             Pm25 = model.Pm25,
-            Humidity = model.Humidity
+            Humidity = model.Humidity,
         };
     }
 }
