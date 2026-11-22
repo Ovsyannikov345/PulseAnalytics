@@ -4,7 +4,6 @@ using DataProcessor.Domain.Constants.Enums;
 using DataProcessor.Domain.Entities.MeterReadings.Payloads;
 using DataProcessor.IntegrationTests.Fixtures;
 using DataProcessor.IntegrationTests.Utilities;
-using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using Xunit;
 
