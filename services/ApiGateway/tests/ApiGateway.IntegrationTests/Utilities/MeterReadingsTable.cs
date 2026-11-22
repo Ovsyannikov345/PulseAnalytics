@@ -40,6 +40,7 @@ internal static class MeterReadingsTable
             command.Parameters.AddWithValue("deduplicationKey", Guid.NewGuid());
             command.Parameters.AddWithValue("type", (int)reading.Type);
             command.Parameters.AddWithValue("location", (int)reading.Location);
+
             // Npgsql writes only UTC values to timestamptz.
             command.Parameters.AddWithValue("receivedAt", reading.ReceivedAt.ToUniversalTime());
             command.Parameters.AddWithValue("payload", NpgsqlDbType.Jsonb, ToPayloadJson(reading));
@@ -58,21 +59,21 @@ internal static class MeterReadingsTable
             MeterType.Motion => new JsonObject
             {
                 ["$type"] = "motion",
-                ["motionDetected"] = reading.MotionDetected
+                ["motionDetected"] = reading.MotionDetected,
             },
             MeterType.Energy => new JsonObject
             {
                 ["$type"] = "energy",
-                ["energy"] = reading.Energy
+                ["energy"] = reading.Energy,
             },
             MeterType.AirQuality => new JsonObject
             {
                 ["$type"] = "air_quality",
                 ["co2"] = reading.Co2,
                 ["pm25"] = reading.Pm25,
-                ["humidity"] = reading.Humidity
+                ["humidity"] = reading.Humidity,
             },
-            _ => throw new ArgumentOutOfRangeException(nameof(reading), reading.Type, "Unknown meter type.")
+            _ => throw new ArgumentOutOfRangeException(nameof(reading), reading.Type, "Unknown meter type."),
         };
 
         return payload.ToJsonString();

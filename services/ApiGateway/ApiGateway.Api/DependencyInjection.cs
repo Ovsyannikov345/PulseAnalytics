@@ -92,6 +92,7 @@ public static class DependencyInjection
             .AddType<ReadingFilterInputType>()
             .AddType<LatestReadingsFilterInputType>()
             .AddType<StatisticsFilterInputType>()
+
             // The schema has its own service container; the filter needs application services (logging).
             .AddErrorFilter(schemaServices =>
                 ActivatorUtilities.CreateInstance<GraphQLErrorFilter>(schemaServices.GetRootServiceProvider()))

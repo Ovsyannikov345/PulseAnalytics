@@ -16,7 +16,7 @@ public sealed class ExportReadingsRequestValidatorTests
         Types = [MeterType.Energy, MeterType.Motion],
         Locations = [MeterLocation.Kitchen, MeterLocation.Office],
         From = From,
-        To = From.AddDays(1)
+        To = From.AddDays(1),
     };
 
     private readonly ExportReadingsRequestValidator _sut = new();
@@ -48,7 +48,7 @@ public sealed class ExportReadingsRequestValidatorTests
         var result = _sut.TestValidate(ValidRequest with
         {
             Types = [MeterType.Energy, (MeterType)0],
-            Locations = [(MeterLocation)99]
+            Locations = [(MeterLocation)99],
         });
 
         // Assert

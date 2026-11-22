@@ -15,7 +15,7 @@ internal static class SeedReadings
             Type = MeterType.Motion,
             Location = location,
             ReceivedAt = receivedAt,
-            MotionDetected = motionDetected
+            MotionDetected = motionDetected,
         };
     }
 
@@ -27,7 +27,7 @@ internal static class SeedReadings
             Type = MeterType.Energy,
             Location = location,
             ReceivedAt = receivedAt,
-            Energy = energy
+            Energy = energy,
         };
     }
 
@@ -47,7 +47,7 @@ internal static class SeedReadings
             ReceivedAt = receivedAt,
             Co2 = co2,
             Pm25 = pm25,
-            Humidity = humidity
+            Humidity = humidity,
         };
     }
 }

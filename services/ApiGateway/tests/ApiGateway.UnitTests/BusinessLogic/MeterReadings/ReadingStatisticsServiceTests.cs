@@ -54,7 +54,7 @@ public sealed class ReadingStatisticsServiceTests
         [
             new EnergyStatisticsModel { Location = MeterLocation.Kitchen, BucketStart = Start, Samples = 2, Energy = Metric(3, 2, 4) },
             new EnergyStatisticsModel { Location = MeterLocation.Kitchen, BucketStart = Start.AddHours(1), Samples = 1, Energy = Metric(6, 6, 6) },
-            new EnergyStatisticsModel { Location = MeterLocation.Office, BucketStart = Start, Samples = 1, Energy = Metric(6, 6, 6) }
+            new EnergyStatisticsModel { Location = MeterLocation.Office, BucketStart = Start, Samples = 1, Energy = Metric(6, 6, 6) },
         ]);
     }
 
@@ -71,7 +71,7 @@ public sealed class ReadingStatisticsServiceTests
         result.Value.ShouldBe(
         [
             new EnergyStatisticsModel { BucketStart = Start, Samples = 3, Energy = Metric(4, 2, 6) },
-            new EnergyStatisticsModel { BucketStart = Start.AddHours(1), Samples = 1, Energy = Metric(6, 6, 6) }
+            new EnergyStatisticsModel { BucketStart = Start.AddHours(1), Samples = 1, Energy = Metric(6, 6, 6) },
         ]);
     }
 
@@ -88,7 +88,7 @@ public sealed class ReadingStatisticsServiceTests
         result.Value.ShouldBe(
         [
             new EnergyStatisticsModel { Location = MeterLocation.Kitchen, Samples = 3, Energy = Metric(4, 2, 6) },
-            new EnergyStatisticsModel { Location = MeterLocation.Office, Samples = 1, Energy = Metric(6, 6, 6) }
+            new EnergyStatisticsModel { Location = MeterLocation.Office, Samples = 1, Energy = Metric(6, 6, 6) },
         ]);
     }
 
@@ -129,7 +129,7 @@ public sealed class ReadingStatisticsServiceTests
             StoredReadings.Energy(MeterLocation.Kitchen, to, energy: 100),
             StoredReadings.Energy(MeterLocation.Garage, Start, energy: 100),
             StoredReadings.Motion(MeterLocation.Kitchen, Start),
-            StoredReadings.AirQuality(MeterLocation.Kitchen, Start)
+            StoredReadings.AirQuality(MeterLocation.Kitchen, Start),
         ]);
 
         var request = new GetEnergyStatisticsRequest { Locations = [MeterLocation.Kitchen], From = Start, To = to };
@@ -152,7 +152,7 @@ public sealed class ReadingStatisticsServiceTests
         [
             StoredReadings.Energy(MeterLocation.Kitchen, new DateTimeOffset(2026, 11, 4, 23, 30, 0, plusTwo)),
             StoredReadings.Energy(MeterLocation.Kitchen, new DateTimeOffset(2026, 11, 5, 0, 30, 0, plusTwo)),
-            StoredReadings.Energy(MeterLocation.Kitchen, new DateTimeOffset(2026, 11, 5, 2, 30, 0, plusTwo))
+            StoredReadings.Energy(MeterLocation.Kitchen, new DateTimeOffset(2026, 11, 5, 2, 30, 0, plusTwo)),
         ]);
 
         var request = new GetEnergyStatisticsRequest
@@ -160,7 +160,7 @@ public sealed class ReadingStatisticsServiceTests
             From = new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero),
             To = new DateTimeOffset(2026, 11, 6, 0, 0, 0, TimeSpan.Zero),
             GroupBy = [StatisticsGrouping.Time],
-            Bucket = TimeBucket.Day
+            Bucket = TimeBucket.Day,
         };
 
         // Act
@@ -170,7 +170,7 @@ public sealed class ReadingStatisticsServiceTests
         result.Value.Select(s => (s.BucketStart, s.Samples)).ShouldBe(
         [
             (new DateTimeOffset(2026, 11, 4, 0, 0, 0, TimeSpan.Zero), 2),
-            (new DateTimeOffset(2026, 11, 5, 0, 0, 0, TimeSpan.Zero), 1)
+            (new DateTimeOffset(2026, 11, 5, 0, 0, 0, TimeSpan.Zero), 1),
         ]);
     }
 
@@ -195,14 +195,14 @@ public sealed class ReadingStatisticsServiceTests
             StoredReadings.AirQuality(MeterLocation.Kitchen, Start, co2: 600, pm25: 10, humidity: 40),
             StoredReadings.AirQuality(MeterLocation.Kitchen, Start.AddMinutes(1), co2: 800, pm25: 30, humidity: 45),
             StoredReadings.AirQuality(MeterLocation.Bedroom, Start, co2: 500, pm25: 5, humidity: 50),
-            StoredReadings.Energy(MeterLocation.Kitchen, Start)
+            StoredReadings.Energy(MeterLocation.Kitchen, Start),
         ]);
 
         var request = new GetAirQualityStatisticsRequest
         {
             From = Start,
             To = Start.AddHours(1),
-            GroupBy = [StatisticsGrouping.Location]
+            GroupBy = [StatisticsGrouping.Location],
         };
 
         // Act
@@ -217,7 +217,7 @@ public sealed class ReadingStatisticsServiceTests
                 Samples = 2,
                 Co2 = Metric(700, 600, 800),
                 Pm25 = Metric(20, 10, 30),
-                Humidity = Metric(42.5, 40, 45)
+                Humidity = Metric(42.5, 40, 45),
             },
             new AirQualityStatisticsModel
             {
@@ -225,8 +225,8 @@ public sealed class ReadingStatisticsServiceTests
                 Samples = 1,
                 Co2 = Metric(500, 500, 500),
                 Pm25 = Metric(5, 5, 5),
-                Humidity = Metric(50, 50, 50)
-            }
+                Humidity = Metric(50, 50, 50),
+            },
         ]);
     }
 
@@ -255,7 +255,7 @@ public sealed class ReadingStatisticsServiceTests
             StoredReadings.Motion(MeterLocation.Corridor, Start.AddMinutes(10), motionDetected: true),
             StoredReadings.Motion(MeterLocation.Corridor, Start.AddMinutes(14), motionDetected: false),
             StoredReadings.Motion(MeterLocation.Garage, Start.AddMinutes(15), motionDetected: false),
-            StoredReadings.Energy(MeterLocation.Garage, Start)
+            StoredReadings.Energy(MeterLocation.Garage, Start),
         ]);
 
         var request = new GetMotionStatisticsRequest
@@ -263,7 +263,7 @@ public sealed class ReadingStatisticsServiceTests
             From = Start,
             To = Start.AddHours(1),
             GroupBy = [StatisticsGrouping.Time],
-            Bucket = TimeBucket.FifteenMinutes
+            Bucket = TimeBucket.FifteenMinutes,
         };
 
         // Act
@@ -273,7 +273,7 @@ public sealed class ReadingStatisticsServiceTests
         result.Value.ShouldBe(
         [
             new MotionStatisticsModel { BucketStart = Start, Samples = 4, MotionSamples = 2 },
-            new MotionStatisticsModel { BucketStart = Start.AddMinutes(15), Samples = 1, MotionSamples = 0 }
+            new MotionStatisticsModel { BucketStart = Start.AddMinutes(15), Samples = 1, MotionSamples = 0 },
         ]);
         result.Value.Select(s => s.ActivityRatio).ShouldBe([0.5, 0]);
     }
@@ -299,7 +299,7 @@ public sealed class ReadingStatisticsServiceTests
             From = Start,
             To = Start.AddHours(2),
             GroupBy = groupBy,
-            Bucket = bucket
+            Bucket = bucket,
         };
     }
 
@@ -317,7 +317,7 @@ public sealed class ReadingStatisticsServiceTests
             StoredReadings.Energy(MeterLocation.Kitchen, Start.AddMinutes(30), energy: 4),
             StoredReadings.Energy(MeterLocation.Kitchen, Start.AddMinutes(70), energy: 6),
             StoredReadings.Energy(MeterLocation.Office, Start.AddMinutes(15), energy: 6),
-            StoredReadings.Motion(MeterLocation.Kitchen, Start)
+            StoredReadings.Motion(MeterLocation.Kitchen, Start),
         ]);
     }
 }

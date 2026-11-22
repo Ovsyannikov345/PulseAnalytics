@@ -66,7 +66,7 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
             Header,
             $"{motion.Id},Motion,Garage,2026-11-01T12:00:00.0000000Z,true,,,,",
             $"{energy.Id},Energy,Office,2026-11-01T12:00:01.0000000Z,,845.62,,,",
-            $"{airQuality.Id},AirQuality,LivingRoom,2026-11-01T12:00:02.0000000Z,,,803,25,36"
+            $"{airQuality.Id},AirQuality,LivingRoom,2026-11-01T12:00:02.0000000Z,,,803,25,36",
         ]);
     }
 
@@ -183,7 +183,7 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
         var port = TcpPorts.GetUnused().ToString(CultureInfo.InvariantCulture);
         var client = CreateClient(new Dictionary<string, string?>
         {
-            ["Database:ConnectionString"] = $"Host=127.0.0.1;Port={port};Database=pulse_analytics;Username=gateway;Password=secret"
+            ["Database:ConnectionString"] = $"Host=127.0.0.1;Port={port};Database=pulse_analytics;Username=gateway;Password=secret",
         });
 
         // Act

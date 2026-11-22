@@ -55,7 +55,7 @@ public sealed class ReadingsExportServiceTests
                 Type = MeterType.Motion,
                 Location = MeterLocation.Garage,
                 ReceivedAt = Start,
-                MotionDetected = true
+                MotionDetected = true,
             },
             new ExportReadingModel
             {
@@ -63,7 +63,7 @@ public sealed class ReadingsExportServiceTests
                 Type = MeterType.Energy,
                 Location = MeterLocation.Kitchen,
                 ReceivedAt = Start.AddSeconds(1),
-                Energy = 2.25
+                Energy = 2.25,
             },
             new ExportReadingModel
             {
@@ -73,8 +73,8 @@ public sealed class ReadingsExportServiceTests
                 ReceivedAt = Start.AddSeconds(2),
                 Co2 = 800,
                 Pm25 = 15,
-                Humidity = 40
-            }
+                Humidity = 40,
+            },
         ]);
     }
 
@@ -88,7 +88,7 @@ public sealed class ReadingsExportServiceTests
         [
             StoredReadings.Energy(MeterLocation.Kitchen, Start.AddMinutes(1), id: Guid.Parse("00000000-0000-0000-0000-000000000003")),
             StoredReadings.Energy(MeterLocation.Kitchen, Start, id: secondId),
-            StoredReadings.Motion(MeterLocation.Kitchen, Start, id: firstId)
+            StoredReadings.Motion(MeterLocation.Kitchen, Start, id: firstId),
         ]);
 
         // Act
@@ -107,7 +107,7 @@ public sealed class ReadingsExportServiceTests
         [
             match,
             StoredReadings.Energy(MeterLocation.Garage, Start),
-            StoredReadings.Motion(MeterLocation.Kitchen, Start)
+            StoredReadings.Motion(MeterLocation.Kitchen, Start),
         ]);
 
         // Act
@@ -128,7 +128,7 @@ public sealed class ReadingsExportServiceTests
             StoredReadings.Energy(MeterLocation.Kitchen, Start.AddTicks(-1)),
             atFrom,
             beforeTo,
-            StoredReadings.Energy(MeterLocation.Kitchen, Start.AddHours(1))
+            StoredReadings.Energy(MeterLocation.Kitchen, Start.AddHours(1)),
         ]);
 
         // Act
@@ -181,7 +181,7 @@ public sealed class ReadingsExportServiceTests
         return new ExportReadingsRequest
         {
             From = Start,
-            To = Start.AddDays(1)
+            To = Start.AddDays(1),
         };
     }
 

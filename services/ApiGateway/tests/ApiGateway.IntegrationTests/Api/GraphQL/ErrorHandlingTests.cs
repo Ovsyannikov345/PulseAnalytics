@@ -107,7 +107,7 @@ public sealed class ErrorHandlingTests(PostgreSqlContainerFixture postgreSql) : 
         var port = TcpPorts.GetUnused().ToString(CultureInfo.InvariantCulture);
         var client = CreateClient(new Dictionary<string, string?>
         {
-            ["Database:ConnectionString"] = $"Host=127.0.0.1;Port={port};Database=pulse_analytics;Username=gateway;Password=secret"
+            ["Database:ConnectionString"] = $"Host=127.0.0.1;Port={port};Database=pulse_analytics;Username=gateway;Password=secret",
         });
 
         // Act

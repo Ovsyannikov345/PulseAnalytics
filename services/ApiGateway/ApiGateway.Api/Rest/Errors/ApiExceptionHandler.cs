@@ -22,8 +22,8 @@ internal sealed class ApiExceptionHandler(
             ProblemDetails = new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,
-                Detail = InternalErrorMessage
-            }
+                Detail = InternalErrorMessage,
+            },
         });
     }
 }

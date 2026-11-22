@@ -27,7 +27,7 @@ public sealed class MeterReadingMappingsTests
             Id = reading.Id,
             Location = MeterLocation.Corridor,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         });
     }
 
@@ -46,7 +46,7 @@ public sealed class MeterReadingMappingsTests
             Id = reading.Id,
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            Energy = 3.25
+            Energy = 3.25,
         });
     }
 
@@ -67,7 +67,7 @@ public sealed class MeterReadingMappingsTests
             ReceivedAt = ReceivedAt,
             Co2 = 812,
             Pm25 = 21,
-            Humidity = 40
+            Humidity = 40,
         });
     }
 
@@ -82,7 +82,7 @@ public sealed class MeterReadingMappingsTests
             Location = MeterLocation.Kitchen,
             ReceivedAt = ReceivedAt,
             Co2 = 700,
-            Pm25 = 10
+            Pm25 = 10,
         };
 
         // Act & Assert
@@ -99,7 +99,7 @@ public sealed class MeterReadingMappingsTests
             Id = Guid.CreateVersion7(),
             Type = (MeterType)4,
             Location = MeterLocation.Kitchen,
-            ReceivedAt = ReceivedAt
+            ReceivedAt = ReceivedAt,
         };
 
         // Act & Assert

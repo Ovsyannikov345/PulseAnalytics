@@ -56,7 +56,7 @@ public sealed class MotionStatisticsQueryTests(PostgreSqlContainerFixture postgr
         [
             new MotionStatisticsRow("GARAGE", HourStart, 4, 1, 0.25),
             new MotionStatisticsRow("GARAGE", HourStart.AddHours(1), 1, 1, 1),
-            new MotionStatisticsRow("CORRIDOR", HourStart, 1, 0, 0)
+            new MotionStatisticsRow("CORRIDOR", HourStart, 1, 0, 0),
         ]);
     }
 
@@ -106,7 +106,7 @@ public sealed class MotionStatisticsQueryTests(PostgreSqlContainerFixture postgr
                 GetNullableDateTimeOffset(statistics.GetProperty("bucketStart")),
                 statistics.GetProperty("samples").GetInt32(),
                 statistics.GetProperty("motionSamples").GetInt32(),
-                statistics.GetProperty("activityRatio").GetDouble()))
+                statistics.GetProperty("activityRatio").GetDouble())),
         ];
     }
 

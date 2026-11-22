@@ -26,7 +26,7 @@ public sealed class StatisticsGroupingExtensionsTests : IAsyncDisposable
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Database:ConnectionString"] = "Host=localhost;Database=unused"
+                ["Database:ConnectionString"] = "Host=localhost;Database=unused",
             })
             .Build();
 

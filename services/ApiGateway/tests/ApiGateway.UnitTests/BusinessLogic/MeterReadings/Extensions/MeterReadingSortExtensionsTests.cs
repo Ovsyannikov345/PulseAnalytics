@@ -28,7 +28,7 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Database:ConnectionString"] = "Host=localhost;Database=unused"
+                ["Database:ConnectionString"] = "Host=localhost;Database=unused",
             })
             .Build();
 
@@ -122,8 +122,8 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
             {
                 Average = g.Average(r => r.Energy!.Value),
                 Minimum = g.Min(r => r.Energy!.Value),
-                Maximum = g.Max(r => r.Energy!.Value)
-            }
+                Maximum = g.Max(r => r.Energy!.Value),
+            },
         });
 
         // Act
@@ -148,20 +148,20 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
             {
                 Average = g.Average(r => r.Co2!.Value),
                 Minimum = g.Min(r => r.Co2!.Value),
-                Maximum = g.Max(r => r.Co2!.Value)
+                Maximum = g.Max(r => r.Co2!.Value),
             },
             Pm25 = new MetricStatisticsModel
             {
                 Average = g.Average(r => r.Pm25!.Value),
                 Minimum = g.Min(r => r.Pm25!.Value),
-                Maximum = g.Max(r => r.Pm25!.Value)
+                Maximum = g.Max(r => r.Pm25!.Value),
             },
             Humidity = new MetricStatisticsModel
             {
                 Average = g.Average(r => r.Humidity!.Value),
                 Minimum = g.Min(r => r.Humidity!.Value),
-                Maximum = g.Max(r => r.Humidity!.Value)
-            }
+                Maximum = g.Max(r => r.Humidity!.Value),
+            },
         });
 
         // Act
@@ -182,7 +182,7 @@ public sealed class MeterReadingSortExtensionsTests : IAsyncDisposable
             Location = g.Key.Location,
             BucketStart = g.Key.BucketStart,
             Samples = g.Count(),
-            MotionSamples = g.Count(r => r.MotionDetected == true)
+            MotionSamples = g.Count(r => r.MotionDetected == true),
         });
 
         // Act

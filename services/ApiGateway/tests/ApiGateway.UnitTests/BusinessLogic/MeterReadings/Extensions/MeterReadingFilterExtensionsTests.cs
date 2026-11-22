@@ -28,7 +28,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Database:ConnectionString"] = "Host=localhost;Database=unused"
+                ["Database:ConnectionString"] = "Host=localhost;Database=unused",
             })
             .Build();
 
@@ -55,7 +55,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
             Types = [MeterType.Energy],
             Locations = [MeterLocation.Kitchen, MeterLocation.Office],
             From = Start,
-            To = Start.AddHours(1)
+            To = Start.AddHours(1),
         };
 
         // Act
@@ -77,7 +77,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
             Types = [MeterType.Energy],
             Locations = [MeterLocation.Kitchen],
             From = Start,
-            To = Start.AddDays(1)
+            To = Start.AddDays(1),
         };
 
         // Act
@@ -123,7 +123,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
             Types = [MeterType.Motion],
             Locations = [MeterLocation.Garage],
             From = Start,
-            To = Start.AddHours(1)
+            To = Start.AddHours(1),
         };
 
         // Act
@@ -143,7 +143,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         var request = new GetLatestReadingsRequest
         {
             Types = [MeterType.Energy, MeterType.Motion],
-            Locations = [MeterLocation.Kitchen, MeterLocation.Office]
+            Locations = [MeterLocation.Kitchen, MeterLocation.Office],
         };
 
         // Act
@@ -163,7 +163,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         {
             Locations = [MeterLocation.Kitchen],
             From = Start,
-            To = Start.AddHours(1)
+            To = Start.AddHours(1),
         };
 
         // Act
@@ -185,7 +185,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         {
             Locations = [MeterLocation.Office],
             From = Start,
-            To = Start.AddHours(1)
+            To = Start.AddHours(1),
         };
 
         // Act
@@ -205,7 +205,7 @@ public sealed class MeterReadingFilterExtensionsTests : IAsyncDisposable
         var request = new GetMotionStatisticsRequest
         {
             From = Start,
-            To = Start.AddHours(1)
+            To = Start.AddHours(1),
         };
 
         // Act

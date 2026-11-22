@@ -37,7 +37,7 @@ internal static class MeterReadingQueries
             From = filter?.From,
             To = filter?.To,
             PageSize = first,
-            Cursor = after
+            Cursor = after,
         };
 
         var result = await meterReadingsService.GetAllReadingsAsync(request, ct);
@@ -54,7 +54,7 @@ internal static class MeterReadingQueries
         var request = new GetLatestReadingsRequest
         {
             Types = filter?.Types,
-            Locations = filter?.Locations
+            Locations = filter?.Locations,
         };
 
         var result = await meterReadingsService.GetLatestReadingsAsync(request, ct);
@@ -75,7 +75,7 @@ internal static class MeterReadingQueries
             Locations = filter?.Locations,
             From = filter?.From,
             To = filter?.To,
-            GroupBy = groupBy
+            GroupBy = groupBy,
         };
 
         var result = await meterReadingsService.GetReadingCountsAsync(request, ct);
@@ -106,14 +106,14 @@ internal static class MeterReadingQueries
                 Id = motion.Id,
                 Location = motion.Location,
                 ReceivedAt = motion.ReceivedAt,
-                MotionDetected = motion.MotionDetected
+                MotionDetected = motion.MotionDetected,
             },
             EnergyReadingModel energy => new EnergyReading
             {
                 Id = energy.Id,
                 Location = energy.Location,
                 ReceivedAt = energy.ReceivedAt,
-                Energy = energy.Energy
+                Energy = energy.Energy,
             },
             AirQualityReadingModel airQuality => new AirQualityReading
             {
@@ -122,9 +122,9 @@ internal static class MeterReadingQueries
                 ReceivedAt = airQuality.ReceivedAt,
                 Co2 = airQuality.Co2,
                 Pm25 = airQuality.Pm25,
-                Humidity = airQuality.Humidity
+                Humidity = airQuality.Humidity,
             },
-            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unknown reading model.")
+            _ => throw new ArgumentOutOfRangeException(nameof(model), model.GetType().Name, "Unknown reading model."),
         };
     }
 
@@ -134,7 +134,7 @@ internal static class MeterReadingQueries
         {
             Type = model.Type,
             Location = model.Location,
-            Count = model.Count
+            Count = model.Count,
         };
     }
 }

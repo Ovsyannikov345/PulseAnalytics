@@ -40,8 +40,8 @@ public sealed class ReadingsExportControllerTests : IAsyncDisposable
         {
             ControllerContext = new ControllerContext
             {
-                HttpContext = new DefaultHttpContext { RequestServices = _services }
-            }
+                HttpContext = new DefaultHttpContext { RequestServices = _services },
+            },
         };
     }
 
@@ -64,7 +64,7 @@ public sealed class ReadingsExportControllerTests : IAsyncDisposable
         var query = Query(From.AddDays(1)) with
         {
             Types = [MeterType.Energy, MeterType.Motion],
-            Locations = [MeterLocation.Kitchen]
+            Locations = [MeterLocation.Kitchen],
         };
 
         // Act
@@ -132,7 +132,7 @@ public sealed class ReadingsExportControllerTests : IAsyncDisposable
         return new ExportReadingsQuery
         {
             From = From,
-            To = to
+            To = to,
         };
     }
 }

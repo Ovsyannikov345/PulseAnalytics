@@ -73,8 +73,8 @@ public sealed class ReadingStatisticsQueriesTests : IAsyncDisposable
                 {
                     Location = MeterLocation.Garage,
                     Samples = 4,
-                    Energy = new MetricStatisticsModel { Average = 2.5, Minimum = 1.25, Maximum = 4 }
-                }
+                    Energy = new MetricStatisticsModel { Average = 2.5, Minimum = 1.25, Maximum = 4 },
+                },
             ]));
 
         // Act
@@ -108,8 +108,8 @@ public sealed class ReadingStatisticsQueriesTests : IAsyncDisposable
                     Samples = 2,
                     Co2 = new MetricStatisticsModel { Average = 700, Minimum = 600, Maximum = 800 },
                     Pm25 = new MetricStatisticsModel { Average = 20, Minimum = 10, Maximum = 30 },
-                    Humidity = new MetricStatisticsModel { Average = 42.5, Minimum = 40, Maximum = 45 }
-                }
+                    Humidity = new MetricStatisticsModel { Average = 42.5, Minimum = 40, Maximum = 45 },
+                },
             ]));
 
         // Act
@@ -156,7 +156,7 @@ public sealed class ReadingStatisticsQueriesTests : IAsyncDisposable
         A.CallTo(() => _readingStatisticsService.GetMotionStatisticsAsync(A<GetMotionStatisticsRequest>._, A<CancellationToken>._))
             .Returns(Result<IReadOnlyList<MotionStatisticsModel>>.Succeed(
             [
-                new MotionStatisticsModel { Samples = 4, MotionSamples = 1 }
+                new MotionStatisticsModel { Samples = 4, MotionSamples = 1 },
             ]));
 
         // Act

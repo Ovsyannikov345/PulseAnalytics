@@ -68,7 +68,7 @@ internal sealed class MetricsService : IMetricsService
             ExportOutcome.Completed => "completed",
             ExportOutcome.Cancelled => "cancelled",
             ExportOutcome.Failed => "failed",
-            _ => throw new UnreachableException($"No tag value for export outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for export outcome {outcome}"),
         };
     }
 }

@@ -17,7 +17,7 @@ public sealed class GetEnergyStatisticsRequestValidatorTests
         From = From,
         To = From.AddDays(1),
         GroupBy = [StatisticsGrouping.Location, StatisticsGrouping.Time],
-        Bucket = TimeBucket.Hour
+        Bucket = TimeBucket.Hour,
     };
 
     private readonly GetEnergyStatisticsRequestValidator _sut = new();
@@ -50,7 +50,7 @@ public sealed class GetEnergyStatisticsRequestValidatorTests
         {
             Locations = [(MeterLocation)0],
             GroupBy = [StatisticsGrouping.Time, (StatisticsGrouping)9],
-            Bucket = (TimeBucket)99
+            Bucket = (TimeBucket)99,
         });
 
         // Assert

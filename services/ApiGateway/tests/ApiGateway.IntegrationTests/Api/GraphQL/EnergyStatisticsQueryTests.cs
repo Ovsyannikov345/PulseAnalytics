@@ -54,7 +54,7 @@ public sealed class EnergyStatisticsQueryTests(PostgreSqlContainerFixture postgr
         [
             new EnergyStatisticsRow("KITCHEN", HourStart, 2, 3, 2, 4),
             new EnergyStatisticsRow("KITCHEN", HourStart.AddHours(1), 1, 6.5, 6.5, 6.5),
-            new EnergyStatisticsRow("OFFICE", HourStart, 1, 6, 6, 6)
+            new EnergyStatisticsRow("OFFICE", HourStart, 1, 6, 6, 6),
         ]);
     }
 
@@ -84,7 +84,7 @@ public sealed class EnergyStatisticsQueryTests(PostgreSqlContainerFixture postgr
         statistics.ShouldBe(
         [
             new EnergyStatisticsRow(null, HourStart, 1, 1, 1, 1),
-            new EnergyStatisticsRow(null, HourStart.AddHours(1), 1, 2, 2, 2)
+            new EnergyStatisticsRow(null, HourStart.AddHours(1), 1, 2, 2, 2),
         ]);
     }
 
@@ -139,7 +139,7 @@ public sealed class EnergyStatisticsQueryTests(PostgreSqlContainerFixture postgr
         statistics.ShouldBe(
         [
             new EnergyStatisticsRow(null, new DateTimeOffset(2026, 11, 1, 0, 0, 0, TimeSpan.Zero), 2, 2, 1, 3),
-            new EnergyStatisticsRow(null, new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero), 1, 5, 5, 5)
+            new EnergyStatisticsRow(null, new DateTimeOffset(2026, 11, 2, 0, 0, 0, TimeSpan.Zero), 1, 5, 5, 5),
         ]);
     }
 
@@ -262,7 +262,7 @@ public sealed class EnergyStatisticsQueryTests(PostgreSqlContainerFixture postgr
                 statistics.GetProperty("samples").GetInt32(),
                 statistics.GetProperty("energy").GetProperty("average").GetDouble(),
                 statistics.GetProperty("energy").GetProperty("minimum").GetDouble(),
-                statistics.GetProperty("energy").GetProperty("maximum").GetDouble()))
+                statistics.GetProperty("energy").GetProperty("maximum").GetDouble())),
         ];
     }
 

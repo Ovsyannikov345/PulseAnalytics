@@ -18,7 +18,7 @@ public sealed class GetReadingCountsRequestValidatorTests
         Locations = [MeterLocation.Kitchen, MeterLocation.Office],
         From = From,
         To = From.AddHours(1),
-        GroupBy = [ReadingGrouping.Location, ReadingGrouping.Type]
+        GroupBy = [ReadingGrouping.Location, ReadingGrouping.Type],
     };
 
     private readonly GetReadingCountsRequestValidator _sut = new();

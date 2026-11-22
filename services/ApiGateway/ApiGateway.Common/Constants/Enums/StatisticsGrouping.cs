@@ -3,5 +3,5 @@
 public enum StatisticsGrouping
 {
     Location = 1,
-    Time = 2
+    Time = 2,
 }

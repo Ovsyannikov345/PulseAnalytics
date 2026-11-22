@@ -68,7 +68,7 @@ public sealed class CorsSettingsTests
         results.Select(result => result.ErrorMessage).ShouldBe(
         [
             "'http://localhost:5173/' is not an origin. Use scheme://host[:port] without a path or trailing slash, e.g. http://localhost:5173.",
-            "'localhost:4000' is not an origin. Use scheme://host[:port] without a path or trailing slash, e.g. http://localhost:5173."
+            "'localhost:4000' is not an origin. Use scheme://host[:port] without a path or trailing slash, e.g. http://localhost:5173.",
         ]);
     }
 }

@@ -50,7 +50,7 @@ internal sealed class ReadingsExportService(
                 Energy = r.Energy,
                 Co2 = r.Co2,
                 Pm25 = r.Pm25,
-                Humidity = r.Humidity
+                Humidity = r.Humidity,
             })
             .AsAsyncEnumerable();
 

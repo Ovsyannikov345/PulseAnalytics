@@ -72,7 +72,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
         [
             Header,
             $"{RowId(0)},Energy,Kitchen,2026-11-04T12:00:00.0000000Z,,0,,,",
-            $"{RowId(1)},Energy,Kitchen,2026-11-04T12:00:01.0000000Z,,1,,,"
+            $"{RowId(1)},Energy,Kitchen,2026-11-04T12:00:01.0000000Z,,1,,,",
         ]);
     }
 
@@ -313,7 +313,7 @@ public sealed class ReadingsCsvResultTests : IAsyncDisposable
             Type = MeterType.Energy,
             Location = MeterLocation.Kitchen,
             ReceivedAt = Start.AddSeconds(index),
-            Energy = index
+            Energy = index,
         };
     }
 

@@ -3,5 +3,5 @@
 public enum ReadingGrouping
 {
     Location = 1,
-    Type = 2
+    Type = 2,
 }

@@ -26,7 +26,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         Id = Guid.Parse("0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21"),
         Location = MeterLocation.LivingRoom,
         ReceivedAt = ReceivedAt,
-        Energy = 2.5
+        Energy = 2.5,
     };
 
     private static readonly MotionReadingModel Motion = new()
@@ -34,7 +34,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         Id = Guid.Parse("0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f22"),
         Location = MeterLocation.Garage,
         ReceivedAt = ReceivedAt,
-        MotionDetected = true
+        MotionDetected = true,
     };
 
     private static readonly AirQualityReadingModel AirQuality = new()
@@ -44,7 +44,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         ReceivedAt = ReceivedAt,
         Co2 = 812,
         Pm25 = 21,
-        Humidity = 40
+        Humidity = 40,
     };
 
     private readonly IMeterReadingsService _meterReadingsService = A.Fake<IMeterReadingsService>();
@@ -70,10 +70,10 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
                 Items =
                 [
                     new CursorPageItem<MeterReadingModel> { Item = Energy, Cursor = "cursor-1" },
-                    new CursorPageItem<MeterReadingModel> { Item = Motion, Cursor = "cursor-2" }
+                    new CursorPageItem<MeterReadingModel> { Item = Motion, Cursor = "cursor-2" },
                 ],
                 HasNextPage = true,
-                HasPreviousPage = false
+                HasPreviousPage = false,
             }));
 
         // Act
@@ -259,7 +259,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
         A.CallTo(() => _meterReadingsService.GetReadingCountsAsync(A<GetReadingCountsRequest>._, A<CancellationToken>._))
             .Returns(Result<IReadOnlyList<ReadingCountModel>>.Succeed(
             [
-                new ReadingCountModel { Location = MeterLocation.Bedroom, Count = 4 }
+                new ReadingCountModel { Location = MeterLocation.Bedroom, Count = 4 },
             ]));
 
         // Act
@@ -329,7 +329,7 @@ public sealed class MeterReadingQueriesTests : IAsyncDisposable
             {
                 Items = [],
                 HasNextPage = false,
-                HasPreviousPage = false
+                HasPreviousPage = false,
             }));
     }
 }

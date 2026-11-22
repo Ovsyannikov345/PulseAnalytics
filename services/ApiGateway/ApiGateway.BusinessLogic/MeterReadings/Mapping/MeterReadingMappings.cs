@@ -15,14 +15,14 @@ internal static class MeterReadingMappings
                 Id = reading.Id,
                 Location = reading.Location,
                 ReceivedAt = reading.ReceivedAt,
-                MotionDetected = GetValueOrThrow(reading, reading.MotionDetected, nameof(MeterReading.MotionDetected))
+                MotionDetected = GetValueOrThrow(reading, reading.MotionDetected, nameof(MeterReading.MotionDetected)),
             },
             MeterType.Energy => new EnergyReadingModel
             {
                 Id = reading.Id,
                 Location = reading.Location,
                 ReceivedAt = reading.ReceivedAt,
-                Energy = GetValueOrThrow(reading, reading.Energy, nameof(MeterReading.Energy))
+                Energy = GetValueOrThrow(reading, reading.Energy, nameof(MeterReading.Energy)),
             },
             MeterType.AirQuality => new AirQualityReadingModel
             {
@@ -31,9 +31,9 @@ internal static class MeterReadingMappings
                 ReceivedAt = reading.ReceivedAt,
                 Co2 = GetValueOrThrow(reading, reading.Co2, nameof(MeterReading.Co2)),
                 Pm25 = GetValueOrThrow(reading, reading.Pm25, nameof(MeterReading.Pm25)),
-                Humidity = GetValueOrThrow(reading, reading.Humidity, nameof(MeterReading.Humidity))
+                Humidity = GetValueOrThrow(reading, reading.Humidity, nameof(MeterReading.Humidity)),
             },
-            _ => throw new InvalidOperationException($"Meter reading {reading.Id} has an unknown type {reading.Type}.")
+            _ => throw new InvalidOperationException($"Meter reading {reading.Id} has an unknown type {reading.Type}."),
         };
     }
 
