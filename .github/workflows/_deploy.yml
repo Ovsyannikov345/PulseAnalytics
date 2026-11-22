@@ -1,0 +1,37 @@
+name: Deploy (reusable, mock)
+
+# Simulated rollout to Azure Container Apps: deploy/deploy.sh only prints the az calls
+# and fakes the platform's answers. Each run is still recorded as a GitHub deployment.
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: Service to deploy (data-ingestor, data-processor, api-gateway, notification-service, frontend)
+        required: true
+        type: string
+      image:
+        description: Full image reference to roll out, e.g. user/repo:sha-cb9f9be
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to Azure (mock)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    concurrency:
+      group: deploy-${{ inputs.service }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Roll out ${{ inputs.service }}
+        env:
+          SERVICE: ${{ inputs.service }}
+          IMAGE: ${{ inputs.image }}
+        run: bash deploy/deploy.sh "$SERVICE" "$IMAGE"
