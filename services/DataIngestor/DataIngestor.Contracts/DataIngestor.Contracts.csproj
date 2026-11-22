@@ -9,7 +9,6 @@
 		<RepositoryUrl>https://github.com/Ovsyannikov345/PulseAnalytics</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PublishRepositoryUrl>true</PublishRepositoryUrl>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<MinVerTagPrefix>contracts-v</MinVerTagPrefix>
 		<MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
 	</PropertyGroup>
