@@ -22,7 +22,7 @@ public sealed class ReadingsBroadcastServiceTests
         ReceivedAt = ReceivedAt,
         Co2 = 803,
         Pm25 = 25,
-        Humidity = 36
+        Humidity = 36,
     };
 
     private readonly IReadingsNotifier _notifier = A.Fake<IReadingsNotifier>();

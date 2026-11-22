@@ -20,7 +20,7 @@ internal sealed class NotificationQueues(RabbitMqContainerFixture rabbitMq) : ID
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     };
 
     private readonly HttpClient _client = rabbitMq.CreateManagementClient();
@@ -55,7 +55,7 @@ internal sealed class NotificationQueues(RabbitMqContainerFixture rabbitMq) : ID
         return
         [
             .. queues.Where(queue => queue.Name.StartsWith(QueueNamePrefix, StringComparison.Ordinal)
-                && queue.Name.Contains(QueueNameInfix, StringComparison.Ordinal))
+                && queue.Name.Contains(QueueNameInfix, StringComparison.Ordinal)),
         ];
     }
 

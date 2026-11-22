@@ -22,7 +22,7 @@ internal static class LiveReadingMessageMapper
             Id = message.ReadingId,
             Location = location,
             ReceivedAt = message.ReceivedAt,
-            MotionDetected = message.MotionDetected
+            MotionDetected = message.MotionDetected,
         });
     }
 
@@ -40,7 +40,7 @@ internal static class LiveReadingMessageMapper
             Id = message.ReadingId,
             Location = location,
             ReceivedAt = message.ReceivedAt,
-            Energy = message.Energy
+            Energy = message.Energy,
         });
     }
 
@@ -60,7 +60,7 @@ internal static class LiveReadingMessageMapper
             ReceivedAt = message.ReceivedAt,
             Co2 = message.Co2,
             Pm25 = message.Pm25,
-            Humidity = message.Humidity
+            Humidity = message.Humidity,
         });
     }
 
@@ -75,7 +75,7 @@ internal static class LiveReadingMessageMapper
             ContractMeterLocation.Garage => Result<MeterLocation>.Succeed(MeterLocation.Garage),
             ContractMeterLocation.Office => Result<MeterLocation>.Succeed(MeterLocation.Office),
             ContractMeterLocation.Corridor => Result<MeterLocation>.Succeed(MeterLocation.Corridor),
-            _ => Result<MeterLocation>.Fail($"Unknown location '{location}'")
+            _ => Result<MeterLocation>.Fail($"Unknown location '{location}'"),
         };
     }
 }

@@ -75,7 +75,7 @@ internal sealed class MetricsService : IMetricsService
             ConsumeOutcome.Acked => "acked",
             ConsumeOutcome.Rejected => "rejected",
             ConsumeOutcome.Requeued => "requeued",
-            _ => throw new UnreachableException($"No tag value for consume outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for consume outcome {outcome}"),
         };
     }
 
@@ -86,7 +86,7 @@ internal sealed class MetricsService : IMetricsService
             MeterType.AirQuality => "air_quality",
             MeterType.Energy => "energy",
             MeterType.Motion => "motion",
-            _ => throw new UnreachableException($"No tag value for meter type {meterType}")
+            _ => throw new UnreachableException($"No tag value for meter type {meterType}"),
         };
     }
 }

@@ -43,7 +43,7 @@ public sealed class NotificationServiceApplicationFactory(
             ["RabbitMq:Host"] = rabbitMq.Host,
             ["RabbitMq:Port"] = rabbitMq.Port.ToString(CultureInfo.InvariantCulture),
             ["RabbitMq:UserName"] = RabbitMqBuilder.DefaultUsername,
-            ["RabbitMq:Password"] = RabbitMqBuilder.DefaultPassword
+            ["RabbitMq:Password"] = RabbitMqBuilder.DefaultPassword,
         };
     }
 }

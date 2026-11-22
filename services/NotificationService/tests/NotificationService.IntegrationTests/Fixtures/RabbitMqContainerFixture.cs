@@ -44,7 +44,7 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
             Port = Port,
             UserName = RabbitMqBuilder.DefaultUsername,
             Password = RabbitMqBuilder.DefaultPassword,
-            ClientProvidedName = "pulse-analytics.notification-service.integration-tests"
+            ClientProvidedName = "pulse-analytics.notification-service.integration-tests",
         };
 
         return await factory.CreateConnectionAsync(ct);
@@ -58,7 +58,7 @@ public sealed class RabbitMqContainerFixture : IAsyncLifetime
         return new HttpClient
         {
             BaseAddress = new Uri($"http://{Host}:{_container.GetMappedPublicPort(ManagementPort)}/api/"),
-            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Basic", credentials) }
+            DefaultRequestHeaders = { Authorization = new AuthenticationHeaderValue("Basic", credentials) },
         };
     }
 }

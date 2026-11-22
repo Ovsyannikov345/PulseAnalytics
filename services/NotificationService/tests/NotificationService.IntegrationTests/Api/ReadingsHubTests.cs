@@ -47,7 +47,7 @@ public sealed class ReadingsHubTests(RabbitMqContainerFixture rabbitMq)
             [
                 $$"""{"type":"Motion","id":"{{motion.ReadingId}}","location":"Garage","receivedAt":"{{ReceivedAt}}","motionDetected":true}""",
                 $$"""{"type":"Energy","id":"{{energy.ReadingId}}","location":"Office","receivedAt":"{{ReceivedAt}}","energy":845.62}""",
-                $$"""{"type":"AirQuality","id":"{{airQuality.ReadingId}}","location":"LivingRoom","receivedAt":"{{ReceivedAt}}","co2":803,"pm25":25,"humidity":36}"""
+                $$"""{"type":"AirQuality","id":"{{airQuality.ReadingId}}","location":"LivingRoom","receivedAt":"{{ReceivedAt}}","co2":803,"pm25":25,"humidity":36}""",
             ]);
     }
 

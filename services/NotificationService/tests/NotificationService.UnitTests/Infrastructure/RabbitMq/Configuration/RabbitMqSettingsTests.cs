@@ -14,7 +14,7 @@ public sealed class RabbitMqSettingsTests
         VirtualHost = "/",
         UserName = "notification",
         Password = "secret",
-        ClientProvidedName = "pulse-analytics.notification-service"
+        ClientProvidedName = "pulse-analytics.notification-service",
     };
 
     [Fact]

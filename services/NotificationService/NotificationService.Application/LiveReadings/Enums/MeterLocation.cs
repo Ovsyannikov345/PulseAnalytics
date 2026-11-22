@@ -7,5 +7,5 @@ public enum MeterLocation
     Bedroom = 3,
     Garage = 4,
     Office = 5,
-    Corridor = 6
+    Corridor = 6,
 }

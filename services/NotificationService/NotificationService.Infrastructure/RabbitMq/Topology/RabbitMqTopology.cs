@@ -2,6 +2,11 @@
 
 internal static class RabbitMqTopology
 {
+    public static string QueueName(string prefix, ServiceInstance instance)
+    {
+        return $"{prefix}.{instance.Id}";
+    }
+
     public static class Exchanges
     {
         public static class StoredReadingsExchange
@@ -36,10 +41,5 @@ internal static class RabbitMqTopology
         public const string MessageTtl = "x-message-ttl";
 
         public const int MessageTtlInMilliseconds = 30_000;
-    }
-
-    public static string QueueName(string prefix, ServiceInstance instance)
-    {
-        return $"{prefix}.{instance.Id}";
     }
 }

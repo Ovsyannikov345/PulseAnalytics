@@ -1,8 +1,8 @@
 ﻿using Ausiannikau.Utilities.Results;
-using NotificationService.Application.Correlation;
-using NotificationService.Infrastructure.RabbitMq.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NotificationService.Application.Correlation;
+using NotificationService.Infrastructure.RabbitMq.Configuration;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 

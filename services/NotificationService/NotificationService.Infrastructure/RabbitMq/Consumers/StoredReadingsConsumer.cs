@@ -46,7 +46,7 @@ internal abstract class StoredReadingsConsumer<TEvent>(
             autoDelete: true,
             arguments: new Dictionary<string, object?>
             {
-                [RabbitMqTopology.QueueArguments.MessageTtl] = RabbitMqTopology.QueueArguments.MessageTtlInMilliseconds
+                [RabbitMqTopology.QueueArguments.MessageTtl] = RabbitMqTopology.QueueArguments.MessageTtlInMilliseconds,
             },
             cancellationToken: ct);
 

@@ -1,10 +1,10 @@
-﻿using NotificationService.Application.Correlation;
-using NotificationService.Infrastructure.RabbitMq.Configuration;
-using NotificationService.Infrastructure.RabbitMq.Connection;
-using FakeItEasy;
+﻿using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
+using NotificationService.Application.Correlation;
+using NotificationService.Infrastructure.RabbitMq.Configuration;
+using NotificationService.Infrastructure.RabbitMq.Connection;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using RabbitMQ.Client.Exceptions;
@@ -32,7 +32,7 @@ public sealed class RabbitMqConnectionProviderTests
             VirtualHost = "/",
             UserName = "notification",
             Password = "secret",
-            ClientProvidedName = "pulse-analytics.notification-service"
+            ClientProvidedName = "pulse-analytics.notification-service",
         };
 
         _sut = new RabbitMqConnectionProvider(_connectionFactory, Options.Create(settings), _logger);
