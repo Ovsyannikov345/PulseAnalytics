@@ -73,7 +73,7 @@ internal static class RabbitMqChannelFakeExtensions
                     call.GetArgument<string>(1)!,
                     call.GetArgument<bool>(2),
                     call.GetArgument<BasicProperties>(3)!,
-                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray()))
+                    call.GetArgument<ReadOnlyMemory<byte>>(4).ToArray())),
         ];
     }
 }

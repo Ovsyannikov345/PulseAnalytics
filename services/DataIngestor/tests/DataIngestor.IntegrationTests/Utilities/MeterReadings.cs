@@ -14,7 +14,7 @@ internal static class MeterReadings
             Name = "Garage",
             Type = MeterType.Motion,
             ReceivedAt = ReceivedAt,
-            Payload = new MotionPayload { MotionDetected = true }
+            Payload = new MotionPayload { MotionDetected = true },
         };
     }
 
@@ -25,7 +25,7 @@ internal static class MeterReadings
             Name = "Office",
             Type = MeterType.Energy,
             ReceivedAt = ReceivedAt,
-            Payload = new EnergyPayload { Energy = 845.62 }
+            Payload = new EnergyPayload { Energy = 845.62 },
         };
     }
 
@@ -36,7 +36,7 @@ internal static class MeterReadings
             Name = "Kitchen",
             Type = MeterType.AirQuality,
             ReceivedAt = ReceivedAt,
-            Payload = new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }
+            Payload = new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 },
         };
     }
 }

@@ -91,7 +91,7 @@ internal abstract class BaseRabbitMqPublisher(
                 MessageId = message.MessageId.ToString(),
                 CorrelationId = CorrelationContext.CorrelationId.ToString(),
                 Type = message.MessageType,
-                Timestamp = new AmqpTimestamp(timeProvider.GetUtcNow().ToUnixTimeSeconds())
+                Timestamp = new AmqpTimestamp(timeProvider.GetUtcNow().ToUnixTimeSeconds()),
             };
 
             using var timeoutCts = new CancellationTokenSource(

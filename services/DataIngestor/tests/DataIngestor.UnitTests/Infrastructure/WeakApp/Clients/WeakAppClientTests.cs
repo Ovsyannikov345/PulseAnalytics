@@ -74,7 +74,7 @@ public sealed class WeakAppClientTests : IDisposable
             Name = "Garage",
             Type = MeterType.Motion,
             ReceivedAt = Now,
-            Payload = new MotionPayload { MotionDetected = true }
+            Payload = new MotionPayload { MotionDetected = true },
         });
     }
 
@@ -94,7 +94,7 @@ public sealed class WeakAppClientTests : IDisposable
             Name = "Office",
             Type = MeterType.Energy,
             ReceivedAt = Now,
-            Payload = new EnergyPayload { Energy = 845.62 }
+            Payload = new EnergyPayload { Energy = 845.62 },
         });
     }
 
@@ -114,7 +114,7 @@ public sealed class WeakAppClientTests : IDisposable
             Name = "Kitchen",
             Type = MeterType.AirQuality,
             ReceivedAt = Now,
-            Payload = new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }
+            Payload = new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 },
         });
     }
 
@@ -133,7 +133,7 @@ public sealed class WeakAppClientTests : IDisposable
         [
             ("Office", MeterType.Energy),
             ("Garage", MeterType.Motion),
-            ("Kitchen", MeterType.AirQuality)
+            ("Kitchen", MeterType.AirQuality),
         ]);
     }
 
@@ -146,7 +146,7 @@ public sealed class WeakAppClientTests : IDisposable
             .Invokes(() => _timeProvider.Advance(responseDelay))
             .ReturnsLazily(() => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent($"[{MotionItem},{EnergyItem},{AirQualityItem}]")
+                Content = new StringContent($"[{MotionItem},{EnergyItem},{AirQualityItem}]"),
             }));
 
         // Act

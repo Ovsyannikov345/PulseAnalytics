@@ -15,7 +15,7 @@ public sealed class IngestionPipelineTests(RabbitMqContainerFixture rabbitMq) : 
     private static readonly Dictionary<string, string?> PollEverySecond = new()
     {
         ["MeterPollingWorker:StartupDelayInSeconds"] = "1",
-        ["MeterPollingWorker:PollingPeriodInSeconds"] = "1"
+        ["MeterPollingWorker:PollingPeriodInSeconds"] = "1",
     };
 
     private readonly WeakAppStub _weakApp = new();
@@ -39,7 +39,7 @@ public sealed class IngestionPipelineTests(RabbitMqContainerFixture rabbitMq) : 
         [
             "meter-reading.motion.received",
             "meter-reading.energy.received",
-            "meter-reading.air-quality.received"
+            "meter-reading.air-quality.received",
         ]);
         firstPoll.Select(message => message.Properties.Type).ShouldBe(
             [nameof(MotionReadingReceived), nameof(EnergyReadingReceived), nameof(AirQualityReadingReceived)]);

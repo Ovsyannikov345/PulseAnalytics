@@ -18,7 +18,7 @@ public sealed class MeterPollingWorkerSettingsTests
         var settings = new MeterPollingWorkerSettings
         {
             PollingPeriodInSeconds = pollingPeriodInSeconds,
-            StartupDelayInSeconds = startupDelayInSeconds
+            StartupDelayInSeconds = startupDelayInSeconds,
         };
 
         // Act
@@ -54,7 +54,7 @@ public sealed class MeterPollingWorkerSettingsTests
         var settings = new MeterPollingWorkerSettings
         {
             PollingPeriodInSeconds = 5,
-            StartupDelayInSeconds = startupDelayInSeconds
+            StartupDelayInSeconds = startupDelayInSeconds,
         };
 
         // Act

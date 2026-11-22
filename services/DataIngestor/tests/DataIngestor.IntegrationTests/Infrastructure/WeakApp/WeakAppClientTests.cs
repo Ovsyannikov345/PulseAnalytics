@@ -54,7 +54,7 @@ public sealed class WeakAppClientTests : IAsyncDisposable
         [
             ("Garage", MeterType.Motion, new MotionPayload { MotionDetected = true }),
             ("Office", MeterType.Energy, new EnergyPayload { Energy = 845.62 }),
-            ("Kitchen", MeterType.AirQuality, new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 })
+            ("Kitchen", MeterType.AirQuality, new AirQualityPayload { Co2 = 803, Pm25 = 25, Humidity = 36 }),
         ]);
     }
 

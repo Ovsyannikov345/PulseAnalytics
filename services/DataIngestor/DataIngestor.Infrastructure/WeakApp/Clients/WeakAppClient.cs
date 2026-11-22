@@ -17,7 +17,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProv
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         AllowOutOfOrderMetadataProperties = true,
-        RespectNullableAnnotations = true
+        RespectNullableAnnotations = true,
     };
 
     public async Task<Result<List<MeterReading>>> GetMetersAsync(CancellationToken ct)
@@ -63,7 +63,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProv
                     Name = motionReading.Name,
                     Type = MeterType.Motion,
                     ReceivedAt = utcNow,
-                    Payload = new MotionPayload { MotionDetected = motionReading.Payload.MotionDetected }
+                    Payload = new MotionPayload { MotionDetected = motionReading.Payload.MotionDetected },
                 },
 
                 EnergyMeterReadingResponse energyReading => new MeterReading
@@ -71,7 +71,7 @@ internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProv
                     Name = energyReading.Name,
                     Type = MeterType.Energy,
                     ReceivedAt = utcNow,
-                    Payload = new EnergyPayload { Energy = energyReading.Payload.Energy }
+                    Payload = new EnergyPayload { Energy = energyReading.Payload.Energy },
                 },
 
                 AirQualityMeterReadingResponse airReading => new MeterReading
@@ -83,13 +83,13 @@ internal sealed class WeakAppClient(HttpClient httpClient, TimeProvider timeProv
                     {
                         Co2 = airReading.Payload.Co2,
                         Pm25 = airReading.Payload.Pm25,
-                        Humidity = airReading.Payload.Humidity
-                    }
+                        Humidity = airReading.Payload.Humidity,
+                    },
                 },
 
                 // Items with an unknown type discriminator already fail deserialization in ParseReadings,
                 // so only the types registered with [JsonDerivedType] on MeterReadingResponse reach this point.
-                _ => throw new UnreachableException($"No mapping for meter reading type {reading.GetType().Name}")
+                _ => throw new UnreachableException($"No mapping for meter reading type {reading.GetType().Name}"),
             };
         }
     }

@@ -251,7 +251,7 @@ public sealed class ExternalMetersServiceTests
             Name = name,
             Type = MeterType.Motion,
             ReceivedAt = ReadingTime,
-            Payload = new MotionPayload { MotionDetected = true }
+            Payload = new MotionPayload { MotionDetected = true },
         };
     }
 
@@ -262,7 +262,7 @@ public sealed class ExternalMetersServiceTests
             Name = name,
             Type = MeterType.Energy,
             ReceivedAt = ReadingTime,
-            Payload = new EnergyPayload { Energy = 845.62 }
+            Payload = new EnergyPayload { Energy = 845.62 },
         };
     }
 

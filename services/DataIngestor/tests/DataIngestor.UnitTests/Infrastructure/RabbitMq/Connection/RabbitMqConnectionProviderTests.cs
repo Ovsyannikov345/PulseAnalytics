@@ -33,7 +33,7 @@ public sealed class RabbitMqConnectionProviderTests
             UserName = "ingestor",
             Password = "secret",
             ClientProvidedName = "pulse-analytics.data-ingestor",
-            PublishTimeoutInSeconds = 5
+            PublishTimeoutInSeconds = 5,
         };
 
         _sut = new RabbitMqConnectionProvider(_connectionFactory, Options.Create(settings), _logger);

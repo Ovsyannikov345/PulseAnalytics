@@ -29,7 +29,7 @@ public sealed class MeterReadingMessageMapperTests
             MessageId = message.MessageId,
             Location = "Garage",
             ReceivedAt = MeterReadings.ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         });
     }
 
@@ -50,7 +50,7 @@ public sealed class MeterReadingMessageMapperTests
             MessageId = message.MessageId,
             Location = "Office",
             ReceivedAt = MeterReadings.ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         });
     }
 
@@ -73,7 +73,7 @@ public sealed class MeterReadingMessageMapperTests
             ReceivedAt = MeterReadings.ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 
@@ -88,6 +88,7 @@ public sealed class MeterReadingMessageMapperTests
 
         // Assert
         message.MessageId.Version.ShouldBe(7);
+
         // The first 48 bits of a version 7 GUID hold its Unix timestamp in milliseconds.
         var timestampMs = Convert.ToInt64(message.MessageId.ToString("N")[..12], 16);
         timestampMs.ShouldBe(MeterReadings.ReceivedAt.ToUnixTimeMilliseconds());
@@ -149,7 +150,7 @@ public sealed class MeterReadingMessageMapperTests
         {
             "motion" => MeterReadings.Motion(),
             "energy" => MeterReadings.Energy(),
-            _ => MeterReadings.AirQuality()
+            _ => MeterReadings.AirQuality(),
         };
 
         // Act

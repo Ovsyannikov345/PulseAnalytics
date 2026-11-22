@@ -20,7 +20,7 @@ internal static class WeakAppResiliencePipeline
                 BackoffType = DelayBackoffType.Exponential,
                 UseJitter = true,
                 Delay = TimeSpan.FromSeconds(settings.RetryBaseDelayInSeconds),
-                ShouldHandle = ShouldRetry
+                ShouldHandle = ShouldRetry,
             })
             .AddTimeout(TimeSpan.FromSeconds(settings.AttemptTimeoutInSeconds));
     }

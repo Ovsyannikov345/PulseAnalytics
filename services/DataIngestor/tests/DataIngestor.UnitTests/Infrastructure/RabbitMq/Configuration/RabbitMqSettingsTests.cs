@@ -15,7 +15,7 @@ public sealed class RabbitMqSettingsTests
         UserName = "ingestor",
         Password = "secret",
         ClientProvidedName = "pulse-analytics.data-ingestor",
-        PublishTimeoutInSeconds = 5
+        PublishTimeoutInSeconds = 5,
     };
 
     [Fact]

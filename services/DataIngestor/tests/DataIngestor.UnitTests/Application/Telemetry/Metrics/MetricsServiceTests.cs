@@ -80,7 +80,7 @@ public sealed class MetricsServiceTests : IDisposable
             MeterReadings.Motion("Garage"),
             MeterReadings.Motion("Office"),
             MeterReadings.Energy(),
-            MeterReadings.AirQuality()
+            MeterReadings.AirQuality(),
         ]);
 
         // Assert
@@ -90,7 +90,7 @@ public sealed class MetricsServiceTests : IDisposable
         {
             ["motion"] = 2,
             ["energy"] = 1,
-            ["air_quality"] = 1
+            ["air_quality"] = 1,
         });
     }
 

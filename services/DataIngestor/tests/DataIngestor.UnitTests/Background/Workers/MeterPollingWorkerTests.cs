@@ -48,7 +48,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         // The output sink runs synchronously inside each log call, so it sees the correlation ID the record was written under.
         _logger = new FakeLogger<MeterPollingWorker>(FakeLogCollector.Create(new FakeLogCollectorOptions
         {
-            OutputSink = record => _correlatedLogRecords.Enqueue((record, CorrelationContext.CorrelationId))
+            OutputSink = record => _correlatedLogRecords.Enqueue((record, CorrelationContext.CorrelationId)),
         }));
 
         A.CallTo(() => _metersService.IngestReadingsAsync(A<CancellationToken>._))
@@ -65,7 +65,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
     {
         Succeeds,
         ReturnsFailure,
-        Throws
+        Throws,
     }
 
     // Stops the worker even when a test failed before stopping it, so its background task
@@ -228,7 +228,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
             {
                 PollBehavior.Succeeds => Task.FromResult(Result.Succeed()),
                 PollBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
-                _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+                _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure")),
             });
         var sut = CreateSut();
 
@@ -428,7 +428,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
                 {
                     PollBehavior.Succeeds => Task.FromResult(Result.Succeed()),
                     PollBehavior.ReturnsFailure => Task.FromResult(Result.Fail("Weak App API responded with failure")),
-                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure"))
+                    _ => Task.FromException<Result>(new InvalidOperationException("Unexpected failure")),
                 };
             });
         var sut = CreateSut();
@@ -608,7 +608,7 @@ public sealed class MeterPollingWorkerTests : IAsyncDisposable
         var settings = new MeterPollingWorkerSettings
         {
             PollingPeriodInSeconds = PollingPeriodInSeconds,
-            StartupDelayInSeconds = startupDelayInSeconds
+            StartupDelayInSeconds = startupDelayInSeconds,
         };
 
         _sut = new MeterPollingWorker(
