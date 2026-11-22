@@ -18,7 +18,7 @@ public sealed class EnergyReadingModelValidatorTests
         DeduplicationKey = Guid.Parse("0199f5c4-3a1e-7b52-9d0e-5c8a7e6b4f21"),
         Location = MeterLocation.Office,
         ReceivedAt = Now,
-        Energy = 845.62
+        Energy = 845.62,
     };
 
     private readonly EnergyReadingModelValidator _sut = new(new FakeTimeProvider(Now));

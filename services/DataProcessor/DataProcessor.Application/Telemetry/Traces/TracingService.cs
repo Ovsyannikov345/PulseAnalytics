@@ -21,7 +21,7 @@ internal sealed class TracingService : ITracingService, IDisposable
             [
                 new(ProcessorTelemetry.Tags.MessageType, messageType),
                 new(ProcessorTelemetry.Tags.MessageId, messageId),
-                new(ProcessorTelemetry.Tags.CorrelationId, correlationId.ToString())
+                new(ProcessorTelemetry.Tags.CorrelationId, correlationId.ToString()),
             ]);
     }
 

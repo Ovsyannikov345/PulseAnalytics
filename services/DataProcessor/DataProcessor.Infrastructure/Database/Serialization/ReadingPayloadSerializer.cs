@@ -14,8 +14,8 @@ internal static class ReadingPayloadSerializer
         AllowOutOfOrderMetadataProperties = true,
         TypeInfoResolver = new DefaultJsonTypeInfoResolver
         {
-            Modifiers = { AddPayloadTypes }
-        }
+            Modifiers = { AddPayloadTypes },
+        },
     };
 
     public static string Serialize(IReadingPayload payload)
@@ -44,8 +44,8 @@ internal static class ReadingPayloadSerializer
             {
                 new JsonDerivedType(typeof(MotionPayload), "motion"),
                 new JsonDerivedType(typeof(EnergyPayload), "energy"),
-                new JsonDerivedType(typeof(AirQualityPayload), "air_quality")
-            }
+                new JsonDerivedType(typeof(AirQualityPayload), "air_quality"),
+            },
         };
     }
 }

@@ -24,7 +24,7 @@ public sealed class StoredReadingEventsTests
             ReadingId = ReadingId,
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         };
 
         // Act
@@ -45,7 +45,7 @@ public sealed class StoredReadingEventsTests
             ReadingId = ReadingId,
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
 
         // Act
@@ -68,7 +68,7 @@ public sealed class StoredReadingEventsTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
 
         // Act
@@ -107,7 +107,7 @@ public sealed class StoredReadingEventsTests
             ReceivedAt = ReceivedAt,
             Co2 = 1200,
             Pm25 = 40,
-            Humidity = 55
+            Humidity = 55,
         };
         var json = JsonSerializer.SerializeToUtf8Bytes(storedEvent, JsonSerializerOptions.Web);
 

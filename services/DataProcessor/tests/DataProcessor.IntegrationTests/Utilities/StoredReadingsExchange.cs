@@ -104,7 +104,7 @@ internal sealed record StoredEventMessage(string RoutingKey, IReadOnlyBasicPrope
         nameof(MotionReadingStored) => Deserialize<MotionReadingStored>(),
         nameof(EnergyReadingStored) => Deserialize<EnergyReadingStored>(),
         nameof(AirQualityReadingStored) => Deserialize<AirQualityReadingStored>(),
-        _ => throw new InvalidOperationException($"Unexpected message type {Properties.Type}")
+        _ => throw new InvalidOperationException($"Unexpected message type {Properties.Type}"),
     };
 
     /// <summary>

@@ -85,7 +85,7 @@ internal sealed class MetricsService : IMetricsService
             PublishOutcome.Nacked => "nacked",
             PublishOutcome.Failed => "failed",
             PublishOutcome.Skipped => "skipped",
-            _ => throw new UnreachableException($"No tag value for publish outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for publish outcome {outcome}"),
         };
     }
 
@@ -96,7 +96,7 @@ internal sealed class MetricsService : IMetricsService
             ConsumeOutcome.Acked => "acked",
             ConsumeOutcome.Rejected => "rejected",
             ConsumeOutcome.Requeued => "requeued",
-            _ => throw new UnreachableException($"No tag value for consume outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for consume outcome {outcome}"),
         };
     }
 
@@ -107,7 +107,7 @@ internal sealed class MetricsService : IMetricsService
             ReadingOutcome.Stored => "stored",
             ReadingOutcome.Duplicate => "duplicate",
             ReadingOutcome.Invalid => "invalid",
-            _ => throw new UnreachableException($"No tag value for reading outcome {outcome}")
+            _ => throw new UnreachableException($"No tag value for reading outcome {outcome}"),
         };
     }
 
@@ -118,7 +118,7 @@ internal sealed class MetricsService : IMetricsService
             MeterType.AirQuality => "air_quality",
             MeterType.Energy => "energy",
             MeterType.Motion => "motion",
-            _ => throw new UnreachableException($"No tag value for meter type {meterType}")
+            _ => throw new UnreachableException($"No tag value for meter type {meterType}"),
         };
     }
 
@@ -132,7 +132,7 @@ internal sealed class MetricsService : IMetricsService
             MeterLocation.Garage => "garage",
             MeterLocation.Office => "office",
             MeterLocation.Corridor => "corridor",
-            _ => throw new UnreachableException($"No tag value for meter location {location}")
+            _ => throw new UnreachableException($"No tag value for meter location {location}"),
         };
     }
 }

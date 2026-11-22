@@ -57,7 +57,7 @@ public sealed class ApplicationDbContextTests : IAsyncDisposable
             Type = MeterType.Energy,
             Location = MeterLocation.Office,
             ReceivedAt = DateTimeOffset.UtcNow,
-            Payload = new EnergyPayload { Energy = 845.62 }
+            Payload = new EnergyPayload { Energy = 845.62 },
         };
 
         // Act

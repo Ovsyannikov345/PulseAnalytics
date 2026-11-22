@@ -55,7 +55,7 @@ public sealed class StoredEventsPipelineTests(RabbitMqContainerFixture rabbitMq,
                     ReadingId = readingIds[motion.MessageId],
                     Location = ContractMeterLocation.Garage,
                     ReceivedAt = MeterReadingEvents.ReceivedAt,
-                    MotionDetected = true
+                    MotionDetected = true,
                 }),
                 ("meter-reading.energy.stored", new EnergyReadingStored
                 {
@@ -63,7 +63,7 @@ public sealed class StoredEventsPipelineTests(RabbitMqContainerFixture rabbitMq,
                     ReadingId = readingIds[energy.MessageId],
                     Location = ContractMeterLocation.Office,
                     ReceivedAt = MeterReadingEvents.ReceivedAt,
-                    Energy = 845.62
+                    Energy = 845.62,
                 }),
                 ("meter-reading.air-quality.stored", new AirQualityReadingStored
                 {
@@ -73,8 +73,8 @@ public sealed class StoredEventsPipelineTests(RabbitMqContainerFixture rabbitMq,
                     ReceivedAt = MeterReadingEvents.ReceivedAt,
                     Co2 = 803,
                     Pm25 = 25,
-                    Humidity = 36
-                })
+                    Humidity = 36,
+                }),
             ],
             ignoreOrder: true);
     }
@@ -203,7 +203,7 @@ public sealed class StoredEventsPipelineTests(RabbitMqContainerFixture rabbitMq,
         var listener = new ActivityListener
         {
             ShouldListenTo = source => sourceNames.Contains(source.Name),
-            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded
+            Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
         };
 
         ActivitySource.AddActivityListener(listener);

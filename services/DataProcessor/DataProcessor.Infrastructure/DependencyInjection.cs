@@ -72,7 +72,7 @@ public static class DependencyInjection
             UserName = rabbitMqSettings.UserName,
             Password = rabbitMqSettings.Password,
             ClientProvidedName = clientProvidedName(rabbitMqSettings),
-            AutomaticRecoveryEnabled = true
+            AutomaticRecoveryEnabled = true,
         };
 
         return ActivatorUtilities.CreateInstance<RabbitMqConnectionProvider>(serviceProvider, connectionFactory);

@@ -31,7 +31,7 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
     {
         [typeof(MotionReadingReceived)] = MotionRoutingKey,
         [typeof(EnergyReadingReceived)] = EnergyRoutingKey,
-        [typeof(AirQualityReadingReceived)] = AirQualityRoutingKey
+        [typeof(AirQualityReadingReceived)] = AirQualityRoutingKey,
     };
 
     private static readonly TimeSpan ConsumersStartTimeout = TimeSpan.FromSeconds(30);
@@ -161,7 +161,7 @@ internal sealed class MeterReadingsExchange : IAsyncDisposable
             CorrelationId = correlationId.ToString(),
             ContentType = "application/json",
             DeliveryMode = DeliveryModes.Persistent,
-            Type = messageType
+            Type = messageType,
         };
 
         await _channel.BasicPublishAsync(Name, routingKey, mandatory: false, properties, body, ct);

@@ -34,7 +34,7 @@ internal sealed class MotionReadingProcessingStrategy(
     {
         return new MotionPayload
         {
-            MotionDetected = model.MotionDetected
+            MotionDetected = model.MotionDetected,
         };
     }
 }

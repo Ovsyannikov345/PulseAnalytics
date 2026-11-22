@@ -37,7 +37,7 @@ public sealed class StoredReadingMessageMapperTests
             ReadingId = ReadingId,
             Location = ContractMeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         });
     }
 
@@ -60,7 +60,7 @@ public sealed class StoredReadingMessageMapperTests
             ReadingId = ReadingId,
             Location = ContractMeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         });
     }
 
@@ -88,7 +88,7 @@ public sealed class StoredReadingMessageMapperTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
     }
 
@@ -155,7 +155,7 @@ public sealed class StoredReadingMessageMapperTests
         {
             MeterType.Motion => new MotionPayload { MotionDetected = true },
             MeterType.Energy => new EnergyPayload { Energy = 1 },
-            _ => new AirQualityPayload { Co2 = 400, Pm25 = 5, Humidity = 40 }
+            _ => new AirQualityPayload { Co2 = 400, Pm25 = 5, Humidity = 40 },
         };
 
         // Act
@@ -213,7 +213,7 @@ public sealed class StoredReadingMessageMapperTests
             Type = type,
             Location = location,
             ReceivedAt = ReceivedAt,
-            Payload = payload
+            Payload = payload,
         };
     }
 

@@ -20,7 +20,7 @@ internal static class StoredReadingMessageMapper
             AirQualityPayload => nameof(AirQualityReadingStored),
 
             _ => throw new UnreachableException(
-                $"No message type for reading payload type {reading.Payload.GetType().Name}")
+                $"No message type for reading payload type {reading.Payload.GetType().Name}"),
         };
     }
 
@@ -38,7 +38,7 @@ internal static class StoredReadingMessageMapper
                     ReadingId = reading.Id,
                     Location = location,
                     ReceivedAt = reading.ReceivedAt,
-                    MotionDetected = motion.MotionDetected
+                    MotionDetected = motion.MotionDetected,
                 },
                 RabbitMqTopology.Exchanges.StoredReadingsExchange.RoutingKeys.MotionReadingStored),
 
@@ -49,7 +49,7 @@ internal static class StoredReadingMessageMapper
                     ReadingId = reading.Id,
                     Location = location,
                     ReceivedAt = reading.ReceivedAt,
-                    Energy = energy.Energy
+                    Energy = energy.Energy,
                 },
                 RabbitMqTopology.Exchanges.StoredReadingsExchange.RoutingKeys.EnergyReadingStored),
 
@@ -62,12 +62,12 @@ internal static class StoredReadingMessageMapper
                     ReceivedAt = reading.ReceivedAt,
                     Co2 = airQuality.Co2,
                     Pm25 = airQuality.Pm25,
-                    Humidity = airQuality.Humidity
+                    Humidity = airQuality.Humidity,
                 },
                 RabbitMqTopology.Exchanges.StoredReadingsExchange.RoutingKeys.AirQualityReadingStored),
 
             _ => throw new UnreachableException(
-                $"No message mapping for reading payload type {reading.Payload.GetType().Name}")
+                $"No message mapping for reading payload type {reading.Payload.GetType().Name}"),
         };
     }
 
@@ -94,7 +94,7 @@ internal static class StoredReadingMessageMapper
             MeterLocation.Garage => ContractMeterLocation.Garage,
             MeterLocation.Office => ContractMeterLocation.Office,
             MeterLocation.Corridor => ContractMeterLocation.Corridor,
-            _ => throw new UnreachableException($"No contract value for meter location {location}")
+            _ => throw new UnreachableException($"No contract value for meter location {location}"),
         };
     }
 }

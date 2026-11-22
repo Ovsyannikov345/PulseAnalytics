@@ -19,7 +19,7 @@ public sealed class AirQualityReadingModelValidatorTests
         ReceivedAt = Now,
         Co2 = 803,
         Pm25 = 25,
-        Humidity = 36
+        Humidity = 36,
     };
 
     private readonly AirQualityReadingModelValidator _sut = new(new FakeTimeProvider(Now));
