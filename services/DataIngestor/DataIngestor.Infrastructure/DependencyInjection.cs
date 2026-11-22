@@ -59,8 +59,6 @@ public static class DependencyInjection
                 WeakAppResiliencePipeline.Configure(builder, resilienceSettings);
             });
 
-        // Must come after the resilience handler: handlers added later run inside earlier ones,
-        // so the body is read within each retry attempt and its timeout.
         weakAppClientBuilder.AddHttpMessageHandler(() => new ResponseBufferingHandler());
 
         // Messaging
