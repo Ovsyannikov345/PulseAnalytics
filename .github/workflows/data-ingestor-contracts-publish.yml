@@ -3,7 +3,7 @@ name: Data Ingestor Contracts Publish
 on:
   push:
     tags:
-      - contracts-v*
+      - data-ingestor-contracts-v*
 
 permissions:
   contents: read
