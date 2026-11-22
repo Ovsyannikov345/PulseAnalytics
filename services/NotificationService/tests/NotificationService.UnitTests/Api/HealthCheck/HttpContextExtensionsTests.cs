@@ -1,5 +1,5 @@
-using NotificationService.Api.HealthCheck;
 using Microsoft.AspNetCore.Http;
+using NotificationService.Api.HealthCheck;
 using Shouldly;
 using Xunit;
 

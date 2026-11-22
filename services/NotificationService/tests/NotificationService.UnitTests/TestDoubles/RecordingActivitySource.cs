@@ -19,7 +19,7 @@ internal sealed class RecordingActivitySource : IDisposable
         {
             ShouldListenTo = source => ReferenceEquals(source, _source),
             Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllDataAndRecorded,
-            ActivityStopped = _stoppedActivities.Enqueue
+            ActivityStopped = _stoppedActivities.Enqueue,
         };
         ActivitySource.AddActivityListener(_listener);
     }

@@ -31,7 +31,7 @@ public sealed class LiveReadingSnapshotTests : IDisposable
     {
         Motion,
         Energy,
-        AirQuality
+        AirQuality,
     }
 
     [Theory]
@@ -65,14 +65,14 @@ public sealed class LiveReadingSnapshotTests : IDisposable
                 Id = Guid.Parse("019a91b2-4c6e-7d13-9a58-3e7f2b6c1d01"),
                 Location = MeterLocation.Garage,
                 ReceivedAt = ReceivedAt,
-                MotionDetected = false
+                MotionDetected = false,
             },
             ReadingType.Energy => new EnergyLiveReading
             {
                 Id = Guid.Parse("019a91b2-4c6e-7d13-9a58-3e7f2b6c1d02"),
                 Location = MeterLocation.Office,
                 ReceivedAt = ReceivedAt,
-                Energy = 845.62
+                Energy = 845.62,
             },
             _ => new AirQualityLiveReading
             {
@@ -81,8 +81,8 @@ public sealed class LiveReadingSnapshotTests : IDisposable
                 ReceivedAt = ReceivedAt,
                 Co2 = 803,
                 Pm25 = 25,
-                Humidity = 36
-            }
+                Humidity = 36,
+            },
         };
     }
 

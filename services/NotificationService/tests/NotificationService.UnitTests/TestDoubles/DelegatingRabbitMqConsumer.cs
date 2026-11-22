@@ -1,9 +1,9 @@
 ﻿using Ausiannikau.Utilities.Results;
+using Microsoft.Extensions.Logging;
 using NotificationService.Application.Telemetry.Metrics;
 using NotificationService.Application.Telemetry.Traces;
 using NotificationService.Infrastructure.RabbitMq.Connection;
 using NotificationService.Infrastructure.RabbitMq.Consumers;
-using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 
 namespace NotificationService.UnitTests.TestDoubles;

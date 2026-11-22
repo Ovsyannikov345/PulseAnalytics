@@ -32,7 +32,7 @@ public static class DependencyInjection
                 UserName = rabbitMqSettings.UserName,
                 Password = rabbitMqSettings.Password,
                 ClientProvidedName = rabbitMqSettings.ClientProvidedName,
-                AutomaticRecoveryEnabled = true
+                AutomaticRecoveryEnabled = true,
             };
         });
 

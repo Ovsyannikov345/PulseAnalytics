@@ -14,14 +14,14 @@ internal static class LiveReadingMappings
                 Id = motion.Id,
                 Location = motion.Location,
                 ReceivedAt = motion.ReceivedAt,
-                MotionDetected = motion.MotionDetected
+                MotionDetected = motion.MotionDetected,
             },
             EnergyLiveReadingModel energy => new EnergyLiveReading
             {
                 Id = energy.Id,
                 Location = energy.Location,
                 ReceivedAt = energy.ReceivedAt,
-                Energy = energy.Energy
+                Energy = energy.Energy,
             },
             AirQualityLiveReadingModel airQuality => new AirQualityLiveReading
             {
@@ -30,9 +30,9 @@ internal static class LiveReadingMappings
                 ReceivedAt = airQuality.ReceivedAt,
                 Co2 = airQuality.Co2,
                 Pm25 = airQuality.Pm25,
-                Humidity = airQuality.Humidity
+                Humidity = airQuality.Humidity,
             },
-            _ => throw new UnreachableException($"No hub message for {reading.GetType().Name}")
+            _ => throw new UnreachableException($"No hub message for {reading.GetType().Name}"),
         };
     }
 }

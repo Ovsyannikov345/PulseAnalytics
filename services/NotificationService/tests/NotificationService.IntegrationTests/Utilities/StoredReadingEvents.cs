@@ -19,7 +19,7 @@ internal static class StoredReadingEvents
             ReadingId = Guid.CreateVersion7(),
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         };
     }
 
@@ -31,7 +31,7 @@ internal static class StoredReadingEvents
             ReadingId = Guid.CreateVersion7(),
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
     }
 
@@ -45,7 +45,7 @@ internal static class StoredReadingEvents
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
     }
 }

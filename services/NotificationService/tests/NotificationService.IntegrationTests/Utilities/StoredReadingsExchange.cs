@@ -24,7 +24,7 @@ internal sealed class StoredReadingsExchange : IAsyncDisposable
     {
         [typeof(MotionReadingStored)] = MotionRoutingKey,
         [typeof(EnergyReadingStored)] = EnergyRoutingKey,
-        [typeof(AirQualityReadingStored)] = AirQualityRoutingKey
+        [typeof(AirQualityReadingStored)] = AirQualityRoutingKey,
     };
 
     private readonly IConnection _connection;
@@ -107,7 +107,7 @@ internal sealed class StoredReadingsExchange : IAsyncDisposable
             CorrelationId = Guid.CreateVersion7().ToString(),
             ContentType = "application/json",
             DeliveryMode = DeliveryModes.Transient,
-            Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds()),
         };
 
         await _channel.BasicPublishAsync(Name, routingKey, mandatory: false, properties, body, ct);

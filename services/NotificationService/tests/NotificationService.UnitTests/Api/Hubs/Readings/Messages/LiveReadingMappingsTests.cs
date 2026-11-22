@@ -21,7 +21,7 @@ public sealed class LiveReadingMappingsTests
             Id = ReadingId,
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         };
 
         // Act
@@ -33,7 +33,7 @@ public sealed class LiveReadingMappingsTests
             Id = ReadingId,
             Location = MeterLocation.Garage,
             ReceivedAt = ReceivedAt,
-            MotionDetected = true
+            MotionDetected = true,
         });
         message.Type.ShouldBe(MeterType.Motion);
     }
@@ -47,7 +47,7 @@ public sealed class LiveReadingMappingsTests
             Id = ReadingId,
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         };
 
         // Act
@@ -59,7 +59,7 @@ public sealed class LiveReadingMappingsTests
             Id = ReadingId,
             Location = MeterLocation.Office,
             ReceivedAt = ReceivedAt,
-            Energy = 845.62
+            Energy = 845.62,
         });
         message.Type.ShouldBe(MeterType.Energy);
     }
@@ -75,7 +75,7 @@ public sealed class LiveReadingMappingsTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         };
 
         // Act
@@ -89,7 +89,7 @@ public sealed class LiveReadingMappingsTests
             ReceivedAt = ReceivedAt,
             Co2 = 803,
             Pm25 = 25,
-            Humidity = 36
+            Humidity = 36,
         });
         message.Type.ShouldBe(MeterType.AirQuality);
     }
@@ -102,7 +102,7 @@ public sealed class LiveReadingMappingsTests
         {
             Id = ReadingId,
             Location = MeterLocation.Kitchen,
-            ReceivedAt = ReceivedAt
+            ReceivedAt = ReceivedAt,
         };
 
         // Act & Assert

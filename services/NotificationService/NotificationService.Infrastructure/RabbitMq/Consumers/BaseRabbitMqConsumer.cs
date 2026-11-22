@@ -1,11 +1,11 @@
 ﻿using Ausiannikau.Utilities.Results;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NotificationService.Application.Correlation;
 using NotificationService.Application.Telemetry.Metrics;
 using NotificationService.Application.Telemetry.Metrics.Enums;
 using NotificationService.Application.Telemetry.Traces;
 using NotificationService.Infrastructure.RabbitMq.Connection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
@@ -205,7 +205,7 @@ internal abstract class BaseRabbitMqConsumer(
                 new ReceivedMessage
                 {
                     BasicProperties = message.BasicProperties,
-                    Body = message.Body
+                    Body = message.Body,
                 },
                 ct);
 
