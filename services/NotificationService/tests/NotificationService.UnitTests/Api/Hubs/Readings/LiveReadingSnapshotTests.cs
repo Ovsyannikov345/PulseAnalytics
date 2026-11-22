@@ -1,6 +1,5 @@
 ﻿using System.Buffers;
 using System.Text.Json.Nodes;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using NotificationService.Api;

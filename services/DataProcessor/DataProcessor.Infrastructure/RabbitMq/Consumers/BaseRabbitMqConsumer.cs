@@ -28,7 +28,7 @@ internal abstract class BaseRabbitMqConsumer(
     protected abstract string QueueName { get; }
 
     /// <summary>
-    /// Message type used in metrics and spans.
+    /// Gets the message type used in metrics and spans.
     /// </summary>
     protected abstract string MessageType { get; }
 
@@ -308,12 +308,12 @@ internal abstract class BaseRabbitMqConsumer(
 internal sealed record ReceivedMessage
 {
     /// <summary>
-    /// Basic properties of the message
+    /// Gets or initializes the basic properties of the message.
     /// </summary>
     public required IReadOnlyBasicProperties BasicProperties { get; init; }
 
     /// <summary>
-    /// Body of the message
+    /// Gets or initializes the body of the message.
     /// </summary>
     /// <remarks>
     /// Valid only until ProcessMessageAsync completes. Copy it (e.g. ToArray()) if it has to outlive the call.

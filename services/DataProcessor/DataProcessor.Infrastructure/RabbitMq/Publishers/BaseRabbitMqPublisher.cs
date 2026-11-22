@@ -151,6 +151,10 @@ internal abstract class BaseRabbitMqPublisher(
 /// <summary>
 /// A message to publish.
 /// </summary>
+/// <param name="Exchange">Exchange to publish the message to.</param>
+/// <param name="RoutingKey">Routing key of the message.</param>
+/// <param name="MessageId">Unique identifier of the message.</param>
+/// <param name="Body">Payload serialized to JSON as the message body.</param>
 /// <param name="Mandatory">
 /// Whether the broker has to route the message to at least one queue. Only <c>false</c> is used for now:
 /// the publisher has no handling (log, outcome) for a returned message.

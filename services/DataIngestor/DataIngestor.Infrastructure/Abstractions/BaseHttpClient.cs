@@ -1,5 +1,4 @@
-﻿using System.Net;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Ausiannikau.Utilities.Results;
 using Microsoft.Extensions.Logging;
 
