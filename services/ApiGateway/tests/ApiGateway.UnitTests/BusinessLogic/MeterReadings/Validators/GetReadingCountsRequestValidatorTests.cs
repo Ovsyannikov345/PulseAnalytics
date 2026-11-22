@@ -1,5 +1,4 @@
-﻿using ApiGateway.BusinessLogic.MeterReadings.Models;
-using ApiGateway.BusinessLogic.MeterReadings.Requests;
+﻿using ApiGateway.BusinessLogic.MeterReadings.Requests;
 using ApiGateway.BusinessLogic.MeterReadings.Validators;
 using ApiGateway.Common.Constants.Enums;
 using FluentValidation.TestHelper;

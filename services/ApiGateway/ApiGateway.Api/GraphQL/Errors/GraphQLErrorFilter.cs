@@ -1,5 +1,4 @@
-﻿using System.Data.Common;
-using HotChocolate;
+﻿using HotChocolate;
 using HotChocolate.Execution;
 using HotChocolate.Language;
 

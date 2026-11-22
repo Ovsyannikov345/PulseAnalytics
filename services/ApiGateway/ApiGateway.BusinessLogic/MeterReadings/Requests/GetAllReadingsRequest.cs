@@ -1,5 +1,4 @@
-﻿using ApiGateway.BusinessLogic.Paging;
-using ApiGateway.Common.Constants.Enums;
+﻿using ApiGateway.Common.Constants.Enums;
 
 namespace ApiGateway.BusinessLogic.MeterReadings.Requests;
 
