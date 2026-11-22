@@ -5,6 +5,7 @@
     <File Path=".gitignore" />
     <File Path="Directory.Build.props" />
     <File Path="Dockerfile" />
+    <File Path="stylecop.json" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NotificationService.IntegrationTests/NotificationService.IntegrationTests.csproj" />
