@@ -4,8 +4,6 @@
 		<UserSecretsId>6f0d2c4e-8a1b-4f37-9c5d-2e7b9a4d1c83</UserSecretsId>
 		<DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
 		<HotChocolateImplicitUsings>disable</HotChocolateImplicitUsings>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>$(NoWarn);CS1591;SA1600</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
