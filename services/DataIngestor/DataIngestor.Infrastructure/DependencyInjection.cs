@@ -38,7 +38,7 @@ public static class DependencyInjection
         services.TryAddSingleton(TimeProvider.System);
 
         // HTTP Clients
-        services.AddHttpClient<IExternalMetersClient, WeakAppClient>((serviceProvider, client) =>
+        var weakAppClientBuilder = services.AddHttpClient<IExternalMetersClient, WeakAppClient>((serviceProvider, client) =>
         {
             var optionsMonitor = serviceProvider.GetRequiredService<IOptionsMonitor<WeakAppSettings>>();
 
@@ -48,8 +48,9 @@ public static class DependencyInjection
 
             client.BaseAddress = new Uri(baseUrl, UriKind.Absolute);
             client.DefaultRequestHeaders.Add(HeaderNames.ApiKey, weakAppSettings.ApiKey);
-        })
-        .AddResilienceHandler(
+        });
+
+        weakAppClientBuilder.AddResilienceHandler(
             WeakAppResiliencePipeline.Name,
             (builder, context) =>
             {
@@ -57,6 +58,10 @@ public static class DependencyInjection
 
                 WeakAppResiliencePipeline.Configure(builder, resilienceSettings);
             });
+
+        // Must come after the resilience handler: handlers added later run inside earlier ones,
+        // so the body is read within each retry attempt and its timeout.
+        weakAppClientBuilder.AddHttpMessageHandler(() => new ResponseBufferingHandler());
 
         // Messaging
         services.AddSingleton<IConnectionFactory>(serviceProvider =>
