@@ -20,6 +20,10 @@ on:
       DOCKERHUB_TOKEN:
         description: Docker Hub access token, required when push is true
         required: false
+    outputs:
+      image:
+        description: Image reference with the commit's sha- tag, e.g. user/repo:sha-cb9f9be (pushed only when push is true)
+        value: ${{ jobs.build.outputs.image }}
 
 permissions:
   contents: read
@@ -29,6 +33,8 @@ jobs:
     name: Build${{ inputs.push && ' and push' || '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      image: ${{ steps.image.outputs.ref }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +55,12 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha
+
+      - name: Image reference
+        id: image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: echo "ref=$(grep -m1 ':sha-' <<< "$TAGS")" >> "$GITHUB_OUTPUT"
 
       - name: Build${{ inputs.push && ' and push' || '' }}
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0

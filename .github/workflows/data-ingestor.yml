@@ -10,6 +10,8 @@ on:
       - .github/workflows/_dotnet-ci.yml
       - .github/workflows/_dotnet-sonar.yml
       - .github/workflows/_docker-image.yml
+      - .github/workflows/_deploy.yml
+      - deploy/deploy.sh
   push:
     branches: [main]
     paths:
@@ -18,6 +20,8 @@ on:
       - .github/workflows/_dotnet-ci.yml
       - .github/workflows/_dotnet-sonar.yml
       - .github/workflows/_docker-image.yml
+      - .github/workflows/_deploy.yml
+      - deploy/deploy.sh
 
 concurrency:
   group: data-ingestor-${{ github.event.pull_request.number || github.ref }}
@@ -56,3 +60,12 @@ jobs:
       push: ${{ github.event_name == 'push' }}
     secrets:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  deploy:
+    name: Deploy
+    needs: docker
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      service: data-ingestor
+      image: ${{ needs.docker.outputs.image }}
