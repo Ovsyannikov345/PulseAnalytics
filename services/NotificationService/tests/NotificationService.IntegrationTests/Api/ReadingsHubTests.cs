@@ -1,9 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Testing;
 using NotificationService.IntegrationTests.Fixtures;
 using NotificationService.IntegrationTests.Utilities;
 using Shouldly;
