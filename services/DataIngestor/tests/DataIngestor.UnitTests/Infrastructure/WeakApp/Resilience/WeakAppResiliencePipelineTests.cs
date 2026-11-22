@@ -92,6 +92,54 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
         _handler.CallsToSendAsync().MustHaveHappenedTwiceExactly();
     }
 
+    [Fact]
+    public async Task Send_BodyFailsMidReadThenSucceeds_RetriesAndReturnsSuccess()
+    {
+        // Arrange
+        // WeakApp sometimes sends 200 and then drops the connection before the whole body arrives.
+        _handler.CallsToSendAsync()
+            .ReturnsLazily(call => Respond(call, HttpStatusCode.OK, new UnreadableHttpContent())).Once()
+            .Then.ReturnsLazily(call => Respond(call, HttpStatusCode.OK, new StringContent("[]")));
+
+        // Act
+        using var response = await SendAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBe("[]");
+        _handler.CallsToSendAsync().MustHaveHappenedTwiceExactly();
+    }
+
+    [Fact]
+    public async Task Send_BodyFailsMidReadOnEveryAttempt_ThrowsHttpRequestExceptionAfterAllRetries()
+    {
+        // Arrange
+        _handler.RespondsWith(HttpStatusCode.OK, () => new UnreadableHttpContent());
+
+        // Act
+        var act = () => SendAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        await act.ShouldThrowAsync<HttpRequestException>();
+        _handler.CallsToSendAsync().MustHaveHappened(1 + Settings.MaxRetryAttempts, Times.Exactly);
+    }
+
+    [Fact]
+    public async Task Send_BodyReadHangsThenNextSucceeds_TimesOutAttemptAndRetries()
+    {
+        // Arrange
+        _handler.CallsToSendAsync()
+            .ReturnsLazily(call => Respond(call, HttpStatusCode.OK, new HangingHttpContent())).Once()
+            .Then.ReturnsLazily(call => Respond(call, HttpStatusCode.OK, new StringContent("[]")));
+
+        // Act
+        using var response = await SendAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        _handler.CallsToSendAsync().MustHaveHappenedTwiceExactly();
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.Unauthorized)]
@@ -162,6 +210,15 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
         return Task.FromResult(new HttpResponseMessage(statusCode) { RequestMessage = call.GetArgument<HttpRequestMessage>(0) });
     }
 
+    private static Task<HttpResponseMessage> Respond(IFakeObjectCall call, HttpStatusCode statusCode, HttpContent content)
+    {
+        return Task.FromResult(new HttpResponseMessage(statusCode)
+        {
+            Content = content,
+            RequestMessage = call.GetArgument<HttpRequestMessage>(0),
+        });
+    }
+
     private static async Task<HttpResponseMessage> HangAsync(IFakeObjectCall call)
     {
         await Task.Delay(Timeout.Infinite, call.GetArgument<CancellationToken>(1));
@@ -175,7 +232,11 @@ public sealed class WeakAppResiliencePipelineTests : IDisposable
 
         WeakAppResiliencePipeline.Configure(builder, settings);
 
-        var resilienceHandler = new ResilienceHandler(builder.Build()) { InnerHandler = _handler };
+        // Same order as in DependencyInjection: the body is read inside the resilience handler.
+        var resilienceHandler = new ResilienceHandler(builder.Build())
+        {
+            InnerHandler = new ResponseBufferingHandler { InnerHandler = _handler },
+        };
 
         return new HttpClient(resilienceHandler) { BaseAddress = new Uri("http://weakapp.test/") };
     }

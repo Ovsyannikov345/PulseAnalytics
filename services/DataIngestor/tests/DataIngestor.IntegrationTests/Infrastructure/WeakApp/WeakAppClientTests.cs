@@ -14,11 +14,13 @@ public sealed class WeakAppClientTests : IAsyncDisposable
     private const int MaxRetryAttempts = 2;
 
     private readonly WeakAppStub _weakApp = new();
+    private readonly RabbitMqContainerFixture _rabbitMq;
     private readonly IngestorApplicationFactory _factory;
     private readonly IExternalMetersClient _sut;
 
     public WeakAppClientTests(RabbitMqContainerFixture rabbitMq)
     {
+        _rabbitMq = rabbitMq;
         _factory = new IngestorApplicationFactory(rabbitMq, _weakApp);
         _sut = _factory.Services.GetRequiredService<IExternalMetersClient>();
     }
@@ -89,6 +91,42 @@ public sealed class WeakAppClientTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task GetMetersAsync_ApiSendsTruncatedBodyThenRecovers_RetriesAndReturnsReadings()
+    {
+        // Arrange
+        await using var weakApp = new RawWeakAppStub();
+        weakApp.RespondsInSequence(RawWeakAppStub.TruncatedReadings(), RawWeakAppStub.Readings());
+        await using var factory = CreateFactory(weakApp);
+        var sut = factory.Services.GetRequiredService<IExternalMetersClient>();
+
+        // Act
+        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Count.ShouldBe(3);
+        weakApp.RequestCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task GetMetersAsync_ApiKeepsSendingTruncatedBodies_ReturnsFailureAfterAllRetries()
+    {
+        // Arrange
+        await using var weakApp = new RawWeakAppStub();
+        weakApp.RespondsInSequence(RawWeakAppStub.TruncatedReadings());
+        await using var factory = CreateFactory(weakApp);
+        var sut = factory.Services.GetRequiredService<IExternalMetersClient>();
+
+        // Act
+        var result = await sut.GetMetersAsync(TestContext.Current.CancellationToken);
+
+        // Assert
+        result.IsFailure.ShouldBeTrue();
+        result.ErrorMessage.ShouldBe("Error occurred while sending HTTP request");
+        weakApp.RequestCount.ShouldBe(1 + MaxRetryAttempts);
+    }
+
+    [Fact]
     public async Task GetMetersAsync_ApiRespondsSlowerThanAttemptTimeout_RetriesAndReturnsReadings()
     {
         // Arrange
@@ -138,5 +176,14 @@ public sealed class WeakAppClientTests : IAsyncDisposable
     {
         await _factory.DisposeAsync();
         _weakApp.Dispose();
+    }
+
+    // Hosts the ingestor against the raw stub instead of the WireMock one.
+    private IngestorApplicationFactory CreateFactory(RawWeakAppStub weakApp)
+    {
+        return new IngestorApplicationFactory(
+            _rabbitMq,
+            _weakApp,
+            new Dictionary<string, string?> { ["WeakApp:BaseUrl"] = weakApp.BaseUrl });
     }
 }
