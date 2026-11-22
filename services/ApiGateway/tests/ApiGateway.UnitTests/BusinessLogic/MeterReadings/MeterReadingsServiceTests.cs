@@ -81,7 +81,7 @@ public sealed class MeterReadingsServiceTests
             StoredReadings.AirQuality(MeterLocation.Garage, Start, id: IdEndingWith(3)),
             StoredReadings.Motion(MeterLocation.Office, Start.AddSeconds(10), id: IdEndingWith(4)),
             StoredReadings.Energy(MeterLocation.Office, Start.AddSeconds(10), id: IdEndingWith(5)),
-            StoredReadings.AirQuality(MeterLocation.Office, Start.AddSeconds(10), id: IdEndingWith(6))
+            StoredReadings.AirQuality(MeterLocation.Office, Start.AddSeconds(10), id: IdEndingWith(6)),
         ]);
 
         var pages = new List<CursorPage<MeterReadingModel>>();
@@ -130,13 +130,13 @@ public sealed class MeterReadingsServiceTests
             kitchenEnergy,
             officeMotion,
             StoredReadings.AirQuality(MeterLocation.Kitchen, Start),
-            StoredReadings.Energy(MeterLocation.Garage, Start)
+            StoredReadings.Energy(MeterLocation.Garage, Start),
         ]);
 
         var request = new GetAllReadingsRequest
         {
             Types = [MeterType.Energy, MeterType.Motion],
-            Locations = [MeterLocation.Kitchen, MeterLocation.Office]
+            Locations = [MeterLocation.Kitchen, MeterLocation.Office],
         };
 
         // Act
@@ -158,7 +158,7 @@ public sealed class MeterReadingsServiceTests
             StoredReadings.Energy(MeterLocation.Kitchen, Start.AddTicks(-10)),
             atFrom,
             beforeTo,
-            StoredReadings.Energy(MeterLocation.Kitchen, to)
+            StoredReadings.Energy(MeterLocation.Kitchen, to),
         ]);
 
         var request = new GetAllReadingsRequest { From = Start, To = to };
@@ -239,7 +239,7 @@ public sealed class MeterReadingsServiceTests
             newestKitchenMotion,
             StoredReadings.Energy(MeterLocation.Garage, Start),
             newestGarageEnergy,
-            newestKitchenAirQuality
+            newestKitchenAirQuality,
         ]);
 
         // Act
@@ -251,7 +251,7 @@ public sealed class MeterReadingsServiceTests
             newestKitchenAirQuality.Id,
             newestGarageEnergy.Id,
             newestKitchenMotion.Id,
-            newestOfficeMotion.Id
+            newestOfficeMotion.Id,
         ]);
     }
 
@@ -262,7 +262,7 @@ public sealed class MeterReadingsServiceTests
         _storedReadings.AddRange(
         [
             StoredReadings.Energy(MeterLocation.Garage, Start, id: IdEndingWith(1)),
-            StoredReadings.Energy(MeterLocation.Garage, Start, id: IdEndingWith(2))
+            StoredReadings.Energy(MeterLocation.Garage, Start, id: IdEndingWith(2)),
         ]);
 
         // Act
@@ -281,13 +281,13 @@ public sealed class MeterReadingsServiceTests
         [
             kitchenEnergy,
             StoredReadings.Energy(MeterLocation.Garage, Start),
-            StoredReadings.Motion(MeterLocation.Kitchen, Start)
+            StoredReadings.Motion(MeterLocation.Kitchen, Start),
         ]);
 
         var request = new GetLatestReadingsRequest
         {
             Types = [MeterType.Energy, MeterType.Energy],
-            Locations = [MeterLocation.Kitchen]
+            Locations = [MeterLocation.Kitchen],
         };
 
         // Act
@@ -338,7 +338,7 @@ public sealed class MeterReadingsServiceTests
             new ReadingCountModel { Type = MeterType.AirQuality, Location = MeterLocation.Bedroom, Count = 1 },
             new ReadingCountModel { Type = MeterType.Energy, Location = MeterLocation.Kitchen, Count = 2 },
             new ReadingCountModel { Type = MeterType.Energy, Location = MeterLocation.Garage, Count = 1 },
-            new ReadingCountModel { Type = MeterType.Motion, Location = MeterLocation.Kitchen, Count = 3 }
+            new ReadingCountModel { Type = MeterType.Motion, Location = MeterLocation.Kitchen, Count = 3 },
         ]);
     }
 
@@ -356,7 +356,7 @@ public sealed class MeterReadingsServiceTests
         [
             new ReadingCountModel { Type = MeterType.AirQuality, Count = 1 },
             new ReadingCountModel { Type = MeterType.Energy, Count = 3 },
-            new ReadingCountModel { Type = MeterType.Motion, Count = 3 }
+            new ReadingCountModel { Type = MeterType.Motion, Count = 3 },
         ]);
     }
 
@@ -374,7 +374,7 @@ public sealed class MeterReadingsServiceTests
         [
             new ReadingCountModel { Location = MeterLocation.Kitchen, Count = 5 },
             new ReadingCountModel { Location = MeterLocation.Bedroom, Count = 1 },
-            new ReadingCountModel { Location = MeterLocation.Garage, Count = 1 }
+            new ReadingCountModel { Location = MeterLocation.Garage, Count = 1 },
         ]);
     }
 
@@ -426,7 +426,7 @@ public sealed class MeterReadingsServiceTests
         {
             Locations = [MeterLocation.Kitchen],
             From = Start.AddSeconds(1),
-            GroupBy = [ReadingGrouping.Type]
+            GroupBy = [ReadingGrouping.Type],
         };
 
         // Act
@@ -436,7 +436,7 @@ public sealed class MeterReadingsServiceTests
         result.Value.ShouldBe(
         [
             new ReadingCountModel { Type = MeterType.Energy, Count = 1 },
-            new ReadingCountModel { Type = MeterType.Motion, Count = 2 }
+            new ReadingCountModel { Type = MeterType.Motion, Count = 2 },
         ]);
     }
 
@@ -481,7 +481,7 @@ public sealed class MeterReadingsServiceTests
             StoredReadings.Motion(MeterLocation.Kitchen, Start.AddSeconds(10)),
             StoredReadings.Motion(MeterLocation.Kitchen, Start.AddSeconds(20)),
             StoredReadings.Energy(MeterLocation.Garage, Start),
-            StoredReadings.AirQuality(MeterLocation.Bedroom, Start)
+            StoredReadings.AirQuality(MeterLocation.Bedroom, Start),
         ]);
     }
 }

@@ -5,7 +5,7 @@
 		<DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
 		<HotChocolateImplicitUsings>disable</HotChocolateImplicitUsings>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>$(NoWarn);CS1591</NoWarn>
+		<NoWarn>$(NoWarn);CS1591;SA1600</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>

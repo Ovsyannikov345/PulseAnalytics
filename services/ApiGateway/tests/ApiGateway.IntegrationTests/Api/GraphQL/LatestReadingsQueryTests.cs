@@ -56,7 +56,7 @@ public sealed class LatestReadingsQueryTests(PostgreSqlContainerFixture postgreS
             newestOfficeAirQuality.Id,
             newestKitchenEnergy.Id,
             onlyGarageEnergy.Id,
-            newestBedroomMotion.Id
+            newestBedroomMotion.Id,
         ]);
     }
 

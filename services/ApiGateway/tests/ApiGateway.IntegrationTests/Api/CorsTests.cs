@@ -74,7 +74,6 @@ public sealed class CorsTests(PostgreSqlContainerFixture postgreSql) : IAsyncLif
         using var client = _factory.CreateClient();
         using var request = ExportRequest(AllowedOrigin);
 
-
         // Act
         using var response = await client.SendAsync(request, Ct);
 
@@ -90,7 +89,6 @@ public sealed class CorsTests(PostgreSqlContainerFixture postgreSql) : IAsyncLif
         // Arrange
         using var client = _factory.CreateClient();
         using var request = ExportRequest(OtherOrigin);
-
 
         // Act
         using var response = await client.SendAsync(request, Ct);

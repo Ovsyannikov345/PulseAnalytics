@@ -25,7 +25,7 @@ public static class DependencyInjection
 
             var connectionString = new NpgsqlConnectionStringBuilder(databaseSettings.ConnectionString)
             {
-                Timeout = databaseSettings.ConnectTimeoutSeconds
+                Timeout = databaseSettings.ConnectTimeoutSeconds,
             };
 
             options

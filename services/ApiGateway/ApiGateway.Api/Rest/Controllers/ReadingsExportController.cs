@@ -16,6 +16,9 @@ public sealed class ReadingsExportController(IReadingsExportService readingsExpo
     /// <summary>
     /// Exports readings as a CSV file.
     /// </summary>
+    /// <param name="query">The time range and the optional type and location filters.</param>
+    /// <param name="ct">A token that cancels the export when the client disconnects.</param>
+    /// <returns>The CSV file, or a problem details response when the query is invalid.</returns>
     [HttpGet("export")]
     [ProducesResponseType<string>(StatusCodes.Status200OK, ReadingsCsvResult.ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -27,7 +30,7 @@ public sealed class ReadingsExportController(IReadingsExportService readingsExpo
             Types = query.Types,
             Locations = query.Locations,
             From = query.From,
-            To = query.To
+            To = query.To,
         };
 
         var result = await readingsExportService.ExportAsync(request, ct);

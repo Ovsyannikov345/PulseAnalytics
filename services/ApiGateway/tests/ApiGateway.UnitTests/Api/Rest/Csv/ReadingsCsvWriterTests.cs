@@ -121,7 +121,7 @@ public sealed class ReadingsCsvWriterTests
             "id,type,location,received_at,motion_detected,energy,co2,pm25,humidity",
             $"{Id},Energy,Kitchen,2026-11-04T12:00:00.0000000Z,,1,,,",
             $"{Id},Energy,Garage,2026-11-04T12:00:00.0000000Z,,2,,,",
-            string.Empty
+            string.Empty,
         ]);
     }
 
@@ -140,7 +140,7 @@ public sealed class ReadingsCsvWriterTests
             Id = Id,
             Type = type,
             Location = location,
-            ReceivedAt = ReceivedAt
+            ReceivedAt = ReceivedAt,
         };
     }
 

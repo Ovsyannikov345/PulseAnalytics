@@ -82,12 +82,14 @@ public sealed class PostgreSqlContainerFixture : IAsyncLifetime
             : DefaultProcessorTag;
 
         await using var processor = new ContainerBuilder($"{ProcessorImage}:{tag}")
+
             // A stale local image could hide a change of the read contract.
             .WithImagePullPolicy(PullPolicy.Always)
             .WithNetwork(_network)
             .WithEnvironment(
                 "Database__ConnectionString",
                 $"Host={NetworkAlias};Port={PostgreSqlPort};Database={Database};Username={UserName};Password={Password}")
+
             // No broker is started: the processor's consumers keep retrying, its host and /health still come up.
             .WithEnvironment("RabbitMq__Host", "rabbitmq")
             .WithEnvironment("RabbitMq__UserName", "guest")

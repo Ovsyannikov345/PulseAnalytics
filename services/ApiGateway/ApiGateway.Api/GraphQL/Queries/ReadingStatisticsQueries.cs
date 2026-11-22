@@ -32,7 +32,7 @@ internal static class ReadingStatisticsQueries
             From = filter.From,
             To = filter.To,
             GroupBy = groupBy,
-            Bucket = bucket
+            Bucket = bucket,
         };
 
         var result = await readingStatisticsService.GetEnergyStatisticsAsync(request, ct);
@@ -54,7 +54,7 @@ internal static class ReadingStatisticsQueries
             From = filter.From,
             To = filter.To,
             GroupBy = groupBy,
-            Bucket = bucket
+            Bucket = bucket,
         };
 
         var result = await readingStatisticsService.GetAirQualityStatisticsAsync(request, ct);
@@ -76,7 +76,7 @@ internal static class ReadingStatisticsQueries
             From = filter.From,
             To = filter.To,
             GroupBy = groupBy,
-            Bucket = bucket
+            Bucket = bucket,
         };
 
         var result = await readingStatisticsService.GetMotionStatisticsAsync(request, ct);
@@ -91,7 +91,7 @@ internal static class ReadingStatisticsQueries
             Location = model.Location,
             BucketStart = model.BucketStart,
             Samples = model.Samples,
-            Energy = ToMetricStatistics(model.Energy)
+            Energy = ToMetricStatistics(model.Energy),
         };
     }
 
@@ -104,7 +104,7 @@ internal static class ReadingStatisticsQueries
             Samples = model.Samples,
             Co2 = ToMetricStatistics(model.Co2),
             Pm25 = ToMetricStatistics(model.Pm25),
-            Humidity = ToMetricStatistics(model.Humidity)
+            Humidity = ToMetricStatistics(model.Humidity),
         };
     }
 
@@ -114,7 +114,7 @@ internal static class ReadingStatisticsQueries
         {
             Average = model.Average,
             Minimum = model.Minimum,
-            Maximum = model.Maximum
+            Maximum = model.Maximum,
         };
     }
 
@@ -126,7 +126,7 @@ internal static class ReadingStatisticsQueries
             BucketStart = model.BucketStart,
             Samples = model.Samples,
             MotionSamples = model.MotionSamples,
-            ActivityRatio = model.ActivityRatio
+            ActivityRatio = model.ActivityRatio,
         };
     }
 }

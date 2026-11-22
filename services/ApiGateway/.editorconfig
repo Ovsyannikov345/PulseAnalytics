@@ -145,3 +145,18 @@ dotnet_naming_rule.params_and_locals_camel.style = camel
 dotnet_naming_rule.params_and_locals_camel.severity = warning
 dotnet_naming_symbols.params_and_locals.applicable_kinds = parameter, local
 dotnet_naming_style.camel.capitalization = camel_case
+
+# StyleCop
+# Conflicts with dotnet_style_qualification_* = false
+dotnet_diagnostic.SA1101.severity = none
+# Conflicts with the _camelCase private field naming rule
+dotnet_diagnostic.SA1309.severity = none
+# Covered by the camelCase parameter naming rule, which also allows `_` discards in overload-selecting parameters
+dotnet_diagnostic.SA1313.severity = none
+# No file headers
+dotnet_diagnostic.SA1633.severity = none
+# Documentation rules need <GenerateDocumentationFile>true</GenerateDocumentationFile>
+dotnet_diagnostic.SA0001.severity = none
+# Logger message classes and small records live next to the type that uses them
+dotnet_diagnostic.SA1402.severity = none
+dotnet_diagnostic.SA1204.severity = none

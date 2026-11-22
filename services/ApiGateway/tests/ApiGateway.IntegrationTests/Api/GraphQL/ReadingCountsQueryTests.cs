@@ -40,7 +40,7 @@ public sealed class ReadingCountsQueryTests(PostgreSqlContainerFixture postgreSq
             new ReadingCountRow("AIR_QUALITY", "OFFICE", 1),
             new ReadingCountRow("ENERGY", "KITCHEN", 3),
             new ReadingCountRow("ENERGY", "OFFICE", 1),
-            new ReadingCountRow("MOTION", "KITCHEN", 2)
+            new ReadingCountRow("MOTION", "KITCHEN", 2),
         ]);
     }
 
@@ -58,7 +58,7 @@ public sealed class ReadingCountsQueryTests(PostgreSqlContainerFixture postgreSq
         [
             new ReadingCountRow("AIR_QUALITY", null, 1),
             new ReadingCountRow("ENERGY", null, 4),
-            new ReadingCountRow("MOTION", null, 2)
+            new ReadingCountRow("MOTION", null, 2),
         ]);
     }
 
@@ -75,7 +75,7 @@ public sealed class ReadingCountsQueryTests(PostgreSqlContainerFixture postgreSq
         counts.ShouldBe(
         [
             new ReadingCountRow(null, "KITCHEN", 5),
-            new ReadingCountRow(null, "OFFICE", 2)
+            new ReadingCountRow(null, "OFFICE", 2),
         ]);
     }
 
@@ -136,7 +136,7 @@ public sealed class ReadingCountsQueryTests(PostgreSqlContainerFixture postgreSq
             SeedReadings.Energy(MeterLocation.Office, ReceivedAt),
             SeedReadings.Motion(MeterLocation.Kitchen, ReceivedAt),
             SeedReadings.Motion(MeterLocation.Kitchen, ReceivedAt.AddMinutes(1)),
-            SeedReadings.AirQuality(MeterLocation.Office, ReceivedAt.AddMinutes(5))
+            SeedReadings.AirQuality(MeterLocation.Office, ReceivedAt.AddMinutes(5)),
         ];
 
         await MeterReadingsTable.InsertAsync(postgreSql, readings, TestContext.Current.CancellationToken);
@@ -153,7 +153,7 @@ public sealed class ReadingCountsQueryTests(PostgreSqlContainerFixture postgreSq
             .. response.Data.GetProperty("readingCounts").EnumerateArray().Select(count => new ReadingCountRow(
                 count.GetProperty("type").GetString(),
                 count.GetProperty("location").GetString(),
-                count.GetProperty("count").GetInt32()))
+                count.GetProperty("count").GetInt32())),
         ];
     }
 

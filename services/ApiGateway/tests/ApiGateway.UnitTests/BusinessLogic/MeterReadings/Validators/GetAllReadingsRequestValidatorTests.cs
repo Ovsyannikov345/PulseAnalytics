@@ -18,7 +18,7 @@ public sealed class GetAllReadingsRequestValidatorTests
         Locations = [MeterLocation.Kitchen],
         From = From,
         To = From.AddHours(1),
-        PageSize = 10
+        PageSize = 10,
     };
 
     private readonly GetAllReadingsRequestValidator _sut = new();

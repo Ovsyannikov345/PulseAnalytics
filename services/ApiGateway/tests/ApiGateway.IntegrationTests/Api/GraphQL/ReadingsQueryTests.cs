@@ -157,7 +157,7 @@ public sealed class ReadingsQueryTests(PostgreSqlContainerFixture postgreSql) : 
         [
             [Id(8), Id(7), Id(6)],
             [Id(5), Id(4), Id(3)],
-            [Id(2), Id(1)]
+            [Id(2), Id(1)],
         ]);
 
         pages.Select(page => page.GetProperty("pageInfo").GetProperty("hasPreviousPage").GetBoolean())

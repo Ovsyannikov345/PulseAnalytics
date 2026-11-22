@@ -39,12 +39,12 @@ internal static class StatisticsGroupingExtensions
             ? query.GroupBy(r => new StatisticsGroupKey
             {
                 Location = r.Location,
-                BucketStart = DatabaseFunctions.DateBin(bucketLength, r.ReceivedAt, BucketOrigin)
+                BucketStart = DatabaseFunctions.DateBin(bucketLength, r.ReceivedAt, BucketOrigin),
             })
             : query.GroupBy(r => new StatisticsGroupKey
             {
                 Location = null,
-                BucketStart = DatabaseFunctions.DateBin(bucketLength, r.ReceivedAt, BucketOrigin)
+                BucketStart = DatabaseFunctions.DateBin(bucketLength, r.ReceivedAt, BucketOrigin),
             });
     }
 }

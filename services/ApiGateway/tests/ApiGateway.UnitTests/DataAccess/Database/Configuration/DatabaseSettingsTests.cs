@@ -9,7 +9,7 @@ public sealed class DatabaseSettingsTests
 {
     private static readonly DatabaseSettings ValidSettings = new()
     {
-        ConnectionString = "Host=postgres.test;Database=pulse_analytics"
+        ConnectionString = "Host=postgres.test;Database=pulse_analytics",
     };
 
     [Fact]

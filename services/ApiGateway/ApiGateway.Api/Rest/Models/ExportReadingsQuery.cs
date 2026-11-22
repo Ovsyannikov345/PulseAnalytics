@@ -3,7 +3,7 @@ using ApiGateway.Common.Constants.Enums;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace ApiGateway.Api.Rest.Models;
- 
+
 public sealed record ExportReadingsQuery
 {
     [BindRequired]

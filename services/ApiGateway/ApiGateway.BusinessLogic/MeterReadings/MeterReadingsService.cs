@@ -85,7 +85,7 @@ internal sealed class MeterReadingsService(
             .Select(reading => new CursorPageItem<MeterReadingModel>
             {
                 Item = reading,
-                Cursor = new ReadingCursor(reading.ReceivedAt, reading.Id).Encode()
+                Cursor = new ReadingCursor(reading.ReceivedAt, reading.Id).Encode(),
             })
             .ToList();
 
@@ -93,7 +93,7 @@ internal sealed class MeterReadingsService(
         {
             Items = items,
             HasNextPage = readings.Count > pageSize,
-            HasPreviousPage = request.Cursor is not null
+            HasPreviousPage = request.Cursor is not null,
         });
     }
 
@@ -144,7 +144,7 @@ internal sealed class MeterReadingsService(
             (false, true) => query
                 .GroupBy(r => r.Location)
                 .Select(g => new ReadingCountModel { Type = null, Location = g.Key, Count = g.Count() }),
-            (false, false) => null
+            (false, false) => null,
         };
 
         if (groupedCounts is null)

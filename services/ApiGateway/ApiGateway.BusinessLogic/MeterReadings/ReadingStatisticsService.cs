@@ -67,8 +67,8 @@ internal sealed class ReadingStatisticsService(
                 {
                     Average = g.Average(r => r.Energy!.Value),
                     Minimum = g.Min(r => r.Energy!.Value),
-                    Maximum = g.Max(r => r.Energy!.Value)
-                }
+                    Maximum = g.Max(r => r.Energy!.Value),
+                },
             })
             .ApplySort(request)
             .ToListAsync(ct);
@@ -99,20 +99,20 @@ internal sealed class ReadingStatisticsService(
                 {
                     Average = g.Average(r => r.Co2!.Value),
                     Minimum = g.Min(r => r.Co2!.Value),
-                    Maximum = g.Max(r => r.Co2!.Value)
+                    Maximum = g.Max(r => r.Co2!.Value),
                 },
                 Pm25 = new MetricStatisticsModel
                 {
                     Average = g.Average(r => r.Pm25!.Value),
                     Minimum = g.Min(r => r.Pm25!.Value),
-                    Maximum = g.Max(r => r.Pm25!.Value)
+                    Maximum = g.Max(r => r.Pm25!.Value),
                 },
                 Humidity = new MetricStatisticsModel
                 {
                     Average = g.Average(r => r.Humidity!.Value),
                     Minimum = g.Min(r => r.Humidity!.Value),
-                    Maximum = g.Max(r => r.Humidity!.Value)
-                }
+                    Maximum = g.Max(r => r.Humidity!.Value),
+                },
             })
             .ApplySort(request)
             .ToListAsync(ct);
@@ -139,7 +139,7 @@ internal sealed class ReadingStatisticsService(
                 Location = g.Key.Location,
                 BucketStart = g.Key.BucketStart,
                 Samples = g.Count(),
-                MotionSamples = g.Count(r => r.MotionDetected == true)
+                MotionSamples = g.Count(r => r.MotionDetected == true),
             })
             .ApplySort(request)
             .ToListAsync(ct);

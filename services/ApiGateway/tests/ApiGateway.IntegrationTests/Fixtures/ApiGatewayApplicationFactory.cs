@@ -34,7 +34,7 @@ public sealed class ApiGatewayApplicationFactory(
         {
             ["Serilog:MinimumLevel:Default"] = "Warning",
 
-            ["Database:ConnectionString"] = postgreSql.ConnectionString
+            ["Database:ConnectionString"] = postgreSql.ConnectionString,
         };
     }
 }

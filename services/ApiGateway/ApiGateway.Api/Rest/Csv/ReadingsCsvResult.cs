@@ -105,7 +105,6 @@ internal static partial class ReadingsCsvResultLogs
     [LoggerMessage(Level = LogLevel.Debug, Message = "CSV export stopped after {RowsWritten} rows, the client disconnected")]
     public static partial void ClientDisconnected(this ILogger logger, int rowsWritten);
 
-
     [LoggerMessage(Level = LogLevel.Error, Message = "CSV export failed after {RowsWritten} rows, the response was aborted")]
     public static partial void ExportAborted(this ILogger logger, Exception exception, int rowsWritten);
 }

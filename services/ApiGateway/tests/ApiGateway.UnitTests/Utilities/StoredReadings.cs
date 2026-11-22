@@ -16,7 +16,7 @@ internal static class StoredReadings
             Type = MeterType.Motion,
             Location = location,
             ReceivedAt = receivedAt,
-            MotionDetected = motionDetected
+            MotionDetected = motionDetected,
         };
     }
 
@@ -28,7 +28,7 @@ internal static class StoredReadings
             Type = MeterType.Energy,
             Location = location,
             ReceivedAt = receivedAt,
-            Energy = energy
+            Energy = energy,
         };
     }
 
@@ -48,7 +48,7 @@ internal static class StoredReadings
             ReceivedAt = receivedAt,
             Co2 = co2,
             Pm25 = pm25,
-            Humidity = humidity
+            Humidity = humidity,
         };
     }
 }

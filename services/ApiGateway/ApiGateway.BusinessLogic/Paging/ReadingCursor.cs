@@ -19,15 +19,15 @@ internal readonly record struct ReadingCursor
 
     private const string InvalidCursorMessage = "'Cursor' is invalid.";
 
-    public DateTimeOffset ReceivedAt { get; }
-
-    public Guid Id { get; }
-
     public ReadingCursor(DateTimeOffset receivedAt, Guid id)
     {
         ReceivedAt = receivedAt.ToUniversalTime();
         Id = id;
     }
+
+    public DateTimeOffset ReceivedAt { get; }
+
+    public Guid Id { get; }
 
     public static Result<ReadingCursor> Decode(string cursor)
     {

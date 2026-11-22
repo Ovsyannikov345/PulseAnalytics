@@ -27,7 +27,7 @@ public sealed class GetLatestReadingsRequestValidatorTests
         var result = _sut.TestValidate(new GetLatestReadingsRequest
         {
             Types = [MeterType.AirQuality],
-            Locations = [MeterLocation.Garage, MeterLocation.Office]
+            Locations = [MeterLocation.Garage, MeterLocation.Office],
         });
 
         // Assert
@@ -41,7 +41,7 @@ public sealed class GetLatestReadingsRequestValidatorTests
         var result = _sut.TestValidate(new GetLatestReadingsRequest
         {
             Types = [(MeterType)4],
-            Locations = [(MeterLocation)7]
+            Locations = [(MeterLocation)7],
         });
 
         // Assert

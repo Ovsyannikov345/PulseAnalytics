@@ -31,7 +31,7 @@ internal sealed class GraphQLClient(HttpClient httpClient)
 
         using var request = new HttpRequestMessage(HttpMethod.Post, EndpointPath)
         {
-            Content = content
+            Content = content,
         };
 
         // The media types Apollo Client accepts; the response status codes follow the GraphQL over HTTP spec for them.
