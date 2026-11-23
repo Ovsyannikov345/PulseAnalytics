@@ -18,8 +18,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    'types'
     'location'
+    'types'
     'from'
     'to'
     'actions';
@@ -83,8 +83,8 @@
   .form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-areas:
-      'types types'
       'location .'
+      'types types'
       'from to'
       '. actions';
   }
@@ -98,12 +98,16 @@
   }
 }
 
-/* Three columns: what to show on the first line, when on the second, with the buttons. */
-@container (min-width: 740px) {
+/*
+ * Three columns: what to show on the first line, when on the second. The first two
+ * fit their content (Locations over From, the chips starting over To), so the spare
+ * width goes to the last column and the buttons sit at its right, with no gaps between fields.
+ */
+@container (min-width: 680px) {
   .form {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: auto auto minmax(0, 1fr);
     grid-template-areas:
-      'types types location'
+      'location types types'
       'from to actions';
   }
 
@@ -116,8 +120,8 @@
 /* Everything on one line. */
 @container (min-width: 1260px) {
   .form {
-    grid-template-columns: auto minmax(200px, 1fr) minmax(230px, 1fr) minmax(230px, 1fr) auto;
-    grid-template-areas: 'types location from to actions';
+    grid-template-columns: minmax(200px, 1fr) auto minmax(230px, 1fr) minmax(230px, 1fr) auto;
+    grid-template-areas: 'location types from to actions';
   }
 }
 

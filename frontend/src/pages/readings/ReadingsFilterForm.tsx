@@ -70,21 +70,6 @@ export function ReadingsFilterForm({
   return (
     <section aria-label="Filters" className={styles.card}>
       <form aria-label="Filter readings" noValidate className={styles.form} onSubmit={apply}>
-        <div className={styles.types}>
-          <span id={typesLabelId} className={styles.groupLabel}>
-            Meter types
-          </span>
-          <ToggleChips
-            labelledBy={typesLabelId}
-            describedBy={problems.types ? typesErrorId : undefined}
-            options={typeOptions}
-            values={draft.types}
-            onChange={(types) => {
-              change({ types });
-            }}
-          />
-          {problems.types ? <FieldError id={typesErrorId} message={problems.types} /> : null}
-        </div>
         <Field label="Locations" className={styles.location}>
           {(control) => (
             <Select
@@ -105,6 +90,21 @@ export function ReadingsFilterForm({
             </Select>
           )}
         </Field>
+        <div className={styles.types}>
+          <span id={typesLabelId} className={styles.groupLabel}>
+            Meter types
+          </span>
+          <ToggleChips
+            labelledBy={typesLabelId}
+            describedBy={problems.types ? typesErrorId : undefined}
+            options={typeOptions}
+            values={draft.types}
+            onChange={(types) => {
+              change({ types });
+            }}
+          />
+          {problems.types ? <FieldError id={typesErrorId} message={problems.types} /> : null}
+        </div>
         <Field label="From" error={problems.from} className={styles.from}>
           {(control) => (
             <Input
