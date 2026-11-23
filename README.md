@@ -99,20 +99,18 @@ The services exchange message contracts as NuGet packages owned by the producer:
 [`PulseAnalytics.DataProcessor.Contracts`](services/DataProcessor/DataProcessor.Contracts) (consumed by the
 notification service).
 
-| Component            | Tech                                                                                     | Host port   | Endpoints                                                                     |
-| -------------------- | ---------------------------------------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------- |
-| Data Ingestor        | .NET 10 worker, `Microsoft.Extensions.Http.Resilience` (Polly), RabbitMQ.Client          | 5101        | `/health`                                                                     |
-| Data Processor       | .NET 10 worker, EF Core + Npgsql, FluentValidation, RabbitMQ.Client                      | 5102        | `/health`                                                                     |
-| API Gateway          | ASP.NET Core 10, HotChocolate 16, EF Core (read-only), FluentValidation, Swashbuckle UI | 5103        | `/graphql`, `/api/readings/export`, `/swagger`, `/openapi/v1.json`, `/health` |
-| Notification Service | ASP.NET Core 10, SignalR, RabbitMQ.Client                                                | 5104        | `/hubs/readings`, `/health`                                                   |
-| Frontend             | React 19, TypeScript, Vite, Apollo Client, `@microsoft/signalr`, Recharts, nginx         | 5100        | `/`, `/health`                                                                |
-| WeakApp              | Built from a pinned commit of the upstream repo                                          | 5000        | `/meters` (needs `X-Api-Key`), `/health`                                      |
-| RabbitMQ             | `rabbitmq:4.1-management`                                                                | 5672, 15672 | AMQP, management UI                                                           |
-| PostgreSQL           | `postgres:18.6-alpine`                                                                   | 5432        |                                                                               |
-| Seq                  | `datalust/seq` (logs and traces)                                                         | 5341        | UI and ingestion                                                              |
-| OTel Collector       | `otel/opentelemetry-collector-contrib`                                                   | 4317, 4318  | OTLP gRPC / HTTP                                                              |
-| Prometheus           | `prom/prometheus`                                                                        | 9090        | UI                                                                            |
-| Grafana              | `grafana/grafana`                                                                        | 3000        | Dashboards                                                                    |
+| Component            | Tech                                                                                     |
+| -------------------- | ---------------------------------------------------------------------------------------- |
+| Data Ingestor        | .NET 10 worker, `Microsoft.Extensions.Http.Resilience` (Polly), RabbitMQ.Client          |
+| Data Processor       | .NET 10 worker, EF Core + Npgsql, FluentValidation, RabbitMQ.Client                      |
+| API Gateway          | ASP.NET Core 10, HotChocolate 16, EF Core (read-only), FluentValidation, Swashbuckle UI |
+| Notification Service | ASP.NET Core 10, SignalR, RabbitMQ.Client                                                |
+| Frontend             | React 19, TypeScript, Vite, Apollo Client, `@microsoft/signalr`, Recharts, nginx         |
+| WeakApp              | Built from a pinned commit of the upstream repo                                          |
+| Message broker       | RabbitMQ 4.1                                                                             |
+| Database             | PostgreSQL 18                                                                            |
+| Logs and traces      | Serilog, Seq                                                                             |
+| Metrics              | OpenTelemetry Collector, Prometheus, Grafana                                             |
 
 All services log with Serilog, handle errors globally (ProblemDetails in the gateway, GraphQL error filter), and
 validate their options at startup, so a missing setting stops the service immediately with a clear error.
@@ -186,7 +184,7 @@ Compose reads `deploy/.env` and stops with `Set <VAR> in deploy/.env` when a req
 | `SEQ_ADMIN_PASSWORD`, `SEQ_API_KEY`                                                                                     | yes, key optional | Seq `admin` password; an optional ingestion API key.                               |
 | `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`                                                                          | yes      | Grafana login.                                                                              |
 | `DATA_INGESTOR_TAG`, `DATA_PROCESSOR_TAG`, `API_GATEWAY_TAG`, `NOTIFICATION_SERVICE_TAG`, `FRONTEND_TAG`                | no       | Docker Hub image tags; default `latest`. CI also publishes `sha-<short commit>`.            |
-| `*_PORT`                                                                                                                | no       | Host ports; the defaults are listed in the [architecture table](#architecture).             |
+| `*_PORT`                                                                                                                | no       | Host ports; the defaults are listed in `.env.example`.                                      |
 
 The RabbitMQ, PostgreSQL, Seq and Grafana credentials are written into their Docker volumes on first start. To change
 them later, recreate the volumes with `docker compose -f deploy/docker-compose.yml down -v`.
