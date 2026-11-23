@@ -434,8 +434,10 @@ flowchart LR
 
 ## Git workflow
 
-- Nothing is committed to `main` directly. Every change goes through a `feature/*` branch and a pull request, merged
-  by squash, so `main` has one commit per change.
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) with the service as the scope,
-  for example `feat(ingestor): …` or `fix(frontend): …`.
-- The path-filtered pipelines of every touched service must pass before a merge.
+- Nothing is committed to `main` directly. Every change is made on a `feature/*` branch and squash-merged through a
+  pull request, so `main` is a linear history with one commit per change and no merge commits.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), scoped to the service or area
+  they touch, for example `feat(ingestor): …`, `fix(frontend): …` or `feat(deploy): …`. Changes that span several
+  services have no scope (`fix: …`).
+- A pull request runs only the pipelines of the services it touches, thanks to the path filters described in
+  [CI/CD](#cicd).
