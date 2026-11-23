@@ -8,11 +8,17 @@
   background: var(--color-surface);
 }
 
-.form {
+.form,
+.rangeRow {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 16px 24px;
+}
+
+/* From, To and the buttons wrap as one group, not field by field, so a lone To can't drop to the next line. */
+.rangeRow {
+  flex: 1 1 auto;
 }
 
 .types {
@@ -53,7 +59,8 @@
     padding: 16px;
   }
 
-  .form > * {
+  .form > *,
+  .rangeRow > * {
     flex: 1 1 100%;
   }
 

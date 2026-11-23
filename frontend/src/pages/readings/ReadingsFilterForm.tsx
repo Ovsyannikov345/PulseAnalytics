@@ -105,37 +105,39 @@ export function ReadingsFilterForm({
             </Select>
           )}
         </Field>
-        <Field label="From" error={problems.from}>
-          {(control) => (
-            <Input
-              {...control}
-              type="datetime-local"
-              value={draft.from}
-              className={styles.time}
-              onChange={(event) => {
-                change({ from: event.target.value });
-              }}
-            />
-          )}
-        </Field>
-        <Field label="To (exclusive)" error={problems.to}>
-          {(control) => (
-            <Input
-              {...control}
-              type="datetime-local"
-              value={draft.to}
-              className={styles.time}
-              onChange={(event) => {
-                change({ to: event.target.value });
-              }}
-            />
-          )}
-        </Field>
-        <div className={styles.actions}>
-          <Button onClick={onReset}>Reset</Button>
-          <Button type="submit" variant="primary">
-            Apply
-          </Button>
+        <div className={styles.rangeRow}>
+          <Field label="From" error={problems.from}>
+            {(control) => (
+              <Input
+                {...control}
+                type="datetime-local"
+                value={draft.from}
+                className={styles.time}
+                onChange={(event) => {
+                  change({ from: event.target.value });
+                }}
+              />
+            )}
+          </Field>
+          <Field label="To (exclusive)" error={problems.to}>
+            {(control) => (
+              <Input
+                {...control}
+                type="datetime-local"
+                value={draft.to}
+                className={styles.time}
+                onChange={(event) => {
+                  change({ to: event.target.value });
+                }}
+              />
+            )}
+          </Field>
+          <div className={styles.actions}>
+            <Button onClick={onReset}>Reset</Button>
+            <Button type="submit" variant="primary">
+              Apply
+            </Button>
+          </div>
         </div>
       </form>
       {invalidInput ? (
