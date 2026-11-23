@@ -23,8 +23,6 @@ SignalR. Four .NET 10 microservices, the frontend and all the infrastructure sta
 [CI/CD](#cicd) ·
 [Observability](#observability) ·
 [Code quality](#code-quality) ·
-[Design decisions](#design-decisions-and-trade-offs) ·
-[Known limitations](#known-limitations) ·
 [Git workflow](#git-workflow)
 
 ## What's inside
