@@ -443,5 +443,4 @@ flowchart LR
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/), scoped to the service or area
   they touch, for example `feat(ingestor): …`, `fix(frontend): …` or `feat(deploy): …`. Changes that span several
   services have no scope (`fix: …`).
-- A pull request runs only the pipelines of the services it touches, thanks to the path filters described in
-  [CI/CD](#cicd).
+- A pull request runs only the pipelines of the services it touches, thanks to the path filters.
