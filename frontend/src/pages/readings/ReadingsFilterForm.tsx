@@ -85,7 +85,7 @@ export function ReadingsFilterForm({
           />
           {problems.types ? <FieldError id={typesErrorId} message={problems.types} /> : null}
         </div>
-        <Field label="Locations">
+        <Field label="Locations" className={styles.location}>
           {(control) => (
             <Select
               {...control}
@@ -105,39 +105,37 @@ export function ReadingsFilterForm({
             </Select>
           )}
         </Field>
-        <div className={styles.rangeRow}>
-          <Field label="From" error={problems.from}>
-            {(control) => (
-              <Input
-                {...control}
-                type="datetime-local"
-                value={draft.from}
-                className={styles.time}
-                onChange={(event) => {
-                  change({ from: event.target.value });
-                }}
-              />
-            )}
-          </Field>
-          <Field label="To (exclusive)" error={problems.to}>
-            {(control) => (
-              <Input
-                {...control}
-                type="datetime-local"
-                value={draft.to}
-                className={styles.time}
-                onChange={(event) => {
-                  change({ to: event.target.value });
-                }}
-              />
-            )}
-          </Field>
-          <div className={styles.actions}>
-            <Button onClick={onReset}>Reset</Button>
-            <Button type="submit" variant="primary">
-              Apply
-            </Button>
-          </div>
+        <Field label="From" error={problems.from} className={styles.from}>
+          {(control) => (
+            <Input
+              {...control}
+              type="datetime-local"
+              value={draft.from}
+              className={styles.time}
+              onChange={(event) => {
+                change({ from: event.target.value });
+              }}
+            />
+          )}
+        </Field>
+        <Field label="To (exclusive)" error={problems.to} className={styles.to}>
+          {(control) => (
+            <Input
+              {...control}
+              type="datetime-local"
+              value={draft.to}
+              className={styles.time}
+              onChange={(event) => {
+                change({ to: event.target.value });
+              }}
+            />
+          )}
+        </Field>
+        <div className={styles.actions}>
+          <Button onClick={onReset}>Reset</Button>
+          <Button type="submit" variant="primary">
+            Apply
+          </Button>
         </div>
       </form>
       {invalidInput ? (
