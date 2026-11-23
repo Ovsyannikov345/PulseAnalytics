@@ -350,25 +350,11 @@ dotnet run --project services/DataIngestor/DataIngestor.Api
 Start order doesn't matter. The processor and notification service wait for their exchanges to appear, and the
 processor creates the database schema at startup, which the gateway reads.
 
-Other useful commands:
-
-```bash
-# Add an EF Core migration (the processor owns the database schema).
-# Set Database__ConnectionString and RabbitMq__* first; no connection is opened.
-cd services/DataProcessor
-dotnet tool restore
-dotnet ef migrations add <Name> --project DataProcessor.Infrastructure --startup-project DataProcessor.Api --output-dir Database/Migrations
-
-# Re-export the GraphQL schema after changing the gateway's types
-cd services/ApiGateway
-dotnet run --project ApiGateway.Api -- schema export --output GraphQL/schema.graphql
-```
-
 ## Testing
 
 Every service has a unit test project and an integration test project. The tests use xUnit v3, Shouldly and
 FakeItEasy. Integration tests use [Testcontainers](https://dotnet.testcontainers.org/) to run real PostgreSQL and
-RabbitMQ, and WireMock (plus a raw-socket stub for truncated bodies) in place of WeakApp. **Docker must be running.**
+RabbitMQ, and WireMock in place of WeakApp. **Docker must be running.**
 
 ```bash
 dotnet test services/DataProcessor/DataProcessor.slnx --filter "Category=Unit"
@@ -409,21 +395,11 @@ Sonar (quality gate)┘
 | Deploy   | On `main` only: [`deploy/deploy.sh`](deploy/deploy.sh) simulates a rollout of the new image to Azure Container Apps                  | Same                                                                                                 |
 
 The mock deployment prints the `az containerapp` calls it would make, fakes the platform's answers and records a
-GitHub deployment in the `production` environment. Nothing outside the runner is contacted. You can run it locally
-with `DEPLOY_POLL_SECONDS=0 bash deploy/deploy.sh data-processor <image>`.
+GitHub deployment in the `production` environment.
 
 The message contracts are released separately. Pushing a tag `data-ingestor-contracts-v<version>` or
 `data-processor-contracts-v<version>` on `main` builds and tests the service, then packs the contracts project
 (version from MinVer) and publishes it to nuget.org with trusted publishing.
-
-To run the pipelines in a fork, configure:
-
-| Kind                 | Name                                                                                                   |
-| -------------------- | ------------------------------------------------------------------------------------------------------ |
-| Secrets              | `SONAR_TOKEN`, `DOCKERHUB_TOKEN`, `NUGET_USER`                                                         |
-| Variables            | `DOCKERHUB_USERNAME`                                                                                   |
-| Environments         | `production` (deploy), `nuget` (contracts publish)                                                     |
-| External             | One SonarQube Cloud project per service and frontend; a nuget.org trusted-publishing policy per package |
 
 ## Observability
 
@@ -452,68 +428,9 @@ flowchart LR
 - .NET: nullable reference types, `TreatWarningsAsErrors`, `EnforceCodeStyleInBuild` and StyleCop analyzers in each
   service's `Directory.Build.props`. Code style comes from a per-service `.editorconfig`. A build with any warning
   fails.
-- Layering is enforced by architecture tests in the gateway and the notification service.
 - SonarQube Cloud quality gates run on every pipeline.
 - Frontend: strict TypeScript, ESLint with zero warnings allowed, Prettier, and a check that the generated GraphQL
   code is up to date.
-- Libraries: Polly (through `Microsoft.Extensions.Http.Resilience`), FluentValidation, HotChocolate, EF Core, Serilog,
-  OpenTelemetry.
-
-## Design decisions and trade-offs
-
-- **WeakApp is built from a pinned upstream commit.** Upstream publishes no image. Building from a git URL keeps
-  third-party binaries out of this repo, and pinning stops upstream changes from altering behaviour.
-- **The resilience pipeline is tuned to WeakApp's measured behaviour.** In probing, only about 37% of calls returned
-  data. The rest were 500/502/504 errors, `200` with `{"error":"data corrupted"}` or `[]`, hangs over 30 s, and
-  truncated chunked bodies. About nine quick calls in a row trigger `429` with `Retry-After`. The ingestor's response:
-  - a 20 s total timeout and a 5 s timeout per attempt;
-  - 2 retries with exponential, jittered backoff;
-  - no retry on `429`, because retries only extend the block;
-  - buffering the whole body inside the pipeline, so a truncated body is retried too;
-  - a 15 s poll period, which avoided `429` entirely where 5 s did not.
-
-  A circuit breaker was tried and removed: WeakApp's normal failure streaks kept it open and it skipped about 40% of
-  polls.
-- **RabbitMQ.Client instead of MassTransit.** MassTransit v9 is commercial. The plain client also keeps topology and
-  publisher confirms explicit.
-- **Topic exchanges, a queue per reading type.** Each type is consumed, validated and monitored on its own, and new
-  consumers can bind without changes to the producer.
-- **Contracts are versioned NuGet packages owned by the producer.** The services can live in separate repositories and
-  share nothing but the message contract.
-- **Idempotent storage.** Each message id is stored as a unique deduplication key, so a redelivered message is
-  acknowledged and skipped. Readings with identical values are still stored, because WeakApp's data has no id or
-  timestamp and a repeated value is a new sample.
-- **No dead-letter queue.** An invalid or failing message is rejected without requeue. A lost reading is only a
-  missing sample, and nothing would replay a DLQ.
-- **The processor owns the schema; the gateway reads a view.** `reporting.meter_readings` flattens the JSONB
-  payload into typed columns. The table can change behind the view, and the gateway doesn't depend on the processor's
-  storage format. The gateway's integration tests migrate their database with the real processor image to catch
-  drift. A plain view was fast enough for a 31-day range over 3 million rows, so there are no materialized rollups.
-- **An N-layered gateway** (Api, BusinessLogic, DataAccess, Common). It is a read-only API, so CQRS or MediatR would add
-  ceremony without benefit. Each request has its own request model and FluentValidation validator.
-- **A separate notification service.** It keeps the gateway stateless and read-only, isolates long-lived WebSocket
-  connections, and scales on its own. Each instance gets every event through its own exclusive, auto-delete queue
-  with a 30 s TTL, so nothing piles up while no instance is listening.
-- **One origin for the browser.** nginx routes by path, so there is no CORS in the deployed system and the bundle
-  contains no backend URLs.
-- **An OpenTelemetry Collector in the middle.** Services push OTLP to one place. The collector exposes metrics to
-  Prometheus and forwards traces to Seq, and the services need no Prometheus exporter.
-- **Independent services over shared code.** Small pieces, such as the RabbitMQ connection handling, are repeated
-  in each service on purpose, so every service can be built, versioned and released on its own.
-
-## Known limitations
-
-- While PostgreSQL is down, the processor rejects the readings it receives, so they are lost. There is no DLQ and no
-  replay.
-- Live updates are best-effort. Stored events are transient and published after the database commit without an
-  outbox, so a crash between the two skips a push. The dashboard re-fetches after reconnecting.
-- Sampling is uneven. A reading is a snapshot taken when a poll succeeds, and `receivedAt` is the ingestor's receive
-  time, since WeakApp sends no timestamps.
-- Prometheus scrapes the collector, so its `up` metric reflects the collector, not each service. Use `/health` or
-  the compose health status for service liveness.
-- Communication between services is not authenticated, and all services share one broker user and one database
-  user. These were out of scope.
-- The gateway's integration tests need Docker Hub access, because they pull the processor image.
 
 ## Git workflow
 
