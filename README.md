@@ -72,7 +72,7 @@ flowchart LR
     Processor -- "insert, deduplicated" --> Postgres
     Processor -- "meter-reading.*.stored" --> Stored
     Postgres -- "reporting.meter_readings view" --> Gateway
-    Stored -- "one queue per instance" --> Notification
+    Stored -- "own queues per instance" --> Notification
     Browser --> Frontend
     Frontend -- "/graphql, /api" --> Gateway
     Frontend -- "/hubs (WebSocket)" --> Notification
@@ -87,8 +87,8 @@ flowchart LR
    exposes the `reporting.meter_readings` view as the read contract for other services.
 3. **API Gateway** is a read-only HotChocolate GraphQL API over that view, with filtering, cursor paging, latest values
    and statistics by time and location. It also has a REST CSV export documented in Swagger.
-4. **Notification Service** binds an exclusive queue per instance to the stored-events exchange and broadcasts every
-   stored reading to connected browsers through the SignalR hub `/hubs/readings`.
+4. **Notification Service** binds its own exclusive queues (one per reading type, per instance) to the stored-events
+   exchange and broadcasts every stored reading to connected browsers through the SignalR hub `/hubs/readings`.
 5. **Frontend** is a React dashboard served by nginx. nginx also proxies `/graphql`, `/api` and `/hubs` to the
    backend, so the browser talks to one origin.
 
@@ -107,11 +107,13 @@ notification service).
 | WeakApp              | Built from a pinned commit of the upstream repo                                          |
 | Message broker       | RabbitMQ 4.1                                                                             |
 | Database             | PostgreSQL 18                                                                            |
-| Logs and traces      | Serilog, Seq                                                                             |
-| Metrics              | OpenTelemetry Collector, Prometheus, Grafana                                             |
+| Logs                 | Serilog, Seq                                                                             |
+| Traces and metrics   | OpenTelemetry, OpenTelemetry Collector, Seq (traces), Prometheus, Grafana                |
 
-All services log with Serilog, handle errors globally (ProblemDetails in the gateway, GraphQL error filter), and
-validate their options at startup, so a missing setting stops the service immediately with a clear error.
+All services log with Serilog and validate their options at startup, so a missing setting stops the service
+immediately with a clear error. The gateway handles errors globally: unhandled REST errors become ProblemDetails, and
+a GraphQL error filter turns failures into coded GraphQL errors. The workers contain failures per poll and per
+message, so one failed poll or bad message never stops a service.
 
 ## Quick start
 
@@ -141,8 +143,8 @@ GitHub commit and pulls the service images from Docker Hub.
    docker compose -f deploy/docker-compose.yml ps
    ```
 
-4. Open the dashboard at <http://localhost:5100>. The first readings arrive about 20 seconds after the ingestor starts
-   (a 5 s startup delay, then a poll every 15 s). WeakApp fails often on purpose, so some polls bring nothing.
+4. Open the dashboard at <http://localhost:5100>. The ingestor polls WeakApp 5 seconds after it starts and then every
+   15 seconds. WeakApp fails often on purpose, so the first readings may take a few polls to arrive.
 
 Stop the system with `docker compose -f deploy/docker-compose.yml down`. Add `-v` to also delete all data (database,
 broker, logs, metrics) and reset the first-start credentials.
@@ -389,8 +391,10 @@ Sonar (quality gate)┘
 | -------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | CI       | Restore and Release build (StyleCop and analyzers as errors, which is the lint step), unit tests; integration tests on pushes to `main` | `npm ci`, GraphQL codegen drift check, ESLint, Prettier check, type check, Vitest, production build |
 | Sonar    | SonarQube Cloud analysis with unit test coverage; fails on the quality gate                                                          | Same, with Vitest coverage                                                                           |
-| Docker   | Builds the image on every PR; on `main` pushes it to Docker Hub as `latest` and `sha-<short commit>`                                 | Same                                                                                                 |
+| Docker   | Builds the image on pull requests; on `main` pushes it to Docker Hub as `latest` and `sha-<short commit>`                            | Same                                                                                                 |
 | Deploy   | On `main` only: [`deploy/deploy.sh`](deploy/deploy.sh) simulates a rollout of the new image to Azure Container Apps                  | Same                                                                                                 |
+
+Draft pull requests skip the pipelines until they are marked ready for review.
 
 The mock deployment prints the `az containerapp` calls it would make, fakes the platform's answers and records a
 GitHub deployment in the `production` environment.
