@@ -1,4 +1,6 @@
 .card {
+  /* The form's layout follows the card's width, not the window's. */
+  container-type: inline-size;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -8,18 +10,41 @@
   background: var(--color-surface);
 }
 
+/*
+ * A grid with a few fixed arrangements, so the fields stay aligned in columns
+ * instead of wrapping one by one at every width. Narrowest first: one column.
+ */
 .form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'location'
+    'types'
+    'from'
+    'to'
+    'actions';
+  align-items: start;
   gap: 16px 24px;
 }
 
 .types {
+  grid-area: types;
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
+}
+
+.location {
+  grid-area: location;
+}
+
+.from {
+  grid-area: from;
+}
+
+.to {
+  grid-area: to;
 }
 
 .groupLabel {
@@ -28,16 +53,21 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* The controls fill their column. */
+.location select,
 .time {
-  min-width: 200px;
+  width: 100%;
+  min-width: 0;
 }
 
-/* Level with the controls: below the labels' line. */
 .actions {
+  grid-area: actions;
   display: flex;
   gap: 8px;
-  margin-top: 24px;
-  margin-left: auto;
+}
+
+.actions > * {
+  flex: 1;
 }
 
 .alert {
@@ -48,26 +78,55 @@
   color: var(--color-error-dark);
 }
 
-@media (max-width: 640px) {
-  .card {
-    padding: 16px;
-  }
-
-  .form > * {
-    flex: 1 1 100%;
-  }
-
-  .time {
-    min-width: 0;
-    width: 100%;
+/* Two columns: the range side by side, the buttons under it on the right. */
+@container (min-width: 480px) {
+  .form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      'location .'
+      'types types'
+      'from to'
+      '. actions';
   }
 
   .actions {
-    margin-top: 0;
-    margin-left: 0;
+    justify-self: end;
   }
 
   .actions > * {
-    flex: 1;
+    flex: none;
+  }
+}
+
+/*
+ * Three columns: what to show on the first line, when on the second. The first two
+ * fit their content (Locations over From, the chips starting over To), so the spare
+ * width goes to the last column and the buttons sit at its right, with no gaps between fields.
+ */
+@container (min-width: 680px) {
+  .form {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'location types types'
+      'from to actions';
+  }
+
+  /* Level with the inputs: below the labels' line. */
+  .actions {
+    margin-top: 24px;
+  }
+}
+
+/* Everything on one line. */
+@container (min-width: 1260px) {
+  .form {
+    grid-template-columns: minmax(200px, 1fr) auto minmax(230px, 1fr) minmax(230px, 1fr) auto;
+    grid-template-areas: 'location types from to actions';
+  }
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 16px;
   }
 }

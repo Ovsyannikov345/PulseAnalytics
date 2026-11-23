@@ -28,10 +28,9 @@
   font-weight: var(--font-weight-semibold);
 }
 
+/* A line of its own: beside the controls it wrapped into a block taller than them. */
 .summary {
-  max-width: 330px;
-  margin-left: auto;
-  align-self: flex-end;
+  margin-top: -6px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-md);
 }
@@ -51,10 +50,5 @@
 
   .controls > * {
     flex: 1 1 100%;
-  }
-
-  .summary {
-    max-width: none;
-    margin-left: 0;
   }
 }

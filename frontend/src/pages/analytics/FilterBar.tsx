@@ -142,14 +142,14 @@ export function FilterBar({
             </Select>
           )}
         </Field>
-        <p className={styles.summary}>
-          {formatDateTime(range.from)} – {formatDateTime(range.to)} · {formatNumber(bucketCount)}{' '}
-          {bucketCount === 1 ? 'bucket' : 'buckets'}.
-          {allowedBuckets.length < timeBuckets.length
-            ? ` Bucket sizes that would need more than ${formatNumber(MAX_BUCKETS)} buckets for this range can't be picked.`
-            : null}
-        </p>
       </div>
+      <p className={styles.summary}>
+        {formatDateTime(range.from)} – {formatDateTime(range.to)} · {formatNumber(bucketCount)}{' '}
+        {bucketCount === 1 ? 'bucket' : 'buckets'}.
+        {allowedBuckets.length < timeBuckets.length
+          ? ` Bucket sizes that would need more than ${formatNumber(MAX_BUCKETS)} buckets for this range can't be picked.`
+          : null}
+      </p>
       {custom || customOpen ? (
         <CustomRangeForm
           // A newly applied range (or one from the back button) refills the inputs.
