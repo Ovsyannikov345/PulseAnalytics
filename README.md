@@ -42,7 +42,7 @@ PulseAnalytics/
 │   ├── otel-collector/        OpenTelemetry Collector config
 │   ├── prometheus/            Prometheus scrape config
 │   └── grafana/               Provisioned datasource and dashboards
-└── .github/workflows/         One CI/CD pipeline per service and frontend, plus reusable workflows
+└── .github/workflows/         One CI/CD pipeline per service and frontend, contracts publishing, reusable workflows
 ```
 
 Each service is self-contained, as if it lived in its own repository. It has its own solution (`<Service>.slnx`),
@@ -286,9 +286,9 @@ pinned by snapshot tests in
 
 | Page      | Route        | Shows                                                                                                                         |
 | --------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Overview  | `/`          | The latest value of every meter, summary tiles, per-location cards and 24-hour trends; refreshes every 30 s                    |
-| Live      | `/live`      | The newest sample per meter, updated in real time over SignalR, with connection status                                          |
-| Analytics | `/analytics` | Average, minimum and maximum by location and time bucket: energy, air quality with warnings, a motion heatmap                   |
+| Overview  | `/`          | The latest value of every meter, summary tiles, per-location cards with air quality warnings, 24-hour energy trends and ingestion coverage; refreshes every 30 s |
+| Live      | `/live`      | The newest sample per meter, updated in real time over SignalR, with air quality warnings and connection status                 |
+| Analytics | `/analytics` | Average, minimum and maximum by location and time bucket: energy and air quality charts, a motion activity heatmap and a per-location summary |
 | Readings  | `/readings`  | Every stored sample with filters and paging, plus CSV download                                                                  |
 
 The UI is built with React 19, Apollo Client, `@microsoft/signalr` and Recharts, styled with CSS Modules, without a
@@ -419,9 +419,11 @@ flowchart LR
   processor and notification service tag every log line of one poll with the same `CorrelationId`.
 - **Traces:** OpenTelemetry traces follow a reading from the WeakApp call through RabbitMQ, the database write and
   the SignalR push. They are viewable in Seq.
-- **Metrics:** each service exports its own counters and histograms (polls, fetch outcomes, publishes, consumed and
-  stored readings, GraphQL and export requests, live pushes), plus ASP.NET Core, HttpClient, Npgsql and Polly
-  metrics. Prometheus scrapes them from the collector, and the RabbitMQ queue metrics directly.
+- **Metrics:** each service exports its own counters and histograms: poll duration, fetches, received and published
+  readings in the ingestor; processing time, processed readings and published events in the processor; CSV exports
+  in the gateway; broadcast readings and delivery delay in the notification service. On top of that come ASP.NET Core
+  (including GraphQL requests), .NET runtime, HttpClient, Polly, Npgsql and SignalR connection metrics. Prometheus
+  scrapes them from the collector, and the RabbitMQ queue metrics directly.
 - **Dashboards:** Grafana provisions four dashboards in the *Pulse Analytics* folder: Data Ingestor (the home
   dashboard), Data Processor, API Gateway and Notification Service.
 
