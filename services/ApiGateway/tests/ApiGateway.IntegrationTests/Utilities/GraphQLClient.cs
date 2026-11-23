@@ -45,6 +45,6 @@ internal sealed class GraphQLClient(HttpClient httpClient)
         return new GraphQLResponse(
             response.StatusCode,
             responseContent,
-            JsonDocument.Parse(responseContent).RootElement.Clone());
+            JsonElement.Parse(responseContent));
     }
 }

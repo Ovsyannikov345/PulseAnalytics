@@ -2,26 +2,34 @@
   position: relative;
 }
 
-/* The track clips the moving bar; the region itself doesn't clip, so chart tooltips can overflow it. */
+/*
+ * A native indeterminate <progress> with its own look: the moving bar is a 40 % wide background slice,
+ * and the element clips it; the region itself doesn't clip, so chart tooltips can overflow it.
+ */
 .progress {
   position: absolute;
   top: 0;
   right: 0;
   left: 0;
   z-index: 1;
+  display: block;
+  width: 100%;
   height: 3px;
   overflow: hidden;
+  border: 0;
+  background: linear-gradient(var(--color-progress), var(--color-progress)) no-repeat;
+  background-size: 40% 100%;
+  appearance: none;
+  animation: slide 1.2s ease-in-out infinite;
 }
 
-.progress::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40%;
-  border-radius: 0 2px 2px 0;
-  background: var(--color-progress);
-  animation: slide 1.2s ease-in-out infinite;
+/* The native track and bar stay transparent; the background above is the visible bar. */
+.progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.progress::-moz-progress-bar {
+  background: transparent;
 }
 
 .content {
@@ -32,18 +40,19 @@
   opacity: 0.45;
 }
 
+/* With a 40 % slice, -66.667 % starts it just off the left edge and 166.667 % ends it just off the right. */
 @keyframes slide {
   from {
-    transform: translateX(-100%);
+    background-position-x: -66.667%;
   }
 
   to {
-    transform: translateX(250%);
+    background-position-x: 166.667%;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .progress::before {
+  .progress {
     animation: none;
   }
 

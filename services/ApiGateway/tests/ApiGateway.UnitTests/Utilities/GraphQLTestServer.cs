@@ -38,7 +38,7 @@ internal sealed class GraphQLTestServer(
 
         var result = await executor.ExecuteAsync(query, TestContext.Current.CancellationToken);
 
-        return JsonDocument.Parse(result.ToJson()).RootElement.Clone();
+        return JsonElement.Parse(result.ToJson());
     }
 
     public async ValueTask DisposeAsync()
