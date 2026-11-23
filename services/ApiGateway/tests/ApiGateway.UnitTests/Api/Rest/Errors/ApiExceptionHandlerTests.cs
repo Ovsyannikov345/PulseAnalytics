@@ -99,6 +99,6 @@ public sealed class ApiExceptionHandlerTests : IAsyncDisposable
 
     private JsonElement ReadProblem()
     {
-        return JsonDocument.Parse(_body.ToArray()).RootElement.Clone();
+        return JsonElement.Parse(_body.ToArray());
     }
 }

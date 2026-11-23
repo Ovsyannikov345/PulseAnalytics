@@ -32,7 +32,7 @@ public sealed class OpenApiDocumentTests(PostgreSqlContainerFixture postgreSql) 
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)).RootElement;
+        var document = JsonElement.Parse(await response.Content.ReadAsStringAsync(Ct));
         document.GetProperty("info").GetProperty("title").GetString().ShouldBe("Pulse Analytics API Gateway");
 
         var operation = document.GetProperty("paths").GetProperty("/api/readings/export").GetProperty("get");
@@ -54,7 +54,7 @@ public sealed class OpenApiDocumentTests(PostgreSqlContainerFixture postgreSql) 
         var content = await client.GetStringAsync(new Uri("/openapi/v1.json", UriKind.Relative), Ct);
 
         // Assert
-        var operation = JsonDocument.Parse(content).RootElement
+        var operation = JsonElement.Parse(content)
             .GetProperty("paths").GetProperty("/api/readings/export").GetProperty("get");
 
         operation.GetProperty("summary").GetString().ShouldBe("Exports readings as a CSV file.");

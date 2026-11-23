@@ -198,7 +198,7 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
         response.Content.Headers.ContentDisposition.ShouldBeNull();
 
         var content = await response.Content.ReadAsStringAsync(Ct);
-        var problem = JsonDocument.Parse(content).RootElement;
+        var problem = JsonElement.Parse(content);
         problem.GetProperty("status").GetInt32().ShouldBe((int)HttpStatusCode.InternalServerError);
         problem.GetProperty("detail").GetString().ShouldBe("An unexpected error occurred.");
         problem.GetProperty("traceId").GetString().ShouldNotBeNullOrWhiteSpace();
@@ -313,7 +313,7 @@ public sealed class ReadingsExportTests(PostgreSqlContainerFixture postgreSql) :
 
     private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response)
     {
-        return JsonDocument.Parse(await response.Content.ReadAsStringAsync(Ct)).RootElement.Clone();
+        return JsonElement.Parse(await response.Content.ReadAsStringAsync(Ct));
     }
 
     // The service's validation message is the detail; model binding errors are listed per parameter.
