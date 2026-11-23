@@ -14,9 +14,7 @@ interface RefetchDimmerProps {
 export function RefetchDimmer({ refreshing, children }: Readonly<RefetchDimmerProps>) {
   return (
     <div className={styles.refetchDimmer} aria-busy={refreshing}>
-      {refreshing ? (
-        <div role="progressbar" aria-label="Updating" className={styles.progress} />
-      ) : null}
+      {refreshing ? <progress aria-label="Updating" className={styles.progress} /> : null}
       <div className={styles.content}>{children}</div>
     </div>
   );
